@@ -1,5 +1,5 @@
 clc;
-close all;
+% close all;
 clear;
 
 set_matlab_utils_path();
@@ -15,6 +15,7 @@ train_method = 'LS';
 dt = 0.005;
 
 canClockPtr = LinCanonicalClock();
+
 
 Data_sim = cell(N,1);
 DMP_data = cell(N,1);
@@ -33,7 +34,10 @@ for n=1:N
     dmp = cell(D,1);
     
     for i=1:D
-        dmp{i} = DMP(N_kernels, a_z, b_z, canClockPtr);
+        shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.99);
+%         shapeAttrGatingPtr = LinGatingFunction(1.0, 0.0);
+%         shapeAttrGatingPtr = ExpGatingFunction(1.0, 0.05);
+        dmp{i} = DMP(N_kernels, a_z, b_z, canClockPtr, shapeAttrGatingPtr);
     end
     
     %% Train the DMP
@@ -137,20 +141,22 @@ for n=1:N
     
     fontsize = 14;
     figure('NumberTitle', 'off', 'Name', ['Demo ' num2str(n)]);
+    k = 1;
     for i=1:D
-        subplot(D,3,(i-1)*(D+1)+1);
+        subplot(D,3,k);
         plot(Time,y_data(i,:), Timed,yd_data(i,:));
         if (i==1), title('pos [$m$]','interpreter','latex','fontsize',fontsize); end
         if (i==D), xlabel('time [$s$]','interpreter','latex','fontsize',fontsize); end
         legend('dmp','demo');
-        subplot(D,3,(i-1)*(D+1)+2);
+        subplot(D,3,k+1);
         plot(Time,dy_data(i,:), Timed,dyd_data(i,:));
         if (i==1), title('vel [$m/s$]','interpreter','latex','fontsize',fontsize); end
         if (i==D), xlabel('time [$s$]','interpreter','latex','fontsize',fontsize); end
-        subplot(D,3,(i-1)*(D+1)+3);
+        subplot(D,3,k+2);
         plot(Time,ddy_data(i,:), Timed,ddyd_data(i,:));
         if (i==1), title('accel [$m/s^2$]','interpreter','latex','fontsize',fontsize); end
         if (i==D), xlabel('time [$s$]','interpreter','latex','fontsize',fontsize); end
+        k = k+3;
     end
 
 end

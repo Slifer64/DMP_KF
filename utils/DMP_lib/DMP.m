@@ -57,9 +57,16 @@ classdef DMP < handle % : public DMP_
         %  @param[in] a_z: Parameter 'a_z' relating to the spring-damper system.
         %  @param[in] b_z: Parameter 'b_z' relating to the spring-damper system.
         %  @param[in] canClockPtr: Pointer to a DMP canonical system object.
-        function this = DMP(N_kernels, a_z, b_z, canClockPtr)
+        function this = DMP(N_kernels, a_z, b_z, canClockPtr, s_gat_ptr)
 
-            this.shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.99);
+            if (nargin < 5)
+                this.shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.99);
+            else
+                this.shapeAttrGatingPtr = s_gat_ptr;
+            end
+%             this.shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.99);
+%             this.shapeAttrGatingPtr = LinGatingFunction(1.0, 0.0);
+%             this.shapeAttrGatingPtr = ExpGatingFunction(1.0, 0.05);
 
             this.init(N_kernels, a_z, b_z, canClockPtr);
 
@@ -328,6 +335,52 @@ classdef DMP < handle % : public DMP_
 
             tau = this.canClockPtr.getTau();
 
+        end
+        
+        %% Returns the partial derivative of the DMP's acceleration wrt to the goal and tau
+        %  @param[in] t: current timestamp.
+        %  @param[in] y: position.
+        %  @param[in] dy: velocity.
+        %  @param[in] y0: initial position.
+        %  @param[in] x_hat: phase variable estimate.
+        %  @param[in] g_hat: goal estimate.
+        %  @param[in] tau_hat: time scale estimate.
+        %  @param[out] dC_dtheta: partial derivative of the DMP's acceleration wrt to the goal and tau.
+        function dC_dtheta = getAcellPartDev_g_tau(this, t, y, dy, y0, x_hat, g_hat, tau_hat)
+
+            dC_dtheta = zeros(2,1);
+            
+            K_dmp = this.a_z*this.b_z;
+            D_dmp = this.a_z;
+            psi = this.kernelFunction(x_hat);
+            sum_psi = sum(psi) + this.zero_tol;
+            sum_w_psi = psi'*this.w;
+            shape_attr_gat = this.shapeAttrGating(x_hat);
+
+            theta1 = g_hat;
+            theta2 = 1/tau_hat;
+            
+            dshape_attr_gat_dtheta2 = this.shapeAttrGatingPtr.getPartDev_1oTau(t,x_hat);
+            
+            dPsidtheta2 = -2*t*this.h.*(theta2*t-this.c).*psi;
+            sum_w_dPsidtheta2 = this.w'*dPsidtheta2;
+            dSumWPsi_dtheta2 = (sum_w_dPsidtheta2*sum_psi - sum_w_psi*sum(dPsidtheta2) ) / sum_psi^2;
+            
+            dC_dtheta(1) = (K_dmp + shape_attr_gat*sum_w_psi/sum_psi)*theta2^2;
+            
+            dC_dtheta(2) = 2*theta2* (K_dmp*(theta1-y) + shape_attr_gat*(theta1-y0)*sum_w_psi/sum_psi) + ...
+                -D_dmp*dy + theta2^2*(theta1-y0)*( dshape_attr_gat_dtheta2*sum_w_psi/sum_psi + shape_attr_gat*dSumWPsi_dtheta2 );
+            dC_dtheta(2) = dC_dtheta(2)*(-1/tau_hat^2);
+
+        end
+        
+        
+        function ddy = getAccel(this, y, dy, y0, y_c, z_c, x_hat, g_hat, tau_hat)
+            
+            z = dy*tau_hat;
+            [~, dz] = this.getStatesDot(x_hat, y, z, y0, g_hat, y_c, z_c);
+            ddy = dz/tau_hat;
+            
         end
 
     end
