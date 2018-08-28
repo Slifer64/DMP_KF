@@ -1,0 +1,4 @@
+enable_safety_check: true
+Fext_dead_zone: [0.4; 0.4; 0.2; 0.25; 0.25; 0.25]
+vel_limit: [0.45; 0.45; 0.5; 1.2; 1.2; 1.2]
+wrench_limit: [35; 35; 200; 25; 25; 150]

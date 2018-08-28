@@ -1,0 +1,27 @@
+# =====  Controller params  ======
+M: [1.0; 5.0; 1.0]
+K: [200; 200; 200.0]
+D: [35.0; 40.0; 30.0] #2*sqrt(M.*K)
+M_rot: [1.0; 1.0; 1.0]
+K_rot: [0.0; 0.0; 0.0]
+D_rot: [5.0; 5.0; 5.0] #2*sqrt(M.*K)
+max_m_o: 6.0 # maximum weight carried by the robot
+max_torque: 50 # maximum torque that the robot is allowed to feeel during initialization
+r_CoM: [0.0; 0.0] # initial estimation of object's CoM from robot end-effector
+pos_tol_stop: 0.02
+vel_tol_stop: 0.005
+orient_ctrl_type: 2
+k_click: 0.0
+f_iir_filt: 0.005
+assume_static_obj: false
+ff_gains: [0.0; 0.0; 0.0] #
+
+g_est: 0.00
+g_est_update_gain: 0.001;
+Kg: 0
+
+Fext_dead_zone: [0.4; 0.4; 0.2; 0.25; 0.25; 0.25]
+
+# ======  Safety check params  =========
+vel_max: [0.45; 0.45; 0.5; 1.2; 1.2; 1.2]
+F_max: [35; 35; 200; 25; 25; 150]

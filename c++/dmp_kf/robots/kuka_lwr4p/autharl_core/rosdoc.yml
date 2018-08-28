@@ -1,0 +1,4 @@
+- builder: doxygen
+  name: AUTh-ARL Core C++ API
+  file_patterns: '*.cpp *.cpp *.h *.cc *.hh *.dox *.hpp'
+  exclude_patterns: '*/test/*'

@@ -1,0 +1,4 @@
+# inertia and damping values for operating the hand in freedrive mode
+# The order is 'finger1', 'finger2', 'finger3', 'spread'
+inertia: [1.0; 1.0; 1.0; 1.5]
+damping: [20.0; 20.0; 20.0; 25]

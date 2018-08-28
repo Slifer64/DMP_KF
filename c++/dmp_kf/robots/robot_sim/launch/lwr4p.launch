@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="robot_config" default="$(find robot_sim)/config/lwr4p.yaml" />
+
+  <rosparam command="load" file="$(arg robot_config)" />
+
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find lwr_description)/urdf/lwr_robot.xacro'" />
+
+  <include file="$(find robot_sim)/launch/common.launch" />
+
+</launch>

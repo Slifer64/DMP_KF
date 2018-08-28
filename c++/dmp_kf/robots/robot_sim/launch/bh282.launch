@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="robot_config" default="$(find robot_sim)/config/bh282.yaml" />
+
+  <rosparam command="load" file="$(arg robot_config)" />
+
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find bhand_description)/urdf/bh282_robot.xacro'" />
+
+  <include file="$(find robot_sim)/launch/common.launch" />
+
+
+</launch>

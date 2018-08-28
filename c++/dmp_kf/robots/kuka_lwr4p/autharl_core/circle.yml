@@ -1,0 +1,11 @@
+machine:
+  services:
+    - docker
+  environment:
+    used_modules: check_cache,check_build,code_style_check,check_deb_make,codecov_tool
+    remote_shell_script: 'https://raw.githubusercontent.com/auth-arl/build_scripts/master/ros-ci-build.sh'
+    docker_image: autharl/autharl_core
+
+test:
+  override:
+    - bash <(curl -s $remote_shell_script) $docker_image

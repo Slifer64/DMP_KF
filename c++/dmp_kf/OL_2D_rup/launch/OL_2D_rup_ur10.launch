@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+
+<launch>
+
+    <!-- Start optoforce sensor
+    <include file="$(find optoforce_ros)/launch/optoforce_node.launch">
+      <arg name="config_file" value="$(find optoforce_ros)/cfg/acquisition_params.yaml" />
+    </include> -->
+
+    <!-- robot_ip: IP-address of the robot's socket-messaging server -->
+    <arg name="robot_ip" default="localhost"/>
+    <arg name="limited" default="false"/>
+    <arg name="min_payload"  default="0.0"/>
+    <arg name="max_payload"  default="10.0"/>
+    <arg name="prefix" default="" />
+
+    <!-- robot model -->
+    <include file="$(find ur_description)/launch/ur10_upload.launch">
+      <arg name="limited" value="$(arg limited)"/>
+    </include>
+
+    <!-- ur common -->
+    <include file="$(find ur_modern_driver)/launch/ur_common.launch">
+      <arg name="robot_ip" value="$(arg robot_ip)"/>
+      <arg name="min_payload"  value="$(arg min_payload)"/>
+      <arg name="max_payload"  value="$(arg max_payload)"/>
+    </include>
+
+    <!-- Object load controller -->
+    <arg name="node_name" default="ol_2d_rup_node" />
+    <node pkg="ol_2d_rup" type="OL_2D_rup" name="$(arg node_name)"
+          output="screen" cwd="node">
+
+          <param name="robot_type" value="ur10" type="str"/>
+          
+    </node>
+
+    <!-- Launch visualization in rviz -->
+    <arg name="rvizconfig" default="$(find ur10_robot)/rviz/ur10_cfg.rviz" />
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)"/>
+
+</launch>

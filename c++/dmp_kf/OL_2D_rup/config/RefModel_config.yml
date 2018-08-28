@@ -1,0 +1,19 @@
+#:=====  RefModel parameters =====
+D_z: [160.0; 120.0; 2.0]
+K_z: [0.0; 0.0; 0.0]
+dmp_tau: 1 # sec
+N_kernels: 30 # * dmp_tau
+kernel_std_scaling: 1.2
+update_method: "KF" # {'KF', 'RLS', 'RLWR'}
+sigma_dmp_w: [100; 100; 100]
+s_n_start: [0.05; 10.0; 0] # initial value of noise
+s_n_end: [0.001; 0.04; 0.001] # final value of noise
+s_n_a: 0.02 # rate of exponential convergence from s_n_start to end s_n_end
+lambda: 0.99
+k_Ferr: [0.0; 0.2; 0.0]
+active_DOFs: [0; 0; 1; 0]
+
+v_thres: 0.06
+v_a: 90
+f_thres: 1.0
+f_a: 4

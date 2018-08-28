@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package>
+  <name>autharl_core</name>
+  <version>0.4.1</version>
+  <description>The autharl_core package</description>
+
+  <maintainer email="thprapav@gmail.com">Theofanis Prapavesis Semetzidis</maintainer>
+  <maintainer email="iasons@auth.gr">Iason Sarantopoulos</maintainer>
+
+  <license>MIT</license>
+
+  <build_depend>orocos_kdl</build_depend>
+  <build_depend>armadillo</build_depend>
+  <build_depend>rviz_visual_tools</build_depend>
+  <build_depend>roslint</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <test_depend>gtest</test_depend>
+
+  <export>
+    <rosdoc config="rosdoc.yml"/>
+  </export>
+</package>

@@ -1,0 +1,12 @@
+machine:
+  services:
+    - docker
+  environment:
+    used_modules: check_cache,check_build,code_style_check,check_deb_make,codecov_tool
+    remote_shell_script: 'https://raw.githubusercontent.com/auth-arl/build_scripts/master/circle-ci-ros-build.sh'
+    docker_image: autharl/autharl_fri
+test:
+  override:
+    - cd .. && git clone git@github.com:auth-arl/FRILibrary.git && cd FRILibrary && ./build.sh && source ~/.bashrc
+    - cd .. && git clone git@github.com:auth-arl/autharl_core.git && cd autharl_core
+    - bash <(curl -s $remote_shell_script) $docker_image
