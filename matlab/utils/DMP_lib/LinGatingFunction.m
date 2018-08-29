@@ -31,16 +31,6 @@ classdef LinGatingFunction < handle
       %  @param[in] u_end: Final value of the gating function.
       function init(gating_fun, u0, u_end)
 
-          gating_fun.setGatingFunParams(u0, u_end);
-
-      end
-
-      %% Sets the gating function's time constants based on the value of
-      %% the phase variable at the end of the movement.
-      %  @param[in] u0: Initial value of the gating function.
-      %  @param[in] u_end: Final value of the gating function.
-      function setGatingFunParams(gating_fun, u0, u_end)
-
           gating_fun.u0 = u0;
           gating_fun.a_u = gating_fun.u0 - u_end;
 

@@ -14,7 +14,7 @@ b_z = a_z/4;
 train_method = 'LS';
 dt = 0.005;
 
-canClockPtr = LinCanonicalClock();
+can_clock_ptr = CanonicalClock();
 
 
 Data_sim = cell(N,1);
@@ -37,7 +37,7 @@ for n=1:N
         shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.99);
 %         shapeAttrGatingPtr = LinGatingFunction(1.0, 0.0);
 %         shapeAttrGatingPtr = ExpGatingFunction(1.0, 0.05);
-        dmp{i} = DMP(N_kernels, a_z, b_z, canClockPtr, shapeAttrGatingPtr);
+        dmp{i} = DMP(N_kernels, a_z, b_z, can_clock_ptr, shapeAttrGatingPtr);
     end
     
     %% Train the DMP
@@ -73,7 +73,7 @@ for n=1:N
     z = zeros(D,1);
 
     t_end = Timed(end);
-    canClockPtr.setTau(t_end);
+    can_clock_ptr.setTau(t_end);
     
     iters = 0;
     Time = [];
@@ -110,7 +110,7 @@ for n=1:N
         end
 
         %% Update phase variable
-        dx = canClockPtr.getPhaseDot(x);
+        dx = can_clock_ptr.getPhaseDot(x);
 
         %% Stopping criteria
         err_p = max(abs(g0-y));

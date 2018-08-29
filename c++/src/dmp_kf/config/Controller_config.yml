@@ -1,0 +1,27 @@
+# =====  Controller params  ======
+
+# DMP parameters
+N_kernels: 30
+train_method: "LWR"
+P0_g_hat: [1.0; 1.0; 1.0]
+P0_tau_hat: [1.0]
+R_v: [0.1; 0.1; 0.1]
+Q_W: [0.1; 0.1; 0.1; 0.1]
+a_p: 0.0
+
+# starting conditions for controller run
+f_thres: 1.0 # norm(force)
+
+# train data params
+a_filt: 0.8 # filtering parameter for the numerical differentiation
+
+# target impedance params
+M: [1.0; 1.0; 1.0]
+K: [200; 200; 200.0]
+D: [40.0; 40.0; 40.0] #2*sqrt(M.*K)
+k_click: 0.0
+ff_gains: [1.0; 1.0; 1.0] # feedforward gains for the target impedance model
+
+# leader-follower sigmoid function params  1 / ( 1 + exp(a_m*(norm(F)-c_m)) )
+a_m: 4.0
+c_m: 1.0

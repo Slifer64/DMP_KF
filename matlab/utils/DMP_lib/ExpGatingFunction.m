@@ -32,16 +32,6 @@ classdef ExpGatingFunction < handle
       %  @param[in] u_end: Value of phase variable at the end of the motion.
       function init(this, u0, u_end)
 
-          this.setGatingFunParams(u0, u_end);
-
-      end
-
-      %% Sets the gating function's time constants based on the value of
-      %% the phase variable at the end of the movement.
-      %  @param[in] u0: Initial value of the phase variable.
-      %  @param[in] u_end: Final value of the gating function.
-      function setGatingFunParams(this, u0, u_end)
-
           this.u0 = u0;
           
           dec_flag = (u0 > u_end);

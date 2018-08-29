@@ -7,8 +7,8 @@ clear;
 est_g = true;
 est_tau = true;
 
-goal_scale = [2.0 2.0 2.0]';
-time_scale = 1.5; 
+goal_scale = [1.5 0.2 -1.8]';
+time_scale = 0.6; 
 
 process_noise = 0.0; % Q
 msr_noise = 0.005; % R
@@ -25,7 +25,7 @@ set_matlab_utils_path();
 load('data/dmp_data.mat', 'DMP_data');
 
 dmp = DMP_data{1};
-canClockPtr = dmp{1}.canClockPtr;
+can_clock_ptr = dmp{1}.can_clock_ptr;
 
 load('data/demo_data.mat','Data');
 
@@ -76,7 +76,7 @@ for n=1:1
     
     t_end = time_scale*Timed(end);
     tau = t_end;
-    canClockPtr.setTau(tau);
+    can_clock_ptr.setTau(tau);
     
     tau_hat = Timed(end);
     if (est_tau == false), tau_hat=tau; end
@@ -177,7 +177,7 @@ for n=1:1
         mf = 1 / (1 + exp(4*(norm(F)-1)));
 
         %% Update phase variable
-        dx = canClockPtr.getPhaseDot(x);
+        dx = can_clock_ptr.getPhaseDot(x);
 
         %% Stopping criteria
         err_p = norm(g-y)/norm(g);

@@ -1,7 +1,0 @@
-#:===  ur-robot params :===
-command_ur10_topic: "/ur_driver/URScript"
-read_wrench_topic: "/optoforce_node/wrench_HEXEA152"
-read_toolVel_topic: "/tool_velocity"
-read_jointState_topic: "/joint_states"
-base_frame: "base"
-tool_frame: "optoforce_frame" #"tool0_controller" 

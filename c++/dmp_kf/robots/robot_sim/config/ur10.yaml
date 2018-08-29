@@ -1,7 +1,0 @@
-/robot_sim/robot_description_name: "/robot_description"
-/robot_sim/base_frame: "base_link"
-/robot_sim/tool_frame: "tool0"
-/robot_sim/ctrl_cycle: 0.005
-/robot_sim/check_limits: true
-/robot_sim/check_singularity: true
-/robot_sim/wrench_topic: "/wrench"

@@ -40,8 +40,8 @@ classdef DMP < handle % : public DMP_
         a_z % parameter 'a_z' relating to the spring-damper system
         b_z % parameter 'b_z' relating to the spring-damper system
 
-        canClockPtr % handle (pointer) to the canonical clock
-        shapeAttrGatingPtr % pointer to gating function for the shape attractor
+        can_clock_ptr % handle (pointer) to the canonical clock
+        shape_attr_gating_ptr % pointer to gating function for the shape attractor
         
         w % N_kernelsx1 vector with the weights of the DMP
         c % N_kernelsx1 vector with the kernel centers of the DMP
@@ -52,74 +52,50 @@ classdef DMP < handle % : public DMP_
     end
 
     methods
-        %% DMP constructor
+        %% DMP constructor.
         %  @param[in] N_kernels: the number of kernels
         %  @param[in] a_z: Parameter 'a_z' relating to the spring-damper system.
         %  @param[in] b_z: Parameter 'b_z' relating to the spring-damper system.
-        %  @param[in] canClockPtr: Pointer to a DMP canonical system object.
-        function this = DMP(N_kernels, a_z, b_z, canClockPtr, s_gat_ptr)
+        %  @param[in] can_clock_ptr: Pointer to a DMP canonical system object.
+        function this = DMP(N_kernels, a_z, b_z, can_clock_ptr, s_gat_ptr)
 
             if (nargin < 5)
-                this.shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.99);
+                this.shape_attr_gating_ptr = SigmoidGatingFunction(1.0, 0.99);
             else
-                this.shapeAttrGatingPtr = s_gat_ptr;
+                this.shape_attr_gating_ptr = s_gat_ptr;
             end
-%             this.shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.99);
-%             this.shapeAttrGatingPtr = LinGatingFunction(1.0, 0.0);
-%             this.shapeAttrGatingPtr = ExpGatingFunction(1.0, 0.05);
+%             this.shape_attr_gating_ptr = SigmoidGatingFunction(1.0, 0.99);
+%             this.shape_attr_gating_ptr = LinGatingFunction(1.0, 0.0);
+%             this.shape_attr_gating_ptr = ExpGatingFunction(1.0, 0.05);
 
-            this.init(N_kernels, a_z, b_z, canClockPtr);
+            this.init(N_kernels, a_z, b_z, can_clock_ptr);
 
         end
 
 
-        %% Initializes the DMP
+        %% Initializes the DMP.
         %  @param[in] N_kernels: the number of kernels
         %  @param[in] a_z: Parameter 'a_z' relating to the spring-damper system.
         %  @param[in] b_z: Parameter 'b_z' relating to the spring-damper system.
-        %  @param[in] canClockPtr: Pointer to a DMP canonical system object.
-        function init(this, N_kernels, a_z, b_z, canClockPtr)
+        %  @param[in] can_clock_ptr: Pointer to a DMP canonical system object.
+        function init(this, N_kernels, a_z, b_z, can_clock_ptr)
 
-            this.zero_tol = 1e-30;%realmin;
-
-            kernelStdScaling = 1.0;
+            this.zero_tol = 1e-30; %realmin;
 
             this.N_kernels = N_kernels;
             this.a_z = a_z;
             this.b_z = b_z;
-            this.canClockPtr = canClockPtr;
+            this.can_clock_ptr = can_clock_ptr;
 
-            this.w = zeros(this.N_kernels,1); %rand(this.N_kernels,1);
+            this.w = zeros(this.N_kernels,1);
             this.setCenters();
-            this.setStds(kernelStdScaling);
+            kernel_std_scaling = 1.0;
+            this.setStds(kernel_std_scaling);
 
         end
 
-
-        %% Sets the centers for the kernel functions of the DMP according to the canonical system
-        function setCenters(this)
-
-            t = ((1:this.N_kernels)-1)/(this.N_kernels-1);
-            x = this.phase(t*this.getTau());
-            this.c = x(1,:)';
-
-        end
-
-
-        %% Sets the standard deviations for the kernel functions  of the DMP
-        %  Sets the variance of each kernel equal to squared difference between the current and the next kernel.
-        %  @param[in] kernelStdScaling: Scales the std of each kernel by 'kernelStdScaling' (optional, default = 1.0).
-        function setStds(this, kernelStdScaling)
-            
-            if (nargin < 2), kernelStdScaling=1.0; end
-
-            this.h = 1./(kernelStdScaling*(this.c(2:end)-this.c(1:end-1))).^2;
-            this.h = [this.h; this.h(end)];
-
-        end
-
-
-        %% Trains the DMP
+        
+        %% Trains the DMP.
         %  @param[in] Time: Row vector with the timestamps of the training data points.
         %  @param[in] yd_data: Row vector with the desired potition.
         %  @param[in] dyd_data: Row vector with the desired velocity.
@@ -134,13 +110,13 @@ classdef DMP < handle % : public DMP_
 
             n_data = length(Time);
             
-            tau0 = this.canClockPtr.getTau();
+            tau0 = this.getTau();
             
             tau = Time(end);
             y0 = yd_data(:,1);
             g = yd_data(:,end);
             
-            this.canClockPtr.setTau(tau);
+            this.setTau(tau);
     
             x = zeros(1, n_data);
             s = zeros(1, n_data);
@@ -159,7 +135,7 @@ classdef DMP < handle % : public DMP_
 
             elseif (strcmpi(train_method,'LS'))
 
-                this.w = normKernelLS(Psi, s, Fd, this.zero_tol);
+                this.w = leastSquares(Psi, s, Fd, this.zero_tol);
 
             else
                 error('Unsopported training method ''%s''', train_method);
@@ -172,69 +148,93 @@ classdef DMP < handle % : public DMP_
 
             train_error = norm(F-Fd)/length(F);
             
-%             this.canClockPtr.setTau(tau0);
+%             this.setTau(tau0);
 
         end
         
-
-        %% Calculates the desired values of the scaled forcing term.
-        %  @param[in] x: The phase variable.
-        %  @param[in] y: Position.
-        %  @param[in] dy: Velocity.
-        %  @param[in] ddy: Acceleration.
+        
+        %% Returns the derivatives of the DMP states.
+        %  @param[in] x: phase variable.
+        %  @param[in] y: \a y state of the this.
+        %  @param[in] z: \a z state of the this.
         %  @param[in] y0: initial position.
         %  @param[in] g: Goal position.
-        %  @param[out] Fd: Desired value of the scaled forcing term.
-        function Fd = calcFd(this, x, y, dy, ddy, y0, g)
+        %  @param[in] y_c: coupling term for the dynamical equation of the \a y state.
+        %  @param[in] z_c: coupling term for the dynamical equation of the \a z state.
+        %  @param[out] dy: derivative of the \a y state of the this.
+        %  @param[out] dz: derivative of the \a z state of the this.
+        %  @param[out] dx: derivative of the phase variable of the this.
+        function [dy, dz, dx] = getStatesDot(this, x, y, z, y0, g, y_c, z_c)
+
+            if (nargin < 8), y_c=0; end
+            if (nargin < 7), z_c=0; end
 
             tau = this.getTau();
-            Fd = (ddy*tau^2 - this.goalAttractor(x, y, tau*dy, g));
+
+            shape_attr = this.shapeAttractor(x, y0, g);
+            goal_attr = this.goalAttractor(x, y, z, g);
+
+            dz = ( goal_attr + shape_attr + z_c) / tau;
+
+            dy = ( z + y_c) / tau;
+
+            dx = this.phaseDot(x);
 
         end
 
+        
+        %% Returns the time scale of the DMP.
+        %  @param[out] tau: The time scale of the this.
+        function tau = getTau(this)
 
-        %% Returns the forcing term of the this.
-        %  @param[in] x: The phase variable.
-        %  @param[out] f: The normalized weighted sum of Gaussians.
-        function f = forcingTerm(this,x)
-
-            Psi = this.kernelFunction(x);
-    
-            f = dot(Psi,this.w) / (sum(Psi)+this.zero_tol); % add 'zero_tol' to avoid numerical issues
-
-        end
-
-
-        %% Returns the scaling factor of the forcing term.
-        %  @param[in] y0: initial position.
-        %  @param[in] g: Goal position.
-        %  @param[out] f_scale: The scaling factor of the forcing term.
-        function f_scale = forcingTermScaling(this, y0, g)
-
-            f_scale = (g-y0);
+            tau = this.can_clock_ptr.getTau();
 
         end
         
         
-        %% Returns the shape attractor gating factor.
-        %  @param[in] x: The phase variable.
-        function sAttrGat = shapeAttrGating(this, x)
+        %% Sets the time scale of the DMP.
+        function tau = setTau(this, tau)
 
-            sAttrGat = this.shapeAttrGatingPtr.getOutput(x);
-            sAttrGat(sAttrGat<0) = 0.0;
+            this.can_clock_ptr.setTau(tau);
 
         end
         
         
-        %% Returns the goal attractor gating factor.
-        %  @param[in] x: The phase variable.
-        function gAttrGat = goalAttrGating(this, x)
+        %% Returns the phase variable.
+        %  @param[in] t: The time instant.
+        %  @param[out] x: The phase variable for time 't'.
+        function x = phase(this, t)
             
-            gAttrGat = 1.0;
+            x = this.can_clock_ptr.getPhase(t);
+
+        end
+        
+        
+        %% Returns the derivative of the phase variable.
+        %  @param[in] x: The phase variable.
+        %  @param[out] dx: The derivative of the phase variable.
+        function dx = phaseDot(this, x)
+            
+            dx = this.can_clock_ptr.getPhaseDot(x);
 
         end
 
 
+        %% Returns a column vector with the values of the kernel functions of the DMP.
+        %  @param[in] x: phase variable
+        %  @param[out] psi: column vector with the values of the kernel functions of the DMP
+        function psi = kernelFunction(this,x)
+
+            n = length(x);
+            psi = zeros(this.N_kernels, n);
+
+            for j=1:n
+                psi(:,j) = exp(-this.h.*((x(j)-this.c).^2));
+            end 
+
+        end
+        
+        
         %% Returns the goal attractor of the this.
         %  @param[in] x: The phase variable.
         %  @param[in] y: \a y state of the this.
@@ -264,80 +264,88 @@ classdef DMP < handle % : public DMP_
         end
         
         
-        %% Returns the phase variable.
-        %  @param[in] t: The time instant.
-        %  @param[out] x: The phase variable for time 't'.
-        function x = phase(this, t)
-            
-            x = this.canClockPtr.getPhase(t);
-
-        end
-        
-        
-        %% Returns the derivative of the phase variable.
+        %% Returns the shape attractor gating factor.
         %  @param[in] x: The phase variable.
-        %  @param[out] dx: The derivative of the phase variable.
-        function dx = phaseDot(this, x)
+        function sAttrGat = shapeAttrGating(this, x)
+
+            sAttrGat = this.shape_attr_gating_ptr.getOutput(x);
+            sAttrGat(sAttrGat<0) = 0.0;
+
+        end
+        
+        
+        %% Returns the goal attractor gating factor.
+        %  @param[in] x: The phase variable.
+        function gAttrGat = goalAttrGating(this, x)
             
-            dx = this.canClockPtr.getPhaseDot(x);
+            gAttrGat = 1.0;
+
+        end
+
+        
+        %% Returns the forcing term of the dmp.
+        %  @param[in] x: The phase variable.
+        %  @param[out] f: The normalized weighted sum of Gaussians.
+        function f = forcingTerm(this,x)
+
+            Psi = this.kernelFunction(x);
+    
+            f = dot(Psi,this.w) / (sum(Psi)+this.zero_tol); % add 'zero_tol' to avoid numerical issues
 
         end
 
 
-        %% Returns the derivatives of the DMP states
-        %  @param[in] x: phase variable.
-        %  @param[in] y: \a y state of the this.
-        %  @param[in] z: \a z state of the this.
+        %% Returns the scaling factor of the forcing term.
         %  @param[in] y0: initial position.
         %  @param[in] g: Goal position.
-        %  @param[in] y_c: coupling term for the dynamical equation of the \a y state.
-        %  @param[in] z_c: coupling term for the dynamical equation of the \a z state.
-        %  @param[out] dy: derivative of the \a y state of the this.
-        %  @param[out] dz: derivative of the \a z state of the this.
-        %  @param[out] dx: derivative of the phase variable of the this.
-        function [dy, dz, dx] = getStatesDot(this, x, y, z, y0, g, y_c, z_c)
+        %  @param[out] f_scale: The scaling factor of the forcing term.
+        function f_scale = forcingTermScaling(this, y0, g)
 
-            if (nargin < 8), y_c=0; end
-            if (nargin < 7), z_c=0; end
+            f_scale = (g-y0);
+
+        end
+        
+        
+        %% Sets the centers for the kernel functions of the DMP according to the canonical system.
+        function setCenters(this)
+
+            t = ((1:this.N_kernels)-1)/(this.N_kernels-1);
+            x = this.phase(t*this.getTau());
+            this.c = x(1,:)';
+
+        end
+
+
+        %% Sets the standard deviations for the kernel functions  of the DMP.
+        %  Sets the variance of each kernel equal to squared difference between the current and the next kernel.
+        %  @param[in] kernelStdScaling: Scales the std of each kernel by 'kernelStdScaling' (optional, default = 1.0).
+        function setStds(this, kernelStdScaling)
+            
+            if (nargin < 2), kernelStdScaling=1.0; end
+
+            this.h = 1./(kernelStdScaling*(this.c(2:end)-this.c(1:end-1))).^2;
+            this.h = [this.h; this.h(end)];
+
+        end
+        
+        
+        %% Calculates the desired values of the scaled forcing term.
+        %  @param[in] x: The phase variable.
+        %  @param[in] y: Position.
+        %  @param[in] dy: Velocity.
+        %  @param[in] ddy: Acceleration.
+        %  @param[in] y0: initial position.
+        %  @param[in] g: Goal position.
+        %  @param[out] Fd: Desired value of the scaled forcing term.
+        function Fd = calcFd(this, x, y, dy, ddy, y0, g)
 
             tau = this.getTau();
-
-            shape_attr = this.shapeAttractor(x, y0, g);
-            goal_attr = this.goalAttractor(x, y, z, g);
-
-            dz = ( goal_attr + shape_attr + z_c) / tau;
-
-            dy = ( z + y_c) / tau;
-
-            dx = this.phaseDot(x);
-
-        end
-
-
-        %% Returns a column vector with the values of the kernel functions of the DMP
-        %  @param[in] x: phase variable
-        %  @param[out] psi: column vector with the values of the kernel functions of the DMP
-        function psi = kernelFunction(this,x)
-
-            n = length(x);
-            psi = zeros(this.N_kernels, n);
-
-            for j=1:n
-                psi(:,j) = exp(-this.h.*((x(j)-this.c).^2));
-            end 
-
-        end
-
-        
-        %% Returns the time cycle of the DMP
-        %  @param[out] tau: The time duration of the this.
-        function tau = getTau(this)
-
-            tau = this.canClockPtr.getTau();
+            Fd = (ddy*tau^2 - this.goalAttractor(x, y, tau*dy, g));
 
         end
         
-        %% Returns the partial derivative of the DMP's acceleration wrt to the goal and tau
+        
+        %% Returns the partial derivative of the DMP's acceleration wrt to the goal and tau.
         %  @param[in] t: current timestamp.
         %  @param[in] y: position.
         %  @param[in] dy: velocity.
@@ -360,7 +368,7 @@ classdef DMP < handle % : public DMP_
             theta1 = g_hat;
             theta2 = 1/tau_hat;
             
-            dshape_attr_gat_dtheta2 = this.shapeAttrGatingPtr.getPartDev_1oTau(t,x_hat);
+            dshape_attr_gat_dtheta2 = this.shape_attr_gating_ptr.getPartDev_1oTau(t,x_hat);
             
             dPsidtheta2 = -2*t*this.h.*(theta2*t-this.c).*psi;
             sum_w_dPsidtheta2 = this.w'*dPsidtheta2;
@@ -375,6 +383,16 @@ classdef DMP < handle % : public DMP_
         end
         
         
+        %% Returns the DMP's acceleration.
+        %  @param[in] y: position.
+        %  @param[in] dy: velocity.
+        %  @param[in] y0: initial position.
+        %  @param[in] y_c: coupling term for the dynamical equation of the \a y state.
+        %  @param[in] z_c: coupling term for the dynamical equation of the \a z state.
+        %  @param[in] x_hat: phase variable estimate.
+        %  @param[in] g_hat: goal estimate.
+        %  @param[in] tau_hat: time scale estimate.
+        %  @param[out] ddy: DMP's acceleration.
         function ddy = getAccel(this, y, dy, y0, y_c, z_c, x_hat, g_hat, tau_hat)
             
             z = dy*tau_hat;
