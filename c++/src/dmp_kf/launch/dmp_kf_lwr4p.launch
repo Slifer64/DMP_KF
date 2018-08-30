@@ -7,7 +7,7 @@
       <arg name="config_file" value="$(find optoforce_ros)/cfg/acquisition_params.yaml" />
     </include> -->
 
-    <!-- robot model -->
+    <!-- robot model
     <arg name="tool" default="no_tool"/>
     <param name="robot_description" command="$(find xacro)/xacro.py '$(find lwr_description)/urdf/lwr_robot_$(arg tool).xacro'" />
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
@@ -15,19 +15,21 @@
       <rosparam param="rate">50</rosparam>
     </node>
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+    -->
 
     <!-- Object load controller -->
-    <arg name="node_name" default="ol_2d_rup_node" />
-    <node pkg="ol_2d_rup" type="dmp_kf" name="$(arg node_name)"
+    <arg name="node_name" default="dmp_kf_node" />
+    <node pkg="dmp_kf" type="dmp_kf" name="$(arg node_name)"
           output="screen" cwd="node">
 
           <param name="robot_type" value="lwr4p" type="str"/>
-          <param name="use_sim" value="false" type="bool"/>
+          <param name="use_sim" value="true" type="bool"/>
 
     </node>
 
-    <!-- Launch visualization in rviz -->
+    <!-- Launch visualization in rviz
     <arg name="rvizconfig" default="$(find ur10_robot)/rviz/ur10_cfg.rviz" />
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)"/>
+    -->
 
 </launch>

@@ -1,16 +1,14 @@
 <?xml version="1.0"?>
 
 <launch>
-    <!-- Launch rqt plot to visualize the coupling forces -->
-    <node name="rqt_plot_Fc" pkg="rqt_plot" type="rqt_plot"
-      args="topics /Fc/z /Fc_d/z /Fext/force/z" />
+    <!-- Launch rqt plot to visualize estimates and forces-->
+    <node name="rqt_plot_goal_hat" pkg="rqt_plot" type="rqt_plot"
+      args="topics /g_hat" />
 
-    <!-- Launch rqt plot to visualize the positions and velocities
-    <node name="rqt_plot_Fext" pkg="rqt_plot" type="rqt_plot"
-      args="topics /Fext/force/z" />-->
+    <node name="rqt_plot_tau_hat" pkg="rqt_plot" type="rqt_plot"
+      args="topics /tau_hat" />
 
-    <!-- Launch rqt plot to visualize the positions and velocities
-    <node name="rqt_plot_Cart" pkg="rqt_plot" type="rqt_plot"
-      args="topics /dS_r/linear/z" />-->
+    <node name="rqt_plot_f_ext" pkg="rqt_plot" type="rqt_plot"
+      args="topics /f_ext" />
 
 </launch>

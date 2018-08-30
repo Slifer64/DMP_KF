@@ -18,7 +18,7 @@ dmp_kf::dmp_kf()
 
   controller.reset(new DMP_EKF_Controller(robot));
   gui.reset(new GUI());
-  log_data.reset(new LogData());
+  log_data.reset(new LogData(robot, controller));
 }
 
 dmp_kf::~dmp_kf()
@@ -103,7 +103,7 @@ void dmp_kf::execute()
 
     if (gui->currentPoseAsStart()) this->saveCurrentPoseAsStartPose();
     if (gui->clearLoggedData()) this->clearLoggedData();
-    if (gui->logOnEnable()) log_data->log(robot, controller);
+    if (gui->logOnEnable()) log_data->log();
 
     robot->update();
   }

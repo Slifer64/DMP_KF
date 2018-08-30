@@ -76,6 +76,7 @@ void DMP_EKF_Controller::initExecution()
   P_theta = arma::diagmat( arma::join_vert( P0_g_hat, arma::mat({P0_tau_hat}) ) );
   t = 0.0;
   x_hat = t/tau_hat;
+  mf = 1.0;
 }
 
 bool DMP_EKF_Controller::startExecution()
@@ -103,7 +104,7 @@ void DMP_EKF_Controller::run()
   // ========  leader-follower role  ========
   arma::vec f_ext_new = (robot->getTaskWrench()).subvec(0,2);
   f_ext = (1-a_force)*f_ext + a_force*f_ext_new;
-  double m = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
+  mf = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
 
   // ========  KF estimation  ========
   int dim = dmp.size();
@@ -123,7 +124,7 @@ void DMP_EKF_Controller::run()
   // ========  Controller  ========
   U_dmp = -K%(Y - Y_ref) + D%dY_ref + M%ddY_ref;
 
-  U_total = m*U_dmp + (1-m)*(ff_gains%f_ext);
+  U_total = mf*U_dmp + (1-mf)*(ff_gains%f_ext);
 
   ddY = ( - D*dY - K*Y + U_total) / M;
 

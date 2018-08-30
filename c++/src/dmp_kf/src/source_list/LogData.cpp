@@ -64,7 +64,7 @@ void write_mat(const arma::mat &m, std::ostream &out, bool binary, int precision
   write_mat(m, n_rows, n_cols, out, binary, precision);
 }
 
-LogData::LogData()
+LogData::LogData(const std::shared_ptr<Robot> &r, const std::shared_ptr<Controller> &c):robot(r),controller(c)
 {}
 
 void LogData::init()
@@ -80,7 +80,7 @@ void LogData::init()
   clear();
 }
 
-void LogData::log(const std::shared_ptr<Robot> &robot, const std::shared_ptr<Controller> &controller)
+void LogData::log()
 {
   Time_data = arma::join_horiz( Time_data, arma::mat({controller->t}) );
 
@@ -90,6 +90,14 @@ void LogData::log(const std::shared_ptr<Robot> &robot, const std::shared_ptr<Con
 
   Fext_data = arma::join_horiz(Fext_data, (robot->getTaskWrench()).subvec(0,2));
   Fext_filt_data = arma::join_horiz(Fext_filt_data, controller->f_ext);
+
+	arma::vec Sigma_theta = arma::sqrt(arma::diagvec(controller->P_theta));
+
+	g_hat_data = arma::join_horiz(g_hat_data, controller->g_hat);
+	Sigma_g_hat_data = arma::join_horiz(Sigma_g_hat_data, Sigma_theta.subvec(0,2));
+	tau_hat_data = arma::join_horiz(tau_hat_data, arma::mat({controller->tau_hat}));
+	sigma_tau_hat_data = arma::join_horiz(sigma_tau_hat_data, arma::mat({Sigma_theta(3)}) );
+	mf_data = arma::join_horiz(mf_data, arma::mat({controller->mf}));
 }
 
 void LogData::clear()
@@ -102,6 +110,12 @@ void LogData::clear()
 
   Fext_data.clear();
   Fext_filt_data.clear();
+
+	g_hat_data.clear();
+  Sigma_g_hat_data.clear();
+  tau_hat_data.clear();
+  sigma_tau_hat_data.clear();
+	mf_data.clear();
 }
 
 void LogData::save()
@@ -128,13 +142,23 @@ void LogData::save()
   if (!out) throw std::ios_base::failure(std::string("Couldn't create file: \"") + file_ext + "\"");
 
   write_mat(Time_data, out, binary, precision);
-
   write_mat(Y_data, out, binary, precision);
   write_mat(dY_data, out, binary, precision);
   write_mat(ddY_data, out, binary, precision);
 
   write_mat(Fext_data, out, binary, precision);
   write_mat(Fext_filt_data, out, binary, precision);
+
+	write_mat(g_hat_data, out, binary, precision);
+	write_mat(Sigma_g_hat_data, out, binary, precision);
+	write_mat(tau_hat_data, out, binary, precision);
+	write_mat(sigma_tau_hat_data, out, binary, precision);
+	write_mat(mf_data, out, binary, precision);
+
+	write_mat(controller->Timed, out, binary, precision);
+  write_mat(controller->Yd_data, out, binary, precision);
+  write_mat(controller->dYd_data, out, binary, precision);
+  write_mat(controller->ddYd_data, out, binary, precision);
 
   out.close();
 }

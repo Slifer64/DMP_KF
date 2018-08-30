@@ -55,8 +55,8 @@ private:
 
   // Training data for the DMP
   double t_d; // current timestamp during demo recording
-  arma::rowvec Timed; // timestamps from demo
-  arma::mat Yd_data, dYd_data, ddYd_data;
+  // arma::rowvec Timed; // timestamps from demo
+  // arma::mat Yd_data, dYd_data, ddYd_data;
   arma::vec p, p_prev, dp, dp_prev, ddp; // store current and previous positions and velocities for numerical diff
   arma::vec g_d; // goal position from demo used for initializing g_hat
   double tau_d; // time scale from demo used for initializing tau_hat

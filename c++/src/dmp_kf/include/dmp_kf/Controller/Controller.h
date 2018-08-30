@@ -29,6 +29,10 @@ public:
   arma::vec g_hat; // goal estimate
   double tau_hat; // time scale estimate
   arma::mat P_theta; // covariance of g_hat and tau_hat
+  double mf; // leader-follower weight
+
+  arma::rowvec Timed; // timestamps from demo
+  arma::mat Yd_data, dYd_data, ddYd_data;
 
 protected:
 
