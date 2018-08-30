@@ -78,6 +78,25 @@ void dmp_kf::execute()
           gui->printMsg("Mode changed to freedrive!",Ui::MSG_TYPE::INFO);
         }
         break;
+      case Ui::ProgramState::DEMO_RECORDING:
+        if (robot->getMode() != Robot::Mode::FREEDRIVE_MODE)
+        {
+          gui->printMsg("Entering DEMO_RECORDING mode...",Ui::MSG_TYPE::INFO);
+          robot->setMode(Robot::Mode::FREEDRIVE_MODE);
+          controller->initDemo();
+          gui->printModeMsg("== MODE: DEMO_RECORDING ==");
+          gui->printMsg("Mode changed to freedrive!",Ui::MSG_TYPE::INFO);
+        }
+        if (gui->recordDemo()) controller->logDemoData();
+        if (gui->train())
+        {
+          gui->printMsg("Started training...",Ui::MSG_TYPE::INFO);
+          controller->train();
+          gui->printMsg("Finished training!",Ui::MSG_TYPE::INFO);
+          gui->resetTrain();
+        }
+        break;
+      if (gui->recordDemo()) controller->logDemoData();
 
       case Ui::ProgramState::PAUSE_PROGRAM:
         if (robot->getMode() != Robot::Mode::IDLE_MODE)

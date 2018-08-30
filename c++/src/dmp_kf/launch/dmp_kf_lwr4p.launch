@@ -23,7 +23,7 @@
           output="screen" cwd="node">
 
           <param name="robot_type" value="lwr4p" type="str"/>
-          <param name="use_sim" value="true" type="bool"/>
+          <param name="use_sim" value="false" type="bool"/>
 
     </node>
 

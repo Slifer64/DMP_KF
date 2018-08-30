@@ -36,9 +36,9 @@
    <widget class="QCommandLinkButton" name="run_controller_button">
     <property name="geometry">
      <rect>
-      <x>170</x>
-      <y>10</y>
-      <width>151</width>
+      <x>10</x>
+      <y>120</y>
+      <width>111</width>
       <height>31</height>
      </rect>
     </property>
@@ -51,7 +51,7 @@
      <rect>
       <x>10</x>
       <y>40</y>
-      <width>151</width>
+      <width>121</width>
       <height>31</height>
      </rect>
     </property>
@@ -65,9 +65,9 @@
    <widget class="QCommandLinkButton" name="stop_program_button">
     <property name="geometry">
      <rect>
-      <x>170</x>
-      <y>40</y>
-      <width>151</width>
+      <x>10</x>
+      <y>70</y>
+      <width>111</width>
       <height>31</height>
      </rect>
     </property>
@@ -78,9 +78,9 @@
    <widget class="QCommandLinkButton" name="save_logged_data_button">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>90</y>
-      <width>161</width>
+      <x>140</x>
+      <y>10</y>
+      <width>131</width>
       <height>31</height>
      </rect>
     </property>
@@ -91,9 +91,9 @@
    <widget class="QCommandLinkButton" name="register_startPose_button">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>160</y>
-      <width>171</width>
+      <x>280</x>
+      <y>10</y>
+      <width>131</width>
       <height>31</height>
      </rect>
     </property>
@@ -104,9 +104,9 @@
    <widget class="QCommandLinkButton" name="move_to_start_button">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>190</y>
-      <width>171</width>
+      <x>280</x>
+      <y>40</y>
+      <width>131</width>
       <height>31</height>
      </rect>
     </property>
@@ -117,9 +117,9 @@
    <widget class="QCheckBox" name="data_logging_checkbox">
     <property name="geometry">
      <rect>
-      <x>180</x>
-      <y>100</y>
-      <width>131</width>
+      <x>20</x>
+      <y>150</y>
+      <width>101</width>
       <height>26</height>
      </rect>
     </property>
@@ -145,7 +145,7 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>151</width>
+      <width>121</width>
       <height>31</height>
      </rect>
     </property>
@@ -162,9 +162,9 @@
    <widget class="QCommandLinkButton" name="clear_logged_data_button">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>120</y>
-      <width>161</width>
+      <x>140</x>
+      <y>40</y>
+      <width>131</width>
       <height>31</height>
      </rect>
     </property>
@@ -198,6 +198,45 @@
      <string>#######################################</string>
     </property>
    </widget>
+   <widget class="QCommandLinkButton" name="record_demo">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>120</y>
+      <width>111</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Record demo</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="stop_demo_record_btn">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>150</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>stop</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="train_btn">
+    <property name="geometry">
+     <rect>
+      <x>180</x>
+      <y>170</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>train</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -205,7 +244,7 @@
      <x>0</x>
      <y>0</y>
      <width>465</width>
-     <height>29</height>
+     <height>24</height>
     </rect>
    </property>
   </widget>

@@ -30,9 +30,11 @@ void DMP_EKF_Controller::readExecutionParams(const char *params_file)
 
   if (!parser.getParam("P0_g_hat", P0_g_hat)) P0_g_hat = arma::vec({1.0, 1.0, 1.0});
   if (!parser.getParam("P0_tau_hat", P0_tau_hat)) P0_tau_hat = 1.0;
-  if (!parser.getParam("R_v", R_v)) R_v = arma::diagmat(arma::vec({1.0, 1.0, 1.0}));
+  if (!parser.getParam("R_v", R_v)) R_v = arma::vec({1.0, 1.0, 1.0});
+  R_v = arma::diagmat(R_v);
   inv_R_v = arma::inv(R_v);
-  if (!parser.getParam("Q_W", Q_w)) Q_w = arma::diagmat(arma::vec({0.0, 0.0, 0.0}));
+  if (!parser.getParam("Q_W", Q_w)) Q_w = arma::vec({0.0, 0.0, 0.0});
+  Q_w = arma::diagmat(Q_w);
   if (!parser.getParam("a_p", a_p)) a_p = 0.0;
 
   // starting conditions for controller run
@@ -58,7 +60,7 @@ void DMP_EKF_Controller::initExecution()
   this->robot->update();
   arma::vec p = this->robot->getTaskPosition();
 
-  start_flag = false;
+  start_exec_flag = false;
 
   // controller variables
   Y = p;
@@ -81,13 +83,13 @@ void DMP_EKF_Controller::initExecution()
 
 bool DMP_EKF_Controller::startExecution()
 {
-  if (!start_flag)
+  if (!start_exec_flag)
   {
     arma::vec F_ext = robot->getTaskWrench();
-    if (arma::norm(F_ext) > 0.2) start_flag = true;
-    else start_flag = false;
+    if (arma::norm(F_ext) > 1.5) start_exec_flag = true;
+    else start_exec_flag = false;
   }
-  return start_flag;
+  return start_exec_flag;
 }
 
 void DMP_EKF_Controller::run()
@@ -106,20 +108,27 @@ void DMP_EKF_Controller::run()
   f_ext = (1-a_force)*f_ext + a_force*f_ext_new;
   mf = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
 
+  std::cout << "==========> Ok 18\n";
+
   // ========  KF estimation  ========
   int dim = dmp.size();
   int n_theta = theta.size();
   arma::mat dC_dtheta = arma::mat().zeros(dim, n_theta);
   for (int i=0; i<dim; i++)
   {
-    double y_c, z_c;
+    std::cout << "==========> Ok 22\n";
+    double y_c=0, z_c=0;
 
     ddY_ref(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, x_hat, g_hat(i), tau_hat);
+
+    std::cout << "==========> Ok 23\n";
 
     dC_dtheta.col(i) = dmp[i]->getAcellPartDev_g_tau(t, Y(i), dY(i), Y0(i), x_hat, g_hat(i), tau_hat);
   }
   dY_ref = dY;
   Y_ref = Y;
+
+  std::cout << "==========> Ok 26\n";
 
   // ========  Controller  ========
   U_dmp = -K%(Y - Y_ref) + D%dY_ref + M%ddY_ref;
@@ -129,12 +138,18 @@ void DMP_EKF_Controller::run()
   ddY = ( - D*dY - K*Y + U_total) / M;
 
   arma::vec Y_robot = this->robot->getTaskPosition();
-  robot->setTaskVelocity( dY + k_click*(Y-Y_robot) );
+  arma::vec V_cmd = arma::vec().zeros(6);
+  V_cmd.subvec(0,2) = dY + k_click*(Y-Y_robot);
+  robot->setTaskVelocity(V_cmd);
+
+  std::cout << "==========> Ok 35\n";
 
   // ========  KF update  ========
   arma::mat K_kf = P_theta*dC_dtheta.t()*inv_R_v;
   arma::vec theta_dot = K_kf * (ddY - ddY_ref);
   arma::mat P_dot = Q_w - K_kf*dC_dtheta*P_theta + 2*a_p*P_theta;
+
+  std::cout << "==========> Ok 42\n";
 
   // ========  numerical integration  ========
   double Ts = robot->getControlCycle();
@@ -143,14 +158,18 @@ void DMP_EKF_Controller::run()
   Y = Y + dY*Ts;
   dY = dY + ddY*Ts;
 
+  std::cout << "==========> Ok 49\n";
+
   theta = theta + theta_dot*Ts;
   g_hat = theta.subvec(0,2);
   tau_hat = theta(3);
   P_theta = P_theta + P_dot*Ts;
   x_hat = t/tau_hat;
+
+  std::cout << "==========> Ok 52\n";
 }
 
-void DMP_EKF_Controller::initTraining()
+void DMP_EKF_Controller::initDemo()
 {
   readTrainingParams();
 
@@ -171,7 +190,7 @@ void DMP_EKF_Controller::initTraining()
   ddYd_data = arma::vec().zeros(3);
 }
 
-void DMP_EKF_Controller::logTrainData()
+void DMP_EKF_Controller::logDemoData()
 {
   this->robot->update();
 
@@ -192,8 +211,18 @@ void DMP_EKF_Controller::logTrainData()
   ddYd_data = arma::join_horiz(Yd_data, ddp);
 }
 
+void DMP_EKF_Controller::clearDemoData()
+{
+  Timed.clear();
+  Yd_data.clear();
+  dYd_data.clear();
+  ddYd_data.clear();
+}
+
 void DMP_EKF_Controller::train()
 {
+  start_train_flag = false;
+
   can_clock_ptr.reset(new as64_::CanonicalClock(1.0));
   shape_attr_gating_ptr.reset(new as64_::SigmoidGatingFunction(1.0, 0.95));
 

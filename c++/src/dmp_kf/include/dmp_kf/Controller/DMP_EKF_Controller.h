@@ -22,8 +22,8 @@ public:
   void initExecution();
   void run();
 
-  void initTraining();
-  void logTrainData();
+  void initDemo();
+  void logDemoData();
   void train();
 
 private:
@@ -32,6 +32,7 @@ private:
   bool startExecution();
 
   void readTrainingParams(const char *params_file = NULL);
+  void clearDemoData();
 
   // =========  model  =========
   std::vector<std::shared_ptr<as64_::DMP>> dmp;
@@ -54,6 +55,7 @@ private:
   arma::mat Q_w; // process noise variance matrix
 
   // Training data for the DMP
+  bool start_train_flag; // if true logTrainData() can start
   double t_d; // current timestamp during demo recording
   // arma::rowvec Timed; // timestamps from demo
   // arma::mat Yd_data, dYd_data, ddYd_data;
@@ -79,7 +81,7 @@ private:
   double a_force; // iir 1st order filter coeff for filtering force measurements
 
   // starting conditions
-  bool start_flag; // if true run() can start
+  bool start_exec_flag; // if true run() can start
   double f_thres; // if norm(f_ext) > f_thres then the controller can start running
 
   // leader-follower sigmoid function params  1 / ( 1 + exp(a_m*(norm(f_ext)-c_m)) )

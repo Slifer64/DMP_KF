@@ -18,8 +18,8 @@ public:
   virtual void initExecution() = 0;
   virtual void run() = 0;
 
-  virtual void initTraining() = 0;
-  virtual void logTrainData() = 0;
+  virtual void initDemo() = 0;
+  virtual void logDemoData() = 0;
   virtual void train() = 0;
 
   double t; // current timestamp during controller execution

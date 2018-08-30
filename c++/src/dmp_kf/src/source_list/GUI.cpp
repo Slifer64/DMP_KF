@@ -43,50 +43,6 @@ int GUI::guiThread()
   return ret_val;
 }
 
-bool GUI::logOnEnable()
-{
-  return gui_obj->log_on_enable;
-}
-
-bool GUI::saveLoggedData() const
-{
-  return gui_obj->save_logged_data;
-}
-
-void GUI::resetSaveLoggedData()
-{
-  gui_obj->save_logged_data = false;
-}
-
-bool GUI::clearLoggedData() const
-{
-  return gui_obj->clear_logged_data;
-}
-
-void GUI::resetClearLoggedData()
-{
-  gui_obj->clear_logged_data = false;
-}
-
-bool GUI::currentPoseAsStart() const
-{
-  return gui_obj->current_pose_as_start;
-}
-
-void GUI::resetCurrentPoseAsStart()
-{
-  gui_obj->current_pose_as_start = false;
-}
-
-bool GUI::gotoStartPose() const
-{
-  return gui_obj->goto_start_pose;
-}
-
-void GUI::resetGotoStartPose()
-{
-  gui_obj->goto_start_pose = false;
-}
 
 Ui::ProgramState GUI::getState() const
 {
@@ -97,14 +53,4 @@ void GUI::setState(const Ui::ProgramState &new_state)
 {
   gui_obj->setState(new_state);
   printModeMsg("== MODE: " + gui_obj->stateName[gui_obj->state] + " ==");
-}
-
-void GUI::printMsg(const std::string &msg, Ui::MSG_TYPE msg_type)
-{
-  gui_obj->setMsg(msg, msg_type);
-}
-
-void GUI::printModeMsg(const std::string &msg)
-{
-  gui_obj->setModeMsg(msg);
 }

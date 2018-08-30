@@ -7,11 +7,12 @@ MainWindow::MainWindow(QWidget *parent) :
 {
   ui->setupUi(this);
 
-  stateName.resize(4);
+  stateName.resize(5);
   stateName[0] = "RUN_CONTROLLER";
   stateName[1] = "FREEDRIVE_MODE";
   stateName[2] = "PAUSE_PROGRAM";
   stateName[3] = "STOP_PROGRAM";
+  stateName[4] = "DEMO_RECORDING";
 
   init();
 }
@@ -44,6 +45,10 @@ void MainWindow::init()
   startPose_registered = false;
   current_pose_as_start = false;
   goto_start_pose = false;
+
+  record_demo = false;
+  demo_recorded = false;
+  train = false;
 
   ui->msg_label->setWordWrap(true);
   ui->msg_label2->setWordWrap(true);
@@ -207,6 +212,7 @@ void MainWindow::on_data_logging_checkbox_toggled(bool checked)
   setMsg(msg.c_str(), Ui::MSG_TYPE::INFO);
 }
 
+
 void MainWindow::PRINT_INFO_MSG(const std::string &msg)
 {
   // std::unique_lock<std::mutex> lck(msg_mtx);
@@ -286,4 +292,60 @@ void MainWindow::checkForReceivedMsgs()
 void MainWindow::finalize()
 {
 
+}
+
+void MainWindow::on_record_demo_clicked()
+{
+    std::unique_lock<std::mutex> lck(btn_click_mtx);
+
+    if (getState() == Ui::ProgramState::DEMO_RECORDING)
+    {
+      setMsg("Mode already in DEMO_RECORDING.", Ui::MSG_TYPE::WARNING);
+      return;
+    }
+
+    if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
+    {
+      setMsg("The program must be paused\nto enter DEMO recording state...", Ui::MSG_TYPE::WARNING);
+    }
+    else
+    {
+      setState(Ui::ProgramState::DEMO_RECORDING);
+      record_demo = true;
+      demo_recorded = true;
+    }
+}
+
+void MainWindow::on_stop_demo_record_btn_clicked()
+{
+    std::unique_lock<std::mutex> lck(btn_click_mtx);
+
+    if (getState() != Ui::ProgramState::DEMO_RECORDING)
+    {
+      setMsg("The program is not in DEMO_RECORDING...", Ui::MSG_TYPE::WARNING);
+    }
+    else
+    {
+      record_demo = false;
+      setMsg("Stopped demo recording...", Ui::MSG_TYPE::INFO);
+    }
+
+}
+
+void MainWindow::on_train_btn_clicked()
+{
+    std::unique_lock<std::mutex> lck(btn_click_mtx);
+
+    if (getState() != Ui::ProgramState::DEMO_RECORDING)
+    {
+      setMsg("The program is not in DEMO_RECORDING...", Ui::MSG_TYPE::WARNING);
+    }
+    else if (record_demo == true)
+    {
+       setMsg("Demo recording is still on...", Ui::MSG_TYPE::WARNING);
+    }
+    else
+    {
+      train = true;
+    }
 }

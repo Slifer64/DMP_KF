@@ -17,7 +17,8 @@ enum ProgramState
   RUN_CONTROLLER,
   FREEDRIVE_MODE,
   PAUSE_PROGRAM,
-  STOP_PROGRAM
+  STOP_PROGRAM,
+  DEMO_RECORDING
 };
 
 enum MSG_TYPE
@@ -41,6 +42,9 @@ public:
     void init();
 
     Ui::ProgramState state;
+    bool record_demo;
+    bool demo_recorded; ///< true if a demo has been recorded
+    bool train;
     bool log_on_enable;
     bool save_logged_data;
     bool clear_logged_data;
@@ -70,6 +74,12 @@ private slots:
     void on_save_logged_data_button_clicked();
     void on_data_logging_checkbox_toggled(bool checked);
     void on_clear_logged_data_button_clicked();
+
+    void on_record_demo_clicked();
+
+    void on_stop_demo_record_btn_clicked();
+
+    void on_train_btn_clicked();
 
 private:
     Ui::MainWindow *ui;
