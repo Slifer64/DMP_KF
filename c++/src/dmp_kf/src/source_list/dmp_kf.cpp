@@ -1,6 +1,8 @@
 #include <dmp_kf/dmp_kf.h>
 
 #include <dmp_kf/Robot/LWR4p_Robot.h>
+#include <dmp_kf/Robot/UR10_Robot.h>
+#include <dmp_kf/Robot/Sim_Robot.h>
 #include <dmp_kf/Controller/DMP_EKF_Controller.h>
 
 using namespace as64_;
@@ -13,8 +15,8 @@ dmp_kf::dmp_kf()
   std::string robot_type;
   if (!nh.getParam("robot_type", robot_type)) robot_type="lwr4p";
   if (!robot_type.compare("lwr4p")) robot.reset(new LWR4p_Robot());
-  // else if (!robot_type.compare("ur10")) robot.reset(new UR10_Robot());
-  // else if (!robot_type.compare("robot_sim")) robot.reset(new Sim_Robot());
+  else if (!robot_type.compare("ur10")) robot.reset(new UR10_Robot());
+  else if (!robot_type.compare("robot_sim")) robot.reset(new Sim_Robot());
 
   controller.reset(new DMP_EKF_Controller(robot));
   gui.reset(new GUI());

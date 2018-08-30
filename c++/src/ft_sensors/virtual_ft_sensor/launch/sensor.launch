@@ -1,0 +1,8 @@
+<launch>
+
+	<!-- Launch sensor -->
+	<node name="virtual_ft_sensor" pkg="virtual_ft_sensor" type="virtual_ft_sensor" required="true" >
+		<rosparam command="load" file="$(find virtual_ft_sensor)/config/sensor_config.yaml" />
+	</node>
+
+</launch>

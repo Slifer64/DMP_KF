@@ -1,0 +1,7 @@
+# =====  sensor parameters  =====
+freq: 500 # publish frequency
+pub_topic: "/wrench" # topic to publish force/torque data
+F_max: [100, 100, 100, 200, 200, 200] # defines the range of forces/torques as [-F_max, F_max]
+noise_ampl: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01] # noise amplitude
+scale: 0.01 # calibration values
+a_filt: 0.01

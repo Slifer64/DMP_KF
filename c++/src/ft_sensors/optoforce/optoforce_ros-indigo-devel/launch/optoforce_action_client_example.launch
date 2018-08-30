@@ -1,0 +1,6 @@
+<launch>
+    <!-- OptoForce Action Client -->
+    <node pkg="optoforce_ros" type="optoforce_action_client_example" name="optoforce_action_client_example" output="screen" cwd="node">
+    </node>
+
+</launch>

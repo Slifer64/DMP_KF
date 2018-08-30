@@ -31,8 +31,17 @@
   <build_depend>dmp_lib</build_depend>
   <run_depend>dmp_lib</run_depend>
 
+  <build_depend>ur10_robot</build_depend>
+  <run_depend>ur10_robot</run_depend>
+
+  <build_depend>robot_sim</build_depend>
+  <run_depend>robot_sim</run_depend>
+
   <build_depend>io_lib</build_depend>
   <run_depend>io_lib</run_depend>
+
+  <build_depend>math_lib</build_depend>
+  <run_depend>math_lib</run_depend>
 
 <!--
   <build_depend>ur10_robot</build_depend>

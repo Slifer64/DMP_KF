@@ -1,0 +1,9 @@
+<launch>
+    <!-- OptoForce Acquisition parameters -->
+    <rosparam file="$(find optoforce_ros)/cfg/acquisition_params.yaml" command="load" ns="optoforce_node"/>
+
+    <!-- OptoForce Acquisition node -->
+    <node pkg="optoforce_ros" type="optoforce_action_node" name="optoforce_node" output="screen" cwd="node">
+    </node>
+
+</launch>

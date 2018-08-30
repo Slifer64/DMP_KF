@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="limited" default="false"/>
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find ur_description)/urdf/ur5_robot.urdf.xacro' limited:=$(arg limited)" />
+</launch>

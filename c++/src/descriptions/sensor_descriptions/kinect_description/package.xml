@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>kinect_description</name>
+  <version>1.0.0</version>
+  <description>Xacro Kinect v1 description including camera frames</description>
+  <maintainer email="beek@robot-rose.nl">Loy van Beek</maintainer>
+  <license>BSD3</license>
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>tf</run_depend>
+</package>

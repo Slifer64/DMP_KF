@@ -1,0 +1,12 @@
+<launch>
+
+	<!-- Configuration file with parameters for optoforce_node -->
+	<arg name="config_file" default="$(find optoforce_ros)/cfg/acquisition_params.yaml"/>
+
+    <!-- OptoForce Acquisition parameters -->
+    <rosparam file="$(arg config_file)" command="load" ns="optoforce_node"/>
+
+    <!-- OptoForce Acquisition node -->
+    <node pkg="optoforce_ros" type="optoforce_node" name="optoforce_node" output="screen" cwd="node"/>
+
+</launch>

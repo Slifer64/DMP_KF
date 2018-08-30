@@ -21,10 +21,11 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   dmp_lib
   io_lib
-  #ur10_robot
+  ur10_robot
   autharl_core
   lwr_robot
-  #robot_sim
+  robot_sim
+  math_lib
 )
 
 # Find Qt5
@@ -69,9 +70,9 @@ set(SRC_LIST
   src/source_list/GUI.cpp
 
   src/source_list/Robot/Robot.cpp
-  #src/source_list/Robot/UR10_Robot.cpp
+  src/source_list/Robot/UR10_Robot.cpp
   src/source_list/Robot/LWR4p_Robot.cpp
-  #src/source_list/Robot/Sim_Robot.cpp
+  src/source_list/Robot/Sim_Robot.cpp
 
   src/source_list/Controller/Controller.cpp
   src/source_list/Controller/DMP_EKF_Controller.cpp
@@ -119,10 +120,11 @@ target_link_libraries(dmp_kf
   ${Boost_LIBRARIES}
   dmp-lib
   io-lib
-  # ur10-robot
+  ur10-robot
   autharl-robot
   autharl-utils
   lwr-robot
   ${Qt_LIBRARIES}
-  # robot_sim
+  robot_sim
+  math-lib
 )

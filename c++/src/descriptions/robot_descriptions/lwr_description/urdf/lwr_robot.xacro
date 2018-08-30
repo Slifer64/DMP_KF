@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<robot name="LWR" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:include filename="$(find lwr_description)/urdf/kuka_lwr_arm.xacro"/>
+
+<!-- Import all Gazebo-customization elements, including Gazebo colors -->
+<xacro:include filename="$(find lwr_description)/urdf/kuka_lwr_arm.gazebo"/> 
+
+
+<!-- Inserts the Kuka here with a specified name and direction ... -->
+
+<xacro:kuka_lwr_arm parent="world" name="lwr" right="1" tool_name=""/>
+<xacro:kuka_lwr_arm_gazebo name="lwr"/>
+
+
+<link name="world" />
+
+</robot>

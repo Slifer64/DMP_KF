@@ -1,0 +1,40 @@
+ # generic filename used for successive storing
+filename: "/tmp/optoforce_topic"
+
+# Maximun number of samples to be stored
+num_samples: 600000
+
+# Topic Publish frequency [Hz]
+loop_rate: 1000
+
+# Publish automatically
+publish: 1
+
+# Acquisition frecuency (at the DAQ level)[Hz]
+# This frequency has to be equal of faster than OptoForce Transmission speed
+acquisition_freq: 1000
+
+# OptoForce Sensors to be opened.
+devices:
+  # Serial Number of the Device. IRE0A004 Repaired device
+  - name: "HEXEA152"
+    # IRE0A004 Calibration from Sensitivity Report
+    #calibration: [183.0,186.06,39.83,7359.85,7324.34,7786.72]
+    # calibration: [68.0, 57.0, 100.0, 300.0, 300.0, 200.0]
+    calibration: [10.0, 10.0, 10.0, 900.0, 900.0, 900.0]
+    #calibration: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    # OptoForce DAQ Transmission frequency in Hz
+    speed: 1000
+    # OptoForce DAQ Filters. Cut-off frequencies of 150Hz, 50Hz, 15Hz are suppported. NoFilter is also supoorted assigning filter: 0
+    filter: 15
+    # todo implement the possibility of expressing the wrench in another frame
+    # no impact for the moment
+    force_transformation:  [ 0, 1, 0, -1, 0, 0, 0, 0, -1]
+    torque_transformation: [ 0, 1, 0,  1, 0, 0, 0, 0,  1]
+
+#  - name: "IRE004"                                          # Serial Number of the Device. IRE004 Black Box
+#    calibration: [97.78,101.72,20.53,5210.6,5267.2,7659.7]  # IRE004 Calibration from Sensitivity Report
+#    speed: 1000                                             # Transmission frequency in Hz
+#    filter: 15                                              # TO BE implemented. 150Hz, 50Hz, 15Hz, NoFilter are suppported
+#    force_transformation:  [ 0, -1, 0, -1, 0, 0, 0, 0, 1]   # TO BE implemented
+#    torque_transformation: [ 0, -1, 0,  1, 0, 0, 0, 0, 1]   # TO BE implemented

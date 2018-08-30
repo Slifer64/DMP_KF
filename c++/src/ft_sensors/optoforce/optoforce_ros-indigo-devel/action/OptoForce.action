@@ -1,0 +1,10 @@
+#goal definition
+bool store
+float64 acq_duration
+int32 publish_freq
+---
+#result definition
+int32 result
+---
+#feedback
+geometry_msgs/WrenchStamped[] wrench_lst

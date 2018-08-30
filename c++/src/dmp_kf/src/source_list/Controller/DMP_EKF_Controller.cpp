@@ -70,6 +70,10 @@ void DMP_EKF_Controller::initExecution()
   U_total.zeros(3);
   f_ext.zeros(3);
 
+  Y_ref.zeros(3);
+  dY_ref.zeros(3);
+  ddY_ref.zeros(3);
+
   // model variables
   Y0 = p;
   g_hat = g_d;
@@ -108,22 +112,17 @@ void DMP_EKF_Controller::run()
   f_ext = (1-a_force)*f_ext + a_force*f_ext_new;
   mf = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
 
-  std::cout << "==========> Ok 18\n";
-
   // ========  KF estimation  ========
   int dim = dmp.size();
   int n_theta = theta.size();
   arma::mat dC_dtheta = arma::mat().zeros(dim, n_theta);
   for (int i=0; i<dim; i++)
   {
-    std::cout << "==========> Ok 22\n";
     double y_c=0, z_c=0;
-
     ddY_ref(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, x_hat, g_hat(i), tau_hat);
-
-    std::cout << "==========> Ok 23\n";
-
-    dC_dtheta.col(i) = dmp[i]->getAcellPartDev_g_tau(t, Y(i), dY(i), Y0(i), x_hat, g_hat(i), tau_hat);
+    arma::vec dC_dtheta_i = dmp[i]->getAcellPartDev_g_tau(t, Y(i), dY(i), Y0(i), x_hat, g_hat(i), tau_hat);
+    dC_dtheta(i,i) = dC_dtheta_i(0);
+    dC_dtheta(i,n_theta-1) = dC_dtheta_i(1);
   }
   dY_ref = dY;
   Y_ref = Y;
@@ -135,7 +134,7 @@ void DMP_EKF_Controller::run()
 
   U_total = mf*U_dmp + (1-mf)*(ff_gains%f_ext);
 
-  ddY = ( - D*dY - K*Y + U_total) / M;
+  ddY = ( - D%dY - K%Y + U_total) / M;
 
   arma::vec Y_robot = this->robot->getTaskPosition();
   arma::vec V_cmd = arma::vec().zeros(6);

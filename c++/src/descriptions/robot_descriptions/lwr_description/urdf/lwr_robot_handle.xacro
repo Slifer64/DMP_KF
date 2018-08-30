@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="kuka_lwr4_with_handle">
+
+  <!-- Include the KUKA LWR model -->
+  <xacro:include filename="$(find lwr_description)/urdf/lwr_robot.xacro"/>
+
+  <!-- Create a joint to connect the arm with the tool -->
+  <joint name="arm_to_handle" type="fixed">
+    <parent link="lwr_arm_7_link" />
+    <child link = "handle_base" />
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+  </joint>
+
+  <!-- Create the link of the handle -->
+  <link name="handle_base">
+    <visual>
+      <geometry>
+        <mesh filename="package://lwr_description/meshes/tools/handle.dae"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <!-- Finally a dummy link and joint for the tool frame -->
+  <joint name="handle_base_to_tool" type="fixed">
+    <parent link="handle_base" />
+    <child link = "handle_tool" />
+    <origin xyz="0.0 0.0 0.116" rpy="0 0 0" />
+  </joint>
+  <link name="handle_tool"/>
+</robot>

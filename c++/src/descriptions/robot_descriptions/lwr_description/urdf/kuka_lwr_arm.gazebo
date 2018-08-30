@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+
+<!-- Controller (gives access to robot control through ros topics)-->
+
+<!--<gazebo>
+  <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+    <robotNamespace>/lwr</robotNamespace>
+  </plugin>
+</gazebo>
+-->
+<gazebo>
+  <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+    <robotNamespace>/lwr</robotNamespace>
+  </plugin>
+</gazebo>
+
+<!-- Each LINK and JOINT from URFD .xacro needs a <gazebo> tag: http://gazebosim.org/tutorials?tut=ros_urdf -->
+<!-- for each <LINK> can define:
+	OPTION 				TYPE
+	.......................................................................
+	material		:	value	: Material of visual element
+	gravity			:	bool	: Use gravity
+	dampingFactor		:	double	: Exponential velocity decay of the link velocity - takes the value and multiplies the previous link velocity by (1-dampingFactor).
+	maxVel			:	double	: Maximum contact correction velocity truncation term.
+	minDepth		:	double	: Minimum allowable depth before contact correction impulse is applied
+	mu1 & mu2		:	double	: Friction coefficients (ODE).
+	fdir1			:	string	: 3-tuple specifying direction of mu1 in the collision local reference frame.
+	kp			:	double	: Contact stiffness k_p for rigid body contacts as defined by ODE.
+	kd			:	double	: Contact damping k_d for rigid body contacts as defined by ODE
+	selfCollide		:	bool	: If true, the link can collide with other links in the model.
+	maxContacts		:	int	: Maximum number of contacts allowed between two entities.
+	laserRetro		:	double	: Intensity value returned by laser sensor.
+-->
+
+<xacro:macro name="gz_link">
+    <mu1>0.05</mu1> <!--  Coefficient of friction. Was 0.8 before but then almost impossible to slip. -->
+    <mu2>0.05</mu2> <!-- 0.8/ 0.05 -->
+    <!--<kp>400000</kp>--> <!-- This defines the springiness of the contacts: 400000 -->
+    <kp>400000.0</kp>
+    <selfCollide>true</selfCollide>
+</xacro:macro>
+
+
+
+<!-- for each <JOINT> can define:
+	OPTION			TYPE
+	....................................................................................................
+
+	kp			: double: Contact stiffness k_p for rigid body contacts as defined by ODE
+	kd			: double: Contact damping k_d for rigid body contacts as defined by ODE
+	stopCfm			: double: Constraint force mixing used when not at a stop
+	stopErp			: double: Error reduction parameter used by the joint stop
+	provideFeedback		: bool	: Allows joints to publish their wrench data (force-torque) via a Gazebo plugin
+	cfmDamping		: bool	: If cfm damping is set to true, ODE will use CFM to simulate damping, allows for infinite damping, and one additional
+				  	  constraint row (previously used for joint limit) is always active. This is a more stable numerical method for damping
+				   	  than the default damping tag.
+	fudgeFactor		: double: Scale the excess for in a joint motor at joint limits. Should be between zero and one.
+
+
+-->
+
+<xacro:macro name="gz_joint">
+    <provideFeedback>true</provideFeedback>
+    <!--<implicitSpringDamper>true</implicitSpringDamper>-->
+    <mu1>0.05</mu1> <!--  Coefficient of friction. Was 0.8 before but then almost impossible to slip. -->
+    <mu2>0.05</mu2> <!-- 0.8/ 0.05 -->
+    <kp>400000.0</kp>
+    <!--<kp>400000</kp> -->
+    <!--<kp>0.0</kp>[> CFM <]-->
+    <!--<kd>0.0</kd>[> ERP <]-->
+    <!--<cfmDamping>true</cfmDamping>-->
+    <!--<dynamics damping="5.5" friction="1"/>-->
+ </xacro:macro>
+
+<xacro:macro name="kuka_lwr_arm_gazebo" params="name">
+
+<!-- JOINT -->
+
+<gazebo reference="${name}_arm_0_joint">
+	<xacro:gz_joint/>
+</gazebo>
+
+<gazebo reference="${name}_arm_1_joint">
+	<xacro:gz_joint/>
+</gazebo>
+
+<gazebo reference="${name}_arm_2_joint">
+	<xacro:gz_joint/>
+</gazebo>
+
+<gazebo reference="${name}_arm_3_joint">
+	<xacro:gz_joint/>
+</gazebo>
+
+<gazebo reference="${name}_arm_4_joint">
+	<xacro:gz_joint/>
+</gazebo>
+
+<gazebo reference="${name}_arm_5_joint">
+	<xacro:gz_joint/>
+</gazebo>
+
+<gazebo reference="${name}_arm_6_joint">
+	<xacro:gz_joint/>
+</gazebo>
+
+<gazebo reference="${name}_arm_7_joint">
+	<xacro:gz_joint/>
+</gazebo>
+
+<!-- LINK -->
+
+<gazebo reference="${name}_arm_base_link">
+	<xacro:gz_link/>
+</gazebo>
+
+<gazebo reference="${name}_arm_2_link">
+	<xacro:gz_link/>
+</gazebo>
+
+<gazebo reference="${name}_arm_3_link">
+	<xacro:gz_link/>
+</gazebo>
+
+<gazebo reference="${name}_arm_4_link">
+	<xacro:gz_link/>
+</gazebo>
+
+<gazebo reference="${name}_arm_5_link">
+	<xacro:gz_link/>
+</gazebo>
+
+<gazebo reference="${name}_arm_6_link">
+	<xacro:gz_link/>
+</gazebo>
+
+<gazebo reference="${name}_arm_7_link">
+	<xacro:gz_link/>
+</gazebo>
+
+</xacro:macro>
+
+
+</robot>

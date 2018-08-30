@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <!-- Start f/t sensor -->
+  <include file="$(find virtual_ft_sensor)/launch/sensor.launch" />
+
+  <arg name="robot" default="lwr4p"/>
+
+  <include file="$(find robot_sim)/launch/$(arg robot).launch">
+    <arg name="robot_config" value="$(find robot_sim)/config/$(arg robot).yaml" />
+  </include>
+
+  <!-- Object load controller -->
+  <arg name="node_name" default="dmp_kf_node" />
+  <node pkg="dmp_kf" type="dmp_kf" name="$(arg node_name)"
+        output="screen" cwd="node">
+
+        <param name="robot_type" value="robot_sim" type="str"/>
+
+  </node>
+
+</launch>

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="tool" default="no_tool"/>
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find bhand_description)/robots/bh_alone.urdf.xacro'" />
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
+      <rosparam param="source_list"> ["/autharl_joint_state_tool"] </rosparam>
+      <rosparam param="rate">50</rosparam>
+    </node>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+    <node name="rviz" pkg="rviz" type="rviz" respawn="false" args="-d $(find bhand_description)/launch/config.rviz" output="screen" />
+</launch>

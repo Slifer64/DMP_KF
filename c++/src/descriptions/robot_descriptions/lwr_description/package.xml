@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>lwr_description</name>
+  <version>0.0.0</version>
+  <description>The lwr_description package</description>
+
+  <maintainer email="fao@todo.todo">fao</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <export></export>
+
+</package>

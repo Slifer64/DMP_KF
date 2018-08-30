@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<launch>
+
+    <arg name="pub_topic" default="/wrench" />
+
+    <!-- Launch rqt plot to visualize forces/torques -->
+    <node name="rqt_plot_force" pkg="rqt_plot" type="rqt_plot"
+      args="topics $(arg pub_topic)/wrench/force/x $(arg pub_topic)/wrench/force/y $(arg pub_topic)/wrench/force/z" />
+
+    <node name="rqt_plot_torque" pkg="rqt_plot" type="rqt_plot"
+      args="topics $(arg pub_topic)/wrench/torque/x $(arg pub_topic)/wrench/torque/y $(arg pub_topic)/wrench/torque/z" />
+
+</launch>
