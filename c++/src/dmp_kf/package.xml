@@ -31,14 +31,8 @@
   <build_depend>dmp_lib</build_depend>
   <run_depend>dmp_lib</run_depend>
 
-  <build_depend>param_lib</build_depend>
-  <run_depend>param_lib</run_depend>
-
-  <build_depend>math_lib</build_depend>
-  <run_depend>math_lib</run_depend>
-
-  <build_depend>sigproc_lib</build_depend>
-  <run_depend>sigproc_lib</run_depend>
+  <build_depend>io_lib</build_depend>
+  <run_depend>io_lib</run_depend>
 
 <!--
   <build_depend>ur10_robot</build_depend>

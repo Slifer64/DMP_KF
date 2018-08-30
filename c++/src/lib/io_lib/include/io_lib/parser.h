@@ -15,7 +15,7 @@
 namespace as64_
 {
 
-namespace param_
+namespace io_
 {
     ///
     /// @defgroup parser Parser
@@ -263,7 +263,7 @@ namespace param_
     }; // end Class
     /// @}
 
-} // namespace param_
+} // namespace io_
 
 } // namespace as64_
 

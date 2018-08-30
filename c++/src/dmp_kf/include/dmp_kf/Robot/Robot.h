@@ -7,6 +7,7 @@
 #include <cstring>
 #include <dmp_kf/utils.h>
 #include <armadillo>
+#include <Eigen/Dense>
 
 /** ====  Generic robot class  ====
  *  A generic robot class that handles the communication with the actual robot.
@@ -149,6 +150,10 @@ public:
   virtual arma::vec getTaskWrench() const = 0;
 
 protected:
+
+  Eigen::Vector4d rotm2quat(Eigen::Matrix3d rotm) const;
+  arma::vec rotm2quat(const arma::mat &rotm) const ;
+
   Mode mode; ///< robot's control mode
   std::vector<std::string> modeName; ///< robot's control mode name
   arma::vec vel_cmd; ///< commanded task velocity expressed in base frame.

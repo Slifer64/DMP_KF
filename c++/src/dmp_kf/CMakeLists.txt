@@ -20,9 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   dmp_lib
-  param_lib
-  sigproc_lib
-  math_lib
+  io_lib
   #ur10_robot
   autharl_core
   lwr_robot
@@ -75,11 +73,8 @@ set(SRC_LIST
   src/source_list/Robot/LWR4p_Robot.cpp
   #src/source_list/Robot/Sim_Robot.cpp
 
-  src/source_list/RefModel/RefModel.cpp
-  src/source_list/RefModel/DMP_VT_RefModel.cpp
-
   src/source_list/Controller/Controller.cpp
-  src/source_list/Controller/ImpVelController.cpp
+  src/source_list/Controller/DMP_EKF_Controller.cpp
 
   src/source_list/dmp_kf.cpp
 
@@ -123,9 +118,7 @@ target_link_libraries(dmp_kf
   ${PCL_LIBRARIES}
   ${Boost_LIBRARIES}
   dmp-lib
-  param-lib
-  sigproc-lib
-  math-lib
+  io-lib
   # ur10-robot
   autharl-robot
   autharl-utils

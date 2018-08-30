@@ -1,10 +1,8 @@
 #include <dmp_kf/dmp_kf.h>
-#include <math_lib/math_lib.h>
 
 #include <dmp_kf/Robot/LWR4p_Robot.h>
-#include <dmp_kf/Controller/ImpVelController.h>
+#include <dmp_kf/Controller/DMP_EKF_Controller.h>
 
-using namespace as64_::math_;
 using namespace as64_;
 
 
@@ -18,8 +16,7 @@ dmp_kf::dmp_kf()
   // else if (!robot_type.compare("ur10")) robot.reset(new UR10_Robot());
   // else if (!robot_type.compare("robot_sim")) robot.reset(new Sim_Robot());
 
-  ref_model.reset(new DMP_VT_RefModel());
-  controller.reset(new ImpVelController(robot,ref_model));
+  controller.reset(new DMP_EKF_Controller(robot));
   gui.reset(new GUI());
   log_data.reset(new LogData());
 }
@@ -66,7 +63,7 @@ void dmp_kf::execute()
           gui->printModeMsg("== MODE: RUN_CONTROLLER ==");
           gui->printMsg("Mode changed to velocity control.",Ui::MSG_TYPE::INFO);
           gui->printMsg("Initializing controller...",Ui::MSG_TYPE::INFO);
-          controller->init();
+          controller->initExecution();
           gui->printMsg("Initialized! Controller is running...",Ui::MSG_TYPE::INFO);
         }
         controller->run();

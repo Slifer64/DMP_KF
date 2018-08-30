@@ -17,6 +17,7 @@ include_directories(
 
 add_library(io-lib
   src/io_utils.cpp
+  src/parser.cpp
 )
 
 add_dependencies(io-lib

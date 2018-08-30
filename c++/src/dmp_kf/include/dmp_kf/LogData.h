@@ -25,17 +25,12 @@ public:
 private:
   arma::rowvec Time_data;
 
-  arma::mat S_ref_data;
-  arma::mat dS_ref_data;
-  arma::mat ddS_ref_data;
-
-  arma::mat S_r_data;
-  arma::mat dS_r_data;
-  arma::mat ddS_r_data;
+  arma::mat Y_data;
+  arma::mat dY_data;
+  arma::mat ddY_data;
 
   arma::mat Fext_data;
-  arma::mat F_c_data;
-  arma::mat F_c_d_data;
+  arma::mat Fext_filt_data;
 
   bool binary;
   std::string data_input_path;

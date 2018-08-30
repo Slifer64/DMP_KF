@@ -21,8 +21,6 @@ public:
 
   virtual void init(double u0, double u_end);
 
-  virtual void setGatingFunParams(double u0, double u_end);
-
   virtual double getOutput(double x) const;
   virtual arma::rowvec getOutput(const arma::rowvec &x) const;
 

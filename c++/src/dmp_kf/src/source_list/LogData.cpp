@@ -1,6 +1,7 @@
 #include <dmp_kf/LogData.h>
 #include <dmp_kf/utils.h>
 #include <iomanip>
+#include <ros/package.h>
 
 std::string getTimeStamp()
 {
@@ -81,28 +82,26 @@ void LogData::init()
 
 void LogData::log(const std::shared_ptr<Robot> &robot, const std::shared_ptr<Controller> &controller)
 {
-  //Time_data
+  Time_data = arma::join_horiz( Time_data, arma::mat({controller->t}) );
 
-  S_r_data = arma::join_horiz(S_r_data, controller->S);
-  dS_r_data = arma::join_horiz(dS_r_data, controller->dS);
-  ddS_r_data = arma::join_horiz(ddS_r_data, controller->ddS);
+  Y_data = arma::join_horiz(Y_data, controller->Y);
+  dY_data = arma::join_horiz(dY_data, controller->dY);
+  ddY_data = arma::join_horiz(ddY_data, controller->ddY);
 
-  Fext_data = arma::join_horiz(Fext_data, robot->getTaskWrench());
-  F_c_data = arma::join_horiz(F_c_data, controller->F_c);
-  F_c_d_data = arma::join_horiz(F_c_d_data, controller->F_c_d);
+  Fext_data = arma::join_horiz(Fext_data, (robot->getTaskWrench()).subvec(0,2));
+  Fext_filt_data = arma::join_horiz(Fext_filt_data, controller->f_ext);
 }
 
 void LogData::clear()
 {
   Time_data.clear();
 
-  S_r_data.clear();
-  dS_r_data.clear();
-  ddS_r_data.clear();
+  Y_data.clear();
+  dY_data.clear();
+  ddY_data.clear();
 
   Fext_data.clear();
-  F_c_data.clear();
-  F_c_d_data.clear();
+  Fext_filt_data.clear();
 }
 
 void LogData::save()
@@ -128,17 +127,14 @@ void LogData::save()
   else out.open(file);
   if (!out) throw std::ios_base::failure(std::string("Couldn't create file: \"") + file_ext + "\"");
 
-  // write_mat(Time_data, out, binary, precision);
+  write_mat(Time_data, out, binary, precision);
 
-  write_mat(S_r_data, out, binary, precision);
-  write_mat(dS_r_data, out, binary, precision);
-  write_mat(ddS_r_data, out, binary, precision);
+  write_mat(Y_data, out, binary, precision);
+  write_mat(dY_data, out, binary, precision);
+  write_mat(ddY_data, out, binary, precision);
 
   write_mat(Fext_data, out, binary, precision);
-  write_mat(F_c_data, out, binary, precision);
-  write_mat(F_c_d_data, out, binary, precision);
-
-  // write_scalar(poseDataFlag, out, binary, precision);
+  write_mat(Fext_filt_data, out, binary, precision);
 
   out.close();
 }

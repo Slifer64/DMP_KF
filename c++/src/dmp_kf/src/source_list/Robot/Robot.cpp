@@ -1,6 +1,6 @@
 #include <dmp_kf/Robot/Robot.h>
 #include <ros/package.h>
-#include <param_lib/param_lib.h>
+#include <io_lib/parser.h>
 
 Robot::Robot()
 {
@@ -26,7 +26,7 @@ void Robot::readParams(const char *params_file)
   std::string path_to_config_file;
   if (params_file != NULL) path_to_config_file = *params_file;
   else path_to_config_file = ros::package::getPath(PACKAGE_NAME)+ "/config/Robot_config.yml";
-  as64_::param_::Parser parser(path_to_config_file);
+  as64_::io_::Parser parser(path_to_config_file);
 
   if (!parser.getParam("enable_safety_check", safety_check_on)) safety_check_on = false;
   if (!parser.getParam("vel_limit", vel_limit)) vel_limit = arma::vec().ones(6) * 100;
@@ -102,4 +102,26 @@ void Robot::setSafetyStatus(const Robot::SafetyStatus &status)
 Robot::SafetyStatus Robot::getSafetyStatus()
 {
   return safe_status;
+}
+
+Eigen::Vector4d Robot::rotm2quat(Eigen::Matrix3d rotm) const
+{
+    Eigen::Quaternion<double> temp_quat(rotm);
+    Eigen::Vector4d quat;
+    quat << temp_quat.w(), temp_quat.x(), temp_quat.y(), temp_quat.z();
+
+    quat = quat * (2*(quat(0)>=0)-1); // to avoid discontinuities
+
+    return quat;
+}
+
+arma::vec Robot::rotm2quat(const arma::mat &rotm) const
+{
+  arma::vec quat(4);
+
+  Eigen::Map<const Eigen::Matrix3d> rotm_wrapper(rotm.memptr());
+  Eigen::Map<Eigen::Vector4d> quat_wrapper(quat.memptr());
+  quat_wrapper = rotm2quat(rotm_wrapper);
+
+  return quat;
 }

@@ -2,8 +2,8 @@
  * Copyright (C) 2017 as64_
  */
 
-#ifndef OL_2D_RUP_H
-#define OL_2D_RUP_H
+#ifndef DMP_KALMAN_FILTER_H
+#define DMP_KALMAN_FILTER_H
 
 #define _USE_MATH_DEFINES
 
@@ -68,4 +68,4 @@ private:
   void gotoStartPose();
 };
 
-#endif // OL_2D_RUP_H
+#endif // DMP_KALMAN_FILTER_H

@@ -1,9 +1,9 @@
-#include <param_lib/parser.h>
+#include <io_lib/parser.h>
 
 namespace as64_
 {
 
-namespace param_
+namespace io_
 {
 
 bool Parser::valid_key(const std::string& key)
@@ -220,6 +220,6 @@ bool Parser::getCxMat(const std::string key, arma::cx_mat &value)
     return true;
 }
 
-} // namespace param_
+} // namespace io_
 
 } // namespace as64_

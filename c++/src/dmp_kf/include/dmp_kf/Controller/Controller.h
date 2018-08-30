@@ -6,9 +6,6 @@
 #include <memory>
 #include <exception>
 
-#include <ros/package.h>
-#include <armadillo>
-
 #include <dmp_kf/utils.h>
 #include <dmp_kf/Robot/Robot.h>
 
@@ -18,18 +15,20 @@ public:
   Controller(std::shared_ptr<Robot> &robot);
   ~Controller();
 
-  virtual void init() = 0;
-
-  virtual void update() = 0;
-
+  virtual void initExecution() = 0;
   virtual void run() = 0;
 
-  // ========= Controller variables ============
-  arma::vec S; ///< controller's state
-  arma::vec dS;
-  arma::vec ddS;
+  virtual void initTraining() = 0;
+  virtual void logTrainData() = 0;
+  virtual void train() = 0;
 
-  bool is_okay;
+  double t; // current timestamp during controller execution
+  arma::vec Y, dY, ddY; // produced by the target impedance model
+  arma::vec f_ext; // external Cartesian force
+
+  arma::vec g_hat; // goal estimate
+  double tau_hat; // time scale estimate
+  arma::mat P_theta; // covariance of g_hat and tau_hat
 
 protected:
 

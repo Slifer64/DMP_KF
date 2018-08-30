@@ -1,5 +1,4 @@
 #include <dmp_kf/Robot/LWR4p_Robot.h>
-#include <math_lib/math_lib.h>
 
 LWR4p_Robot::LWR4p_Robot():N_JOINTS(7)
 {
@@ -145,7 +144,7 @@ arma::vec LWR4p_Robot::getTaskOrientation() const
   arma::vec task_orient(4);
   arma::mat R;
   robot->getTaskOrientation(R);
-  task_orient = as64_::math_::rotm2quat(R);
+  task_orient = rotm2quat(R);
   return task_orient;
 }
 
