@@ -41,6 +41,15 @@ public:
   bool currentPoseAsStart() const { return gui_obj->current_pose_as_start; }
   void resetCurrentPoseAsStart() { gui_obj->current_pose_as_start = false; }
 
+  bool saveTrainedModel() const { return gui_obj->save_trained_model; }
+  void resetSaveTrainedModel() { gui_obj->save_trained_model = false; }
+
+  bool loadTrainedModel() const { return gui_obj->load_trained_model; }
+  void resetLoadTrainedModel() { gui_obj->load_trained_model = false; }
+
+  bool runTrainedModel() const { return gui_obj->run_trained_model; }
+  void resetRunTrainedModel() { gui_obj->run_trained_model = false; }
+
   Ui::ProgramState getState() const;
   void setState(const Ui::ProgramState &state);
 

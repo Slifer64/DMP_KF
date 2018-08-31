@@ -4,7 +4,13 @@
 #include <io_lib/parser.h>
 
 DMP_EKF_Controller::DMP_EKF_Controller(std::shared_ptr<Robot> &robot):Controller(robot)
-{}
+{
+  can_clock_ptr.reset(new as64_::CanonicalClock(1.0));
+  shape_attr_gating_ptr.reset(new as64_::SigmoidGatingFunction(1.0, 0.95));
+
+  robot->update();
+  q_start = robot->getJointPosition();
+}
 
 void DMP_EKF_Controller::readTrainingParams(const char *params_file)
 {
@@ -83,6 +89,7 @@ void DMP_EKF_Controller::initExecution()
   t = 0.0;
   x_hat = t/tau_hat;
   mf = 1.0;
+  can_clock_ptr->setTau(tau_hat);
 }
 
 bool DMP_EKF_Controller::startExecution()
@@ -90,13 +97,13 @@ bool DMP_EKF_Controller::startExecution()
   if (!start_exec_flag)
   {
     arma::vec F_ext = robot->getTaskWrench();
-    if (arma::norm(F_ext) > 1.5) start_exec_flag = true;
+    if (arma::norm(F_ext) > f_thres) start_exec_flag = true;
     else start_exec_flag = false;
   }
   return start_exec_flag;
 }
 
-void DMP_EKF_Controller::run()
+void DMP_EKF_Controller::execute()
 {
   // ========  Initial starting conditions  ========
   if (!startExecution())
@@ -127,8 +134,6 @@ void DMP_EKF_Controller::run()
   dY_ref = dY;
   Y_ref = Y;
 
-  std::cout << "==========> Ok 26\n";
-
   // ========  Controller  ========
   U_dmp = -K%(Y - Y_ref) + D%dY_ref + M%ddY_ref;
 
@@ -141,14 +146,10 @@ void DMP_EKF_Controller::run()
   V_cmd.subvec(0,2) = dY + k_click*(Y-Y_robot);
   robot->setTaskVelocity(V_cmd);
 
-  std::cout << "==========> Ok 35\n";
-
   // ========  KF update  ========
   arma::mat K_kf = P_theta*dC_dtheta.t()*inv_R_v;
   arma::vec theta_dot = K_kf * (ddY - ddY_ref);
   arma::mat P_dot = Q_w - K_kf*dC_dtheta*P_theta + 2*a_p*P_theta;
-
-  std::cout << "==========> Ok 42\n";
 
   // ========  numerical integration  ========
   double Ts = robot->getControlCycle();
@@ -157,15 +158,11 @@ void DMP_EKF_Controller::run()
   Y = Y + dY*Ts;
   dY = dY + ddY*Ts;
 
-  std::cout << "==========> Ok 49\n";
-
   theta = theta + theta_dot*Ts;
   g_hat = theta.subvec(0,2);
   tau_hat = theta(3);
   P_theta = P_theta + P_dot*Ts;
   x_hat = t/tau_hat;
-
-  std::cout << "==========> Ok 52\n";
 }
 
 void DMP_EKF_Controller::initDemo()
@@ -186,7 +183,7 @@ void DMP_EKF_Controller::initDemo()
   Timed = arma::mat({0});
   Yd_data = p;
   dYd_data = dp;
-  ddYd_data = arma::vec().zeros(3);
+  ddYd_data = ddp;
 }
 
 void DMP_EKF_Controller::logDemoData()
@@ -207,7 +204,7 @@ void DMP_EKF_Controller::logDemoData()
   Timed = arma::join_horiz(Timed, arma::mat({t_d}));
   Yd_data = arma::join_horiz(Yd_data, p);
   dYd_data = arma::join_horiz(dYd_data, dp);
-  ddYd_data = arma::join_horiz(Yd_data, ddp);
+  ddYd_data = arma::join_horiz(ddYd_data, ddp);
 }
 
 void DMP_EKF_Controller::clearDemoData()
@@ -222,11 +219,16 @@ void DMP_EKF_Controller::train()
 {
   start_train_flag = false;
 
-  can_clock_ptr.reset(new as64_::CanonicalClock(1.0));
-  shape_attr_gating_ptr.reset(new as64_::SigmoidGatingFunction(1.0, 0.95));
+  // std::cout << "========================================================\n";
+	// std::cout << "Timed: (" << Timed.n_rows << " x " << Timed.n_cols << ")\n";
+	// std::cout << "Yd_data: (" << Yd_data.n_rows << " x " << Yd_data.n_cols << ")\n";
+	// std::cout << "dYd_data: (" << dYd_data.n_rows << " x " << dYd_data.n_cols << ")\n";
+	// std::cout << "ddYd_data: (" << ddYd_data.n_rows << " x " << ddYd_data.n_cols << ")\n";
+	// std::cout << "========================================================\n";
 
-  dmp.resize(3);
-  for (int i=0; i<dmp.size(); i++)
+  int dim = Yd_data.n_rows;
+  dmp.resize(dim);
+  for (int i=0; i<dim; i++)
   {
     dmp[i].reset(new as64_::DMP(N_kernels, a_z, b_z, can_clock_ptr, shape_attr_gating_ptr));
     dmp[i]->train(train_method, Timed, Yd_data.row(i), dYd_data.row(i), ddYd_data.row(i));
@@ -235,4 +237,126 @@ void DMP_EKF_Controller::train()
   int n_data = Yd_data.n_cols;
   g_d = Yd_data.col(n_data-1);
   tau_d = Timed(n_data-1);
+}
+
+bool DMP_EKF_Controller::saveTrainedModel()
+{
+  std::string model_data_file = ros::package::getPath(PACKAGE_NAME)+ "/data/mode_data.bin";
+  bool binary = true;
+
+  std::ofstream out(model_data_file.c_str(), std::ios::binary);
+  if (!out) return false; //throw std::ios_base::failure(std::string("Couldn't create file: \"") + model_data_file + "\"");
+
+  write_mat(q_start, out, binary);
+  write_mat(Timed, out, binary);
+  write_mat(Yd_data, out, binary);
+  write_mat(dYd_data, out, binary);
+  write_mat(ddYd_data, out, binary);
+
+  int dim = dmp.size();
+  write_scalar((long)dim, out, binary);
+  for (int i=0; i<dim; i++)
+  {
+    arma::vec dmp_params(3);
+    dmp_params(0) = dmp[i]->N_kernels;
+    dmp_params(1) = dmp[i]->a_z;
+    dmp_params(2) = dmp[i]->b_z;
+    dmp_params = arma::join_vert(dmp_params, dmp[i]->w);
+    write_mat(dmp_params, out, binary);
+  }
+
+  out.close();
+
+  return true;
+}
+
+bool DMP_EKF_Controller::loadTrainedModel()
+{
+  std::string model_data_file = ros::package::getPath(PACKAGE_NAME)+ "/data/mode_data.bin";
+  bool binary = true;
+
+  std::ifstream in(model_data_file.c_str(), std::ios::binary);
+  if (!in) return false; //throw std::ios_base::failure(std::string("Couldn't open file: \"") + model_data_file + "\"");
+
+  read_mat(q_start, in, binary);
+  read_mat(Timed, in, binary);
+  read_mat(Yd_data, in, binary);
+  read_mat(dYd_data, in, binary);
+  read_mat(ddYd_data, in, binary);
+
+  int n_data = Yd_data.n_cols;
+  g_d = Yd_data.col(n_data-1);
+  tau_d = Timed(n_data-1);
+
+  // std::cout << "========================================================\n";
+	// std::cout << "q_start: (" << q_start.n_rows << " x " << q_start.n_cols << ")\n";
+	// std::cout << "Timed: (" << Timed.n_rows << " x " << Timed.n_cols << ")\n";
+	// std::cout << "Yd_data: (" << Yd_data.n_rows << " x " << Yd_data.n_cols << ")\n";
+	// std::cout << "dYd_data: (" << dYd_data.n_rows << " x " << dYd_data.n_cols << ")\n";
+  // std::cout << "ddYd_data: (" << ddYd_data.n_rows << " x " << ddYd_data.n_cols << ")\n";
+
+  long dim;
+  read_scalar(dim, in, binary);
+
+  // std::cout << "dim: " << dim << "\n";
+
+  dmp.resize(dim);
+  for (int i=0; i<dim; i++)
+  {
+    arma::vec dmp_params;
+    read_mat(dmp_params, in, binary);
+
+    // std::cout << "dmp_params: (" << dmp_params.n_rows << " x " << dmp_params.n_cols << ")\n";
+
+    int i_end = dmp_params.size()-1;
+    int N_kernels = dmp_params(0);
+    double a_z = dmp_params(1);
+    double b_z = dmp_params(2);
+
+    // std::cout << "N_kernels: " << N_kernels << "\n";
+    // std::cout << "a_z: " << a_z << "\n";
+    // std::cout << "b_z: " << b_z << "\n";
+
+    dmp[i].reset(new as64_::DMP(N_kernels, a_z, b_z, can_clock_ptr, shape_attr_gating_ptr));
+    dmp[i]->w = dmp_params.subvec(3,i_end);
+  }
+
+  in.close();
+
+  return true;
+}
+
+void DMP_EKF_Controller::runModel()
+{
+  initExecution();
+
+  while (true)
+  {
+    this->robot->update();
+
+    int dim = dmp.size();
+    for (int i=0; i<dim; i++)
+    {
+      double y_c=0, z_c=0;
+      ddY(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, x_hat, g_hat(i), tau_hat);
+    }
+
+    arma::vec Y_robot = this->robot->getTaskPosition();
+    arma::vec V_cmd = arma::vec().zeros(6);
+    V_cmd.subvec(0,2) = dY + k_click*(Y-Y_robot);
+    robot->setTaskVelocity(V_cmd);
+    robot->command();
+
+    // ========  numerical integration  ========
+    double Ts = robot->getControlCycle();
+
+    t = t + Ts;
+    Y = Y + dY*Ts;
+    dY = dY + ddY*Ts;
+    x_hat = t/tau_hat;
+
+    double err = arma::norm(Y-g_hat);
+    if (err < 0.5e-3) break;
+  }
+
 }

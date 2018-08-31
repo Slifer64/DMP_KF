@@ -5,13 +5,13 @@ clear;
 addpath('utils/');
 
 binary = true;
-filename = '../data/out_data_Sat_Jun_16_00-20-17_2018.bin';
+filename = '../data/out_data_Fri_Aug_31_11-55-40_2018.bin';
 fid = fopen(filename);
 if (fid < 0)
     error('Could not load %s\n', filename);
 end
 
-Time data = read_mat(fid, binary);
+Time_data = read_mat(fid, binary);
 Y_data = read_mat(fid, binary);
 dY_data = read_mat(fid, binary);
 ddY_data = read_mat(fid, binary);

@@ -54,5 +54,4 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     xlabel('time [$s$]','interpreter','latex','fontsize',fontsize);
     hold off;
 
-
 end

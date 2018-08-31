@@ -22,6 +22,9 @@ public:
   void save();
   void clear();
 
+  void saveTraining();
+  void loadTraining();
+
 private:
 
   std::shared_ptr<Controller> controller;

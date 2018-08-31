@@ -33,10 +33,10 @@ void MainWindow::init()
   ui->stop_program_button->setStyleSheet(cmd_btn_style_sheet.c_str());
   ui->run_controller_button->setStyleSheet(cmd_btn_style_sheet.c_str());
 
-  ui->save_logged_data_button->setStyleSheet(cmd_btn_style_sheet.c_str());
-  ui->clear_logged_data_button->setStyleSheet(cmd_btn_style_sheet.c_str());
-  ui->register_startPose_button->setStyleSheet(cmd_btn_style_sheet.c_str());
-  ui->move_to_start_button->setStyleSheet(cmd_btn_style_sheet.c_str());
+  ui->save_logged_data_btn->setStyleSheet(cmd_btn_style_sheet.c_str());
+  ui->clear_logged_data_btn->setStyleSheet(cmd_btn_style_sheet.c_str());
+  ui->register_startPose_btn->setStyleSheet(cmd_btn_style_sheet.c_str());
+  ui->move_to_start_btn->setStyleSheet(cmd_btn_style_sheet.c_str());
 
   state = Ui::ProgramState::PAUSE_PROGRAM;
   save_logged_data = false;
@@ -49,6 +49,12 @@ void MainWindow::init()
   record_demo = false;
   demo_recorded = false;
   train = false;
+  model_trained = false;
+
+  save_trained_model = false;
+  load_trained_model = false;
+
+  run_trained_model = false;
 
   ui->msg_label->setWordWrap(true);
   ui->msg_label2->setWordWrap(true);
@@ -149,7 +155,7 @@ void MainWindow::on_run_controller_button_clicked()
   }
 }
 
-void MainWindow::on_move_to_start_button_clicked()
+void MainWindow::on_move_to_start_btn_clicked()
 {
   std::unique_lock<std::mutex> lck(btn_click_mtx);
 
@@ -168,7 +174,7 @@ void MainWindow::on_move_to_start_button_clicked()
   }
 }
 
-void MainWindow::on_register_startPose_button_clicked()
+void MainWindow::on_register_startPose_btn_clicked()
 {
   std::unique_lock<std::mutex> lck(btn_click_mtx);
 
@@ -178,7 +184,7 @@ void MainWindow::on_register_startPose_button_clicked()
   // setMsg("Registered current pose as start.", Ui::MSG_TYPE::INFO);
 }
 
-void MainWindow::on_save_logged_data_button_clicked()
+void MainWindow::on_save_logged_data_btn_clicked()
 {
   std::unique_lock<std::mutex> lck(btn_click_mtx);
   if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
@@ -193,7 +199,7 @@ void MainWindow::on_save_logged_data_button_clicked()
 
 }
 
-void MainWindow::on_clear_logged_data_button_clicked()
+void MainWindow::on_clear_logged_data_btn_clicked()
 {
   std::unique_lock<std::mutex> lck(btn_click_mtx);
 
@@ -217,21 +223,24 @@ void MainWindow::PRINT_INFO_MSG(const std::string &msg)
 {
   // std::unique_lock<std::mutex> lck(msg_mtx);
   ui->msg_label->setStyleSheet("QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 12pt \"DejaVu Serif\"}");
-  ui->msg_label->setText(("[INFO]: " + msg).c_str());
+  // ui->msg_label->setText(("[INFO]: " + msg).c_str());
+  ui->msg_label->setText(msg.c_str());
 }
 
 void MainWindow::PRINT_WARN_MSG(const std::string &msg)
 {
   // std::unique_lock<std::mutex> lck(msg_mtx);
   ui->msg_label->setStyleSheet("QLabel { background-color : rgb(238, 238, 236); color : rgb(245, 121, 0); font: 75 12pt \"DejaVu Serif\"}");
-  ui->msg_label->setText(("[WARNING]: " + msg).c_str());
+  // ui->msg_label->setText(("[WARNING]: " + msg).c_str());
+  ui->msg_label->setText(msg.c_str());
 }
 
 void MainWindow::PRINT_ERR_MSG(const std::string &msg)
 {
   // std::unique_lock<std::mutex> lck(msg_mtx);
   ui->msg_label->setStyleSheet("QLabel { background-color : rgb(238, 238, 236); color : red; font: 75 12pt \"DejaVu Serif\"}");
-  ui->msg_label->setText(("[ERROR]: " + msg).c_str());
+  // ui->msg_label->setText(("[ERROR]: " + msg).c_str());
+  ui->msg_label->setText(msg.c_str());
 }
 
 void MainWindow::setMsg(const std::string &msg, Ui::MSG_TYPE msg_type)
@@ -347,5 +356,52 @@ void MainWindow::on_train_btn_clicked()
     else
     {
       train = true;
+      model_trained = true;
+    }
+}
+
+void MainWindow::on_save_trained_model_btn_clicked()
+{
+    if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
+    {
+      setMsg("The program must be paused\nto save the trained model...", Ui::MSG_TYPE::WARNING);
+    }
+    else if (model_trained == false)
+    {
+      setMsg("There is no trained model...", Ui::MSG_TYPE::WARNING);
+    }
+    else
+    {
+      save_trained_model = true;
+    }
+}
+
+void MainWindow::on_load_trained_model_btn_clicked()
+{
+    if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
+    {
+      setMsg("The program must be paused\nto load the trained model...", Ui::MSG_TYPE::WARNING);
+    }
+    else
+    {
+      load_trained_model = true;
+      model_trained = true;
+      startPose_registered = true;
+    }
+}
+
+void MainWindow::on_run_trained_model_btn_clicked()
+{
+    if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
+    {
+      setMsg("The program must be paused\nto run the trained model...", Ui::MSG_TYPE::WARNING);
+    }
+    else if (model_trained == false)
+    {
+      setMsg("There is no trained model to run...", Ui::MSG_TYPE::WARNING);
+    }
+    else
+    {
+      run_trained_model = true;
     }
 }

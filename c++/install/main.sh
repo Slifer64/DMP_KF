@@ -15,7 +15,7 @@ cd $INSTALL_SCRIPTS_DIR
 AS64_ERROR=0
 
 if [ $# -eq 0 ]; then
-  declare -a arr=("frilibrary") # "qt5" "frilibrary" "ati_sensor" "barretthand" "ros_deps" "eigen3" "armadillo" "optoforce" "ur_simulator" "Kinect_OpenNI_PrimeSense")
+  declare -a arr=("frilibrary" "optoforce") # "qt5" "frilibrary" "ati_sensor" "barretthand" "ros_deps" "eigen3" "armadillo" "optoforce" "ur_simulator" "Kinect_OpenNI_PrimeSense")
 elif [ "$1" = "-a" ]; then
   declare -a arr=("latest_armadillo" "latest_eigen3" "frilibrary" "ati_sensor" "barretthand" "mujoco" "ros_deps")
 else

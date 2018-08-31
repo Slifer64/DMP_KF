@@ -20,11 +20,16 @@ public:
   ~DMP_EKF_Controller() {}
 
   void initExecution();
-  void run();
+  void execute();
 
   void initDemo();
   void logDemoData();
   void train();
+
+  bool loadTrainedModel();
+  bool saveTrainedModel();
+
+  void runModel();
 
 private:
 

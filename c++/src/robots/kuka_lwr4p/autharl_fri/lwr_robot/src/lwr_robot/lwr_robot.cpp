@@ -82,7 +82,7 @@ void Robot::setMode(arl::robot::Mode mode, int chain_index)
         startCartImpController();
         saveLastJointPosition();
       }
-      break; 
+      break;
     default: std::cout << "Mode " << mode << " Not available" << std::endl;
   }
 }
@@ -598,10 +598,10 @@ bool Robot::isOk()
 {
   static bool ok;
   ok = FRI->IsMachineOK();
-  if (!ok)
-  {
-    ROS_ERROR_STREAM("[autharl_fri/lwr_robot] " << "FRI::IsMachineOK() returned false.");
-  }
+  // if (!ok)
+  // {
+  //   ROS_ERROR_STREAM("[autharl_fri/lwr_robot] " << "FRI::IsMachineOK() returned false.");
+  // }
   return ok;
 }
 }  // namespace robot

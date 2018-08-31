@@ -42,9 +42,13 @@ public:
     void init();
 
     Ui::ProgramState state;
+    bool run_trained_model;
+    bool save_trained_model;
+    bool load_trained_model;
     bool record_demo;
     bool demo_recorded; ///< true if a demo has been recorded
     bool train;
+    bool model_trained;
     bool log_on_enable;
     bool save_logged_data;
     bool clear_logged_data;
@@ -68,18 +72,24 @@ private slots:
 
     void on_run_controller_button_clicked();
 
-    void on_move_to_start_button_clicked();
-    void on_register_startPose_button_clicked();
+    void on_move_to_start_btn_clicked();
+    void on_register_startPose_btn_clicked();
 
-    void on_save_logged_data_button_clicked();
+    void on_save_logged_data_btn_clicked();
     void on_data_logging_checkbox_toggled(bool checked);
-    void on_clear_logged_data_button_clicked();
+    void on_clear_logged_data_btn_clicked();
 
     void on_record_demo_clicked();
 
     void on_stop_demo_record_btn_clicked();
 
     void on_train_btn_clicked();
+
+    void on_save_trained_model_btn_clicked();
+
+    void on_load_trained_model_btn_clicked();
+
+    void on_run_trained_model_btn_clicked();
 
 private:
     Ui::MainWindow *ui;

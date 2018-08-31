@@ -56,8 +56,6 @@ private:
   std::shared_ptr<Robot> robot;
   std::shared_ptr<Controller> controller;
 
-  arma::vec q_start; ///< starting pose
-
   bool save_logData_finished;
   std::shared_ptr<std::thread> save_logData_thread;
   void saveLogDataThreadFun();

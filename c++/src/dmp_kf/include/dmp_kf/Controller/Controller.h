@@ -16,11 +16,18 @@ public:
   ~Controller();
 
   virtual void initExecution() = 0;
-  virtual void run() = 0;
+  virtual void execute() = 0;
 
   virtual void initDemo() = 0;
   virtual void logDemoData() = 0;
   virtual void train() = 0;
+
+  virtual bool loadTrainedModel() = 0;
+  virtual bool saveTrainedModel() = 0;
+
+  virtual void runModel() = 0;
+
+  arma::vec q_start; ///< starting pose
 
   double t; // current timestamp during controller execution
   arma::vec Y, dY, ddY; // produced by the target impedance model

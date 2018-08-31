@@ -68,7 +68,8 @@ void dmp_kf::execute()
           controller->initExecution();
           gui->printMsg("Initialized! Controller is running...",Ui::MSG_TYPE::INFO);
         }
-        controller->run();
+        controller->execute();
+        if (gui->logOnEnable()) log_data->log();
         break;
 
       case Ui::ProgramState::FREEDRIVE_MODE:
@@ -101,6 +102,7 @@ void dmp_kf::execute()
       if (gui->recordDemo()) controller->logDemoData();
 
       case Ui::ProgramState::PAUSE_PROGRAM:
+
         if (robot->getMode() != Robot::Mode::IDLE_MODE)
         {
           gui->printMsg("Entering idle mode...",Ui::MSG_TYPE::INFO);
@@ -108,8 +110,35 @@ void dmp_kf::execute()
           gui->printModeMsg("== MODE: IDLE ==");
           gui->printMsg("Mode changed to idle!",Ui::MSG_TYPE::INFO);
         }
+
         if (gui->saveLoggedData()) this->saveLogData();
+
         if (gui->gotoStartPose()) this->gotoStartPose();
+
+        if (gui->saveTrainedModel())
+        {
+          if (controller->saveTrainedModel()) gui->printMsg("Trained model saved successfully!",Ui::MSG_TYPE::INFO);
+          else gui->printMsg("Failed to save trained model...",Ui::MSG_TYPE::WARNING);
+          gui->resetSaveTrainedModel();
+        }
+
+        if (gui->loadTrainedModel())
+        {
+          if (controller->loadTrainedModel()) gui->printMsg("Trained model loaded successfully!",Ui::MSG_TYPE::INFO);
+          else gui->printMsg("Failed to load trained model...",Ui::MSG_TYPE::WARNING);
+          gui->resetLoadTrainedModel();
+        }
+
+        if (gui->runTrainedModel())
+        {
+          gui->printMsg("Running trained model...",Ui::MSG_TYPE::INFO);
+          robot->setMode(Robot::Mode::VELOCITY_CONTROL);
+          controller->runModel();
+          robot->setMode(Robot::Mode::IDLE_MODE);
+          gui->printMsg("Finished running trained model!",Ui::MSG_TYPE::INFO);
+          gui->resetRunTrainedModel();
+        }
+
         break;
 
       case Ui::ProgramState::STOP_PROGRAM:
@@ -124,7 +153,7 @@ void dmp_kf::execute()
 
     if (gui->currentPoseAsStart()) this->saveCurrentPoseAsStartPose();
     if (gui->clearLoggedData()) this->clearLoggedData();
-    if (gui->logOnEnable()) log_data->log();
+
 
     robot->update();
   }
@@ -138,7 +167,9 @@ void dmp_kf::finalize()
 
 void dmp_kf::saveLogDataThreadFun()
 {
+  std::cout << "=========> Ok 16\n";
   log_data->save();
+  std::cout << "=========> Ok 78\n";
   save_logData_finished = true;
 }
 
@@ -175,7 +206,7 @@ void dmp_kf::clearLoggedData()
 
 void dmp_kf::saveCurrentPoseAsStartPose()
 {
-  q_start = robot->getJointPosition();
+  controller->q_start = robot->getJointPosition();
   gui->printMsg("Registered current pose as start.", Ui::MSG_TYPE::INFO);
   gui->resetCurrentPoseAsStart(); // reset gui flag
 }
@@ -187,14 +218,14 @@ void dmp_kf::gotoStartPose()
 
   robot->update();
   arma::vec q_current = robot->getJointPosition();
-  double duration = std::max(arma::max(arma::abs(q_start-q_current))*7.0/arma::datum::pi,2.0);
-  robot->setJointTrajectory(q_start, duration);
+  double duration = std::max(arma::max(arma::abs(controller->q_start-q_current))*7.0/arma::datum::pi,2.0);
+  robot->setJointTrajectory(controller->q_start, duration);
   robot->update();
 
   gui->resetGotoStartPose(); // reset gui flag
 
   q_current = robot->getJointPosition();
-  if (arma::norm(q_current-q_start) < 1e-3)
+  if (arma::norm(q_current-controller->q_start) < 5e-3)
   {
     PRINT_CONFIRM_MSG("Reached start pose!\n");
     gui->printMsg("Reached start pose!", Ui::MSG_TYPE::INFO);

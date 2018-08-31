@@ -19,51 +19,6 @@ std::string getTimeStamp()
 	return time_stamp;
 }
 
-template <typename T>
-void write_scalar(T scalar, std::ostream &out = std::cout, bool binary = false, int precision = 6)
-{
-  if (binary) out.write((const char *)(&scalar), sizeof(scalar));
-  else out << std::setprecision(precision) << scalar;
-}
-
-void write_mat(const arma::mat &m, int n_rows, int n_cols, std::ostream &out, bool binary, int precision)
-{
-  if (binary)
-  {
-    double *buff = new double[n_rows*n_cols];
-
-     int k=0;
-     for (int i=0;i<n_rows;i++){
-       for (int j=0;j<n_cols;j++) buff[k++] = m(i,j);
-     }
-     out.write((const char *)(buff), n_rows*n_cols*sizeof(double));
-
-     delete []buff;
-  }
-  else
-  {
-    for (int i=0;i<n_rows;i++)
-    {
-      for (int j=0;j<n_cols;j++) out << std::setprecision(precision) << m(i,j) << " ";
-      out << "\n";
-    }
-  }
-
-}
-
-void write_mat(const arma::mat &m, std::ostream &out, bool binary, int precision)
-{
-  long n_rows = m.n_rows;
-  long n_cols = m.n_cols;
-
-  write_scalar(n_rows, out, binary);
-  if (!binary) out << "\n";
-  write_scalar(n_cols, out, binary);
-  if (!binary) out << "\n";
-
-  write_mat(m, n_rows, n_cols, out, binary, precision);
-}
-
 LogData::LogData(const std::shared_ptr<Robot> &r, const std::shared_ptr<Controller> &c):robot(r),controller(c)
 {}
 
@@ -136,18 +91,30 @@ void LogData::save()
   std::cout << "filename = " << filename << "\n";
   std::cout << "file = " << file << "\n";
 
+	std::cout << "file = " << file << "\n";
+
   std::ofstream out;
   if (binary) out.open(file, std::ios::binary);
   else out.open(file);
-  if (!out) throw std::ios_base::failure(std::string("Couldn't create file: \"") + file_ext + "\"");
+  if (!out) throw std::ios_base::failure(std::string("Couldn't create file: \"") + file + "\"");
 
   write_mat(Time_data, out, binary, precision);
   write_mat(Y_data, out, binary, precision);
   write_mat(dY_data, out, binary, precision);
   write_mat(ddY_data, out, binary, precision);
 
+	std::cout << "========================================================\n";
+	std::cout << "Time_data: (" << Time_data.n_rows << " x " << Time_data.n_cols << ")\n";
+	std::cout << "Y_data: (" << Y_data.n_rows << " x " << Y_data.n_cols << ")\n";
+	std::cout << "dY_data: (" << dY_data.n_rows << " x " << dY_data.n_cols << ")\n";
+	std::cout << "ddY_data: (" << ddY_data.n_rows << " x " << ddY_data.n_cols << ")\n";
+
   write_mat(Fext_data, out, binary, precision);
   write_mat(Fext_filt_data, out, binary, precision);
+
+	std::cout << "========================================================\n";
+	std::cout << "Fext_data: (" << Fext_data.n_rows << " x " << Fext_data.n_cols << ")\n";
+	std::cout << "Fext_filt_data: (" << Fext_filt_data.n_rows << " x " << Fext_filt_data.n_cols << ")\n";
 
 	write_mat(g_hat_data, out, binary, precision);
 	write_mat(Sigma_g_hat_data, out, binary, precision);
@@ -155,10 +122,24 @@ void LogData::save()
 	write_mat(sigma_tau_hat_data, out, binary, precision);
 	write_mat(mf_data, out, binary, precision);
 
+	std::cout << "========================================================\n";
+	std::cout << "g_hat_data: (" << g_hat_data.n_rows << " x " << g_hat_data.n_cols << ")\n";
+	std::cout << "Sigma_g_hat_data: (" << Sigma_g_hat_data.n_rows << " x " << Sigma_g_hat_data.n_cols << ")\n";
+	std::cout << "tau_hat_data: (" << tau_hat_data.n_rows << " x " << tau_hat_data.n_cols << ")\n";
+	std::cout << "sigma_tau_hat_data: (" << sigma_tau_hat_data.n_rows << " x " << sigma_tau_hat_data.n_cols << ")\n";
+	std::cout << "mf_data: (" << mf_data.n_rows << " x " << mf_data.n_cols << ")\n";
+
 	write_mat(controller->Timed, out, binary, precision);
   write_mat(controller->Yd_data, out, binary, precision);
   write_mat(controller->dYd_data, out, binary, precision);
   write_mat(controller->ddYd_data, out, binary, precision);
+
+	std::cout << "========================================================\n";
+	std::cout << "Timed: (" << controller->Timed.n_rows << " x " << controller->Timed.n_cols << ")\n";
+	std::cout << "Yd_data: (" << controller->Yd_data.n_rows << " x " << controller->Yd_data.n_cols << ")\n";
+	std::cout << "dYd_data: (" << controller->dYd_data.n_rows << " x " << controller->dYd_data.n_cols << ")\n";
+	std::cout << "ddYd_data: (" << controller->ddYd_data.n_rows << " x " << controller->ddYd_data.n_cols << ")\n";
+	std::cout << "========================================================\n";
 
   out.close();
 }
