@@ -42,19 +42,28 @@ public:
     void init();
 
     Ui::ProgramState state;
+
+    bool save_training_data;
+    bool load_training_data;
+
     bool run_trained_model;
     bool save_trained_model;
     bool load_trained_model;
+
     bool record_demo;
     bool demo_recorded; ///< true if a demo has been recorded
-    bool train;
+    bool train_model;
     bool model_trained;
+
     bool log_on_enable;
+
     bool save_logged_data;
     bool clear_logged_data;
+
     bool goto_start_pose;
     bool current_pose_as_start;
     bool startPose_registered; ///< true if a starting pose has been registered
+
     std::vector<std::string> stateName;
 
     void setMsg(const std::string &msg, Ui::MSG_TYPE msg_type);
@@ -81,15 +90,21 @@ private slots:
 
     void on_record_demo_clicked();
 
-    void on_stop_demo_record_btn_clicked();
-
-    void on_train_btn_clicked();
+    void on_train_model_btn_clicked();
 
     void on_save_trained_model_btn_clicked();
 
     void on_load_trained_model_btn_clicked();
 
     void on_run_trained_model_btn_clicked();
+
+    void on_save_training_data_btn_clicked();
+
+    void on_load_training_data_btn_clicked();
+
+    void on_start_demo_record_btn_clicked();
+
+    void on_stop_demo_record_btn_clicked();
 
 private:
     Ui::MainWindow *ui;

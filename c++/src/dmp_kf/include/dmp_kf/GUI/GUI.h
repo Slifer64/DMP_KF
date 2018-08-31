@@ -22,12 +22,13 @@ public:
   void init();
   int guiThread();
 
-  bool logOnEnable() { return gui_obj->log_on_enable; }
+  bool logOnEnable() const { return gui_obj->log_on_enable; }
 
-  bool recordDemo() { return gui_obj->record_demo; }
+  bool recordDemo() const { return gui_obj->record_demo; }
+  void resetRecordDemo() { gui_obj->record_demo = false; }
 
-  bool train() { return gui_obj->train; }
-  bool resetTrain() { gui_obj->train = false; }
+  bool trainModel() const { return gui_obj->train_model; }
+  bool resetTrainModel() { gui_obj->train_model = false; }
 
   bool saveLoggedData() const { return gui_obj->save_logged_data; }
   void resetSaveLoggedData() { gui_obj->save_logged_data = false; }
@@ -49,6 +50,12 @@ public:
 
   bool runTrainedModel() const { return gui_obj->run_trained_model; }
   void resetRunTrainedModel() { gui_obj->run_trained_model = false; }
+
+  bool saveTrainingData() const { return gui_obj->save_training_data; }
+  void resetSaveTrainingData() { gui_obj->save_training_data = false; }
+
+  bool loadTrainingData() const { return gui_obj->load_training_data; }
+  void resetLoadTrainingData() { gui_obj->load_training_data = false; }
 
   Ui::ProgramState getState() const;
   void setState(const Ui::ProgramState &state);

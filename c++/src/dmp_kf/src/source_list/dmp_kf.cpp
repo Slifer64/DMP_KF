@@ -41,6 +41,7 @@ void dmp_kf::execute()
   init();
 
   bool exit_program = false;
+  std::string err_msg;
 
   robot->update();
 
@@ -81,6 +82,7 @@ void dmp_kf::execute()
           gui->printMsg("Mode changed to freedrive!",Ui::MSG_TYPE::INFO);
         }
         break;
+
       case Ui::ProgramState::DEMO_RECORDING:
         if (robot->getMode() != Robot::Mode::FREEDRIVE_MODE)
         {
@@ -88,18 +90,11 @@ void dmp_kf::execute()
           robot->setMode(Robot::Mode::FREEDRIVE_MODE);
           controller->initDemo();
           gui->printModeMsg("== MODE: DEMO_RECORDING ==");
-          gui->printMsg("Mode changed to freedrive!",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Mode changed to DEMO_RECORDING!",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Registered current pose as start.", Ui::MSG_TYPE::INFO);
         }
         if (gui->recordDemo()) controller->logDemoData();
-        if (gui->train())
-        {
-          gui->printMsg("Started training...",Ui::MSG_TYPE::INFO);
-          controller->train();
-          gui->printMsg("Finished training!",Ui::MSG_TYPE::INFO);
-          gui->resetTrain();
-        }
         break;
-      if (gui->recordDemo()) controller->logDemoData();
 
       case Ui::ProgramState::PAUSE_PROGRAM:
 
@@ -117,15 +112,15 @@ void dmp_kf::execute()
 
         if (gui->saveTrainedModel())
         {
-          if (controller->saveTrainedModel()) gui->printMsg("Trained model saved successfully!",Ui::MSG_TYPE::INFO);
-          else gui->printMsg("Failed to save trained model...",Ui::MSG_TYPE::WARNING);
+          if (controller->saveTrainedModel(err_msg)) gui->printMsg("Trained model saved successfully!",Ui::MSG_TYPE::INFO);
+          else gui->printMsg(err_msg.c_str() ,Ui::MSG_TYPE::WARNING);
           gui->resetSaveTrainedModel();
         }
 
         if (gui->loadTrainedModel())
         {
-          if (controller->loadTrainedModel()) gui->printMsg("Trained model loaded successfully!",Ui::MSG_TYPE::INFO);
-          else gui->printMsg("Failed to load trained model...",Ui::MSG_TYPE::WARNING);
+          if (controller->loadTrainedModel(err_msg)) gui->printMsg("Trained model loaded successfully!",Ui::MSG_TYPE::INFO);
+          else gui->printMsg(err_msg.c_str() ,Ui::MSG_TYPE::WARNING);
           gui->resetLoadTrainedModel();
         }
 
@@ -137,6 +132,30 @@ void dmp_kf::execute()
           robot->setMode(Robot::Mode::IDLE_MODE);
           gui->printMsg("Finished running trained model!",Ui::MSG_TYPE::INFO);
           gui->resetRunTrainedModel();
+        }
+
+        if (gui->saveTrainingData())
+        {
+          gui->printMsg("Saving training data...",Ui::MSG_TYPE::INFO);
+          if (controller->saveTrainingData(err_msg)) gui->printMsg("Training data saved successfully!",Ui::MSG_TYPE::INFO);
+          else gui->printMsg(err_msg.c_str(),Ui::MSG_TYPE::WARNING);
+          gui->resetSaveTrainingData();
+        }
+
+        if (gui->loadTrainingData())
+        {
+          gui->printMsg("Loading training data...",Ui::MSG_TYPE::INFO);
+          if (controller->loadTrainingData(err_msg)) gui->printMsg("Loaded training data successfully!",Ui::MSG_TYPE::INFO);
+          else gui->printMsg(err_msg.c_str(), Ui::MSG_TYPE::WARNING);
+          gui->resetLoadTrainingData();
+        }
+
+        if (gui->trainModel())
+        {
+          gui->printMsg("Started training...",Ui::MSG_TYPE::INFO);
+          if (controller->train(err_msg)) gui->printMsg("Finished training!",Ui::MSG_TYPE::INFO);
+          else gui->printMsg(err_msg,Ui::MSG_TYPE::WARNING);
+          gui->resetTrainModel();
         }
 
         break;
@@ -151,7 +170,13 @@ void dmp_kf::execute()
         break;
     }
 
-    if (gui->currentPoseAsStart()) this->saveCurrentPoseAsStartPose();
+    if (gui->currentPoseAsStart())
+    {
+      controller->setStartPose();
+      gui->printMsg("Registered current pose as start.", Ui::MSG_TYPE::INFO);
+      gui->resetCurrentPoseAsStart(); // reset gui flag
+    }
+
     if (gui->clearLoggedData()) this->clearLoggedData();
 
 
@@ -167,9 +192,7 @@ void dmp_kf::finalize()
 
 void dmp_kf::saveLogDataThreadFun()
 {
-  std::cout << "=========> Ok 16\n";
   log_data->save();
-  std::cout << "=========> Ok 78\n";
   save_logData_finished = true;
 }
 
@@ -202,13 +225,6 @@ void dmp_kf::clearLoggedData()
 
   PRINT_INFO_MSG("Cleared logged data!\n");
   gui->printMsg("Cleared logged data!\n", Ui::MSG_TYPE::INFO);
-}
-
-void dmp_kf::saveCurrentPoseAsStartPose()
-{
-  controller->q_start = robot->getJointPosition();
-  gui->printMsg("Registered current pose as start.", Ui::MSG_TYPE::INFO);
-  gui->resetCurrentPoseAsStart(); // reset gui flag
 }
 
 void dmp_kf::gotoStartPose()

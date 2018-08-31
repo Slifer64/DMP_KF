@@ -81,6 +81,10 @@ void DMP_EKF_Controller::initExecution()
   ddY_ref.zeros(3);
 
   // model variables
+  int i_end = Timed.size()-1;
+  g_d = Yd_data.col(i_end);
+  tau_d = Timed(i_end);
+
   Y0 = p;
   g_hat = g_d;
   tau_hat = tau_d;
@@ -165,6 +169,11 @@ void DMP_EKF_Controller::execute()
   x_hat = t/tau_hat;
 }
 
+void DMP_EKF_Controller::logExecData()
+{
+
+}
+
 void DMP_EKF_Controller::initDemo()
 {
   readTrainingParams();
@@ -184,6 +193,9 @@ void DMP_EKF_Controller::initDemo()
   Yd_data = p;
   dYd_data = dp;
   ddYd_data = ddp;
+
+  q_start = robot->getJointPosition();
+  is_q_start_set = true;
 }
 
 void DMP_EKF_Controller::logDemoData()
@@ -215,16 +227,15 @@ void DMP_EKF_Controller::clearDemoData()
   ddYd_data.clear();
 }
 
-void DMP_EKF_Controller::train()
+bool DMP_EKF_Controller::train(std::string &err_msg)
 {
   start_train_flag = false;
 
-  // std::cout << "========================================================\n";
-	// std::cout << "Timed: (" << Timed.n_rows << " x " << Timed.n_cols << ")\n";
-	// std::cout << "Yd_data: (" << Yd_data.n_rows << " x " << Yd_data.n_cols << ")\n";
-	// std::cout << "dYd_data: (" << dYd_data.n_rows << " x " << dYd_data.n_cols << ")\n";
-	// std::cout << "ddYd_data: (" << ddYd_data.n_rows << " x " << ddYd_data.n_cols << ")\n";
-	// std::cout << "========================================================\n";
+  if (Timed.size() == 0)
+  {
+    err_msg = "Error training model: The training data are empty...";
+    return false;
+  }
 
   int dim = Yd_data.n_rows;
   dmp.resize(dim);
@@ -233,25 +244,36 @@ void DMP_EKF_Controller::train()
     dmp[i].reset(new as64_::DMP(N_kernels, a_z, b_z, can_clock_ptr, shape_attr_gating_ptr));
     dmp[i]->train(train_method, Timed, Yd_data.row(i), dYd_data.row(i), ddYd_data.row(i));
   }
+  is_trained = true;
 
   int n_data = Yd_data.n_cols;
   g_d = Yd_data.col(n_data-1);
   tau_d = Timed(n_data-1);
+
+  return true;
 }
 
-bool DMP_EKF_Controller::saveTrainedModel()
+bool DMP_EKF_Controller::saveTrainedModel(std::string &err_msg)
 {
-  std::string model_data_file = ros::package::getPath(PACKAGE_NAME)+ "/data/mode_data.bin";
+  if (!is_trained)
+  {
+    err_msg = "Error saving the model:\nThe model hasn't been trained...";
+    return false;
+  }
+
+  std::string data_file = ros::package::getPath(PACKAGE_NAME)+ "/data/model_data.bin";
   bool binary = true;
 
-  std::ofstream out(model_data_file.c_str(), std::ios::binary);
-  if (!out) return false; //throw std::ios_base::failure(std::string("Couldn't create file: \"") + model_data_file + "\"");
+  std::ofstream out(data_file.c_str(), std::ios::binary);
+  if (!out)
+  {
+    err_msg = "Error saving the model:\nCouldn't create file \"" + data_file + "\"...";
+    return false;
+  }
 
   write_mat(q_start, out, binary);
-  write_mat(Timed, out, binary);
-  write_mat(Yd_data, out, binary);
-  write_mat(dYd_data, out, binary);
-  write_mat(ddYd_data, out, binary);
+  write_mat(g_d, out, binary);
+  write_scalar((double)tau_d, out, binary);
 
   int dim = dmp.size();
   write_scalar((long)dim, out, binary);
@@ -270,58 +292,41 @@ bool DMP_EKF_Controller::saveTrainedModel()
   return true;
 }
 
-bool DMP_EKF_Controller::loadTrainedModel()
+bool DMP_EKF_Controller::loadTrainedModel(std::string &err_msg)
 {
-  std::string model_data_file = ros::package::getPath(PACKAGE_NAME)+ "/data/mode_data.bin";
+  std::string data_file = ros::package::getPath(PACKAGE_NAME)+ "/data/model_data.bin";
   bool binary = true;
 
-  std::ifstream in(model_data_file.c_str(), std::ios::binary);
-  if (!in) return false; //throw std::ios_base::failure(std::string("Couldn't open file: \"") + model_data_file + "\"");
+  std::ifstream in(data_file.c_str(), std::ios::binary);
+  if (!in)
+  {
+    err_msg = "Error loading the model:\nCouldn't open file: \"" + data_file + "\"";
+    return false;
+  }
 
   read_mat(q_start, in, binary);
-  read_mat(Timed, in, binary);
-  read_mat(Yd_data, in, binary);
-  read_mat(dYd_data, in, binary);
-  read_mat(ddYd_data, in, binary);
-
-  int n_data = Yd_data.n_cols;
-  g_d = Yd_data.col(n_data-1);
-  tau_d = Timed(n_data-1);
-
-  // std::cout << "========================================================\n";
-	// std::cout << "q_start: (" << q_start.n_rows << " x " << q_start.n_cols << ")\n";
-	// std::cout << "Timed: (" << Timed.n_rows << " x " << Timed.n_cols << ")\n";
-	// std::cout << "Yd_data: (" << Yd_data.n_rows << " x " << Yd_data.n_cols << ")\n";
-	// std::cout << "dYd_data: (" << dYd_data.n_rows << " x " << dYd_data.n_cols << ")\n";
-  // std::cout << "ddYd_data: (" << ddYd_data.n_rows << " x " << ddYd_data.n_cols << ")\n";
+  read_mat(g_d, in, binary);
+  read_scalar(tau_d, in, binary);
 
   long dim;
   read_scalar(dim, in, binary);
-
-  // std::cout << "dim: " << dim << "\n";
-
   dmp.resize(dim);
   for (int i=0; i<dim; i++)
   {
     arma::vec dmp_params;
     read_mat(dmp_params, in, binary);
-
-    // std::cout << "dmp_params: (" << dmp_params.n_rows << " x " << dmp_params.n_cols << ")\n";
-
     int i_end = dmp_params.size()-1;
     int N_kernels = dmp_params(0);
     double a_z = dmp_params(1);
     double b_z = dmp_params(2);
-
-    // std::cout << "N_kernels: " << N_kernels << "\n";
-    // std::cout << "a_z: " << a_z << "\n";
-    // std::cout << "b_z: " << b_z << "\n";
 
     dmp[i].reset(new as64_::DMP(N_kernels, a_z, b_z, can_clock_ptr, shape_attr_gating_ptr));
     dmp[i]->w = dmp_params.subvec(3,i_end);
   }
 
   in.close();
+
+  is_trained = true;
 
   return true;
 }
@@ -330,9 +335,20 @@ void DMP_EKF_Controller::runModel()
 {
   initExecution();
 
+  arma::rowvec Time_data;
+  arma::mat Y_data;
+  arma::mat dY_data;
+  arma::mat ddY_data;
+
   while (true)
   {
+    if (this->robot->isOk() == false) break;
     this->robot->update();
+
+    Time_data = arma::join_horiz(Time_data, arma::mat({t}));
+    Y_data = arma::join_horiz(Y_data, Y);
+    dY_data = arma::join_horiz(dY_data, dY);
+    ddY_data = arma::join_horiz(ddY_data, ddY);
 
     int dim = dmp.size();
     for (int i=0; i<dim; i++)
@@ -358,5 +374,21 @@ void DMP_EKF_Controller::runModel()
     double err = arma::norm(Y-g_hat);
     if (err < 0.5e-3) break;
   }
+
+  std::string data_file = ros::package::getPath(PACKAGE_NAME)+ "/data/model_run_data.bin";
+  bool binary = true;
+
+  std::ofstream out(data_file.c_str(), std::ios::binary);
+  if (!out)
+  {
+    throw std::ios_base::failure(std::string("Error saving training model data:\nCouldn't create file: \"" + data_file + "\""));
+  }
+
+  write_mat(Time_data, out, binary);
+  write_mat(Y_data, out, binary);
+  write_mat(dY_data, out, binary);
+  write_mat(ddY_data, out, binary);
+
+  out.close();
 
 }

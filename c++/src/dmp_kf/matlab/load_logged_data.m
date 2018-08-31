@@ -30,6 +30,8 @@ Yd_data = read_mat(fid, binary);
 dYd_data = read_mat(fid, binary);
 ddYd_data = read_mat(fid, binary);
 
+fclose(fid);
+
 % Time_data = (0:(size(S_r_data,2)-1))*0.008;
 
 save('logged_data.mat', ...

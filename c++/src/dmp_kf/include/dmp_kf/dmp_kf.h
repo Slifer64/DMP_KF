@@ -62,7 +62,6 @@ private:
   void saveLogData();
   void clearLoggedData();
 
-  void saveCurrentPoseAsStartPose();
   void gotoStartPose();
 };
 

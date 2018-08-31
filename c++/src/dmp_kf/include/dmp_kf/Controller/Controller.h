@@ -17,17 +17,26 @@ public:
 
   virtual void initExecution() = 0;
   virtual void execute() = 0;
+  virtual void logExecData() = 0;
 
   virtual void initDemo() = 0;
   virtual void logDemoData() = 0;
-  virtual void train() = 0;
+  virtual bool train(std::string &err_msg) = 0;
 
-  virtual bool loadTrainedModel() = 0;
-  virtual bool saveTrainedModel() = 0;
+  virtual bool loadTrainedModel(std::string &err_msg) = 0;
+  virtual bool saveTrainedModel(std::string &err_msg) = 0;
+  bool saveTrainingData(std::string &err_msg);
+  bool loadTrainingData(std::string &err_msg);
 
   virtual void runModel() = 0;
+  void logSimData();
+
+  void setStartPose();
+
+  bool is_trained;
 
   arma::vec q_start; ///< starting pose
+  bool is_q_start_set;
 
   double t; // current timestamp during controller execution
   arma::vec Y, dY, ddY; // produced by the target impedance model
@@ -40,6 +49,8 @@ public:
 
   arma::rowvec Timed; // timestamps from demo
   arma::mat Yd_data, dYd_data, ddYd_data;
+  arma::vec g_d; // goal position from demo used for initializing g_hat
+  double tau_d; // time scale from demo used for initializing tau_hat
 
 protected:
 
