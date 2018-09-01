@@ -8,16 +8,20 @@
 
 #include <dmp_kf/utils.h>
 #include <dmp_kf/Robot/Robot.h>
+#include <dmp_kf/GUI/GUI.h>
+
+#include <dmp_kf/LogData.h>
 
 class Controller
 {
 public:
-  Controller(std::shared_ptr<Robot> &robot);
+
+  Controller(std::shared_ptr<Robot> &robot, const std::shared_ptr<GUI> gui);
   ~Controller();
 
   virtual void initExecution() = 0;
   virtual void execute() = 0;
-  virtual void logExecData() = 0;
+  bool saveExecutionData(std::string &err_msg);
 
   virtual void initDemo() = 0;
   virtual void logDemoData() = 0;
@@ -29,7 +33,7 @@ public:
   bool loadTrainingData(std::string &err_msg);
 
   virtual void runModel() = 0;
-  void logSimData();
+  bool saveModelRunData(std::string &err_msg);
 
   void setStartPose();
 
@@ -41,20 +45,24 @@ public:
   double t; // current timestamp during controller execution
   arma::vec Y, dY, ddY; // produced by the target impedance model
   arma::vec f_ext; // external Cartesian force
+  arma::vec f_ext_raw;
 
   arma::vec g_hat; // goal estimate
   double tau_hat; // time scale estimate
   arma::mat P_theta; // covariance of g_hat and tau_hat
   double mf; // leader-follower weight
 
-  arma::rowvec Timed; // timestamps from demo
-  arma::mat Yd_data, dYd_data, ddYd_data;
+  KinematicData modelRun_data;
+
+  KinematicData train_data;
   arma::vec g_d; // goal position from demo used for initializing g_hat
   double tau_d; // time scale from demo used for initializing tau_hat
 
+  ExecutionData exec_data;
 protected:
 
   std::shared_ptr<Robot> robot;
+  std::shared_ptr<const GUI> gui;
 };
 
 #endif // CONTROLLER_OL_2D_RUP_H

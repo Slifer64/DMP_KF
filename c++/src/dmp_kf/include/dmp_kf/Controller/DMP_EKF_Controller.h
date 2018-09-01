@@ -16,12 +16,11 @@
 class DMP_EKF_Controller: public Controller
 {
 public:
-  DMP_EKF_Controller(std::shared_ptr<Robot> &robot);
+  DMP_EKF_Controller(std::shared_ptr<Robot> &robot, const std::shared_ptr<GUI> gui);
   ~DMP_EKF_Controller() {}
 
   void initExecution();
   void execute();
-  void logExecData();
 
   void initDemo();
   void logDemoData();
@@ -38,7 +37,6 @@ private:
   bool startExecution();
 
   void readTrainingParams(const char *params_file = NULL);
-  void clearDemoData();
 
   // =========  model  =========
   std::vector<std::shared_ptr<as64_::DMP>> dmp;
@@ -62,9 +60,6 @@ private:
 
   // Training data for the DMP
   bool start_train_flag; // if true logTrainData() can start
-  double t_d; // current timestamp during demo recording
-  // arma::rowvec Timed; // timestamps from demo
-  // arma::mat Yd_data, dYd_data, ddYd_data;
   arma::vec p, p_prev, dp, dp_prev, ddp; // store current and previous positions and velocities for numerical diff
   // arma::vec g_d; // goal position from demo used for initializing g_hat
   // double tau_d; // time scale from demo used for initializing tau_hat

@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QPalette>
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -28,46 +30,27 @@ void MainWindow::init()
   this->setWindowTitle(QApplication::translate("Robot Control", "Robot Control", 0));
 
   std::string cmd_btn_style_sheet = "QCommandLinkButton {background-color: rgb(233, 185, 110);}";
-  ui->freedrive_mode_button->setStyleSheet(cmd_btn_style_sheet.c_str());
-  ui->freedrive_mode_button->style()->unpolish(ui->freedrive_mode_button);
-  ui->freedrive_mode_button->style()->polish(ui->freedrive_mode_button);
 
-  ui->pause_program_button->setStyleSheet(cmd_btn_style_sheet.c_str());
-  ui->pause_program_button->style()->unpolish(ui->pause_program_button);
-  ui->pause_program_button->style()->polish(ui->pause_program_button);
-
-  ui->stop_program_button->setStyleSheet(cmd_btn_style_sheet.c_str());
-  ui->stop_program_button->style()->unpolish(ui->stop_program_button);
-  ui->stop_program_button->style()->polish(ui->stop_program_button);
-
-  ui->run_controller_button->setStyleSheet(cmd_btn_style_sheet.c_str());
-  ui->run_controller_button->style()->unpolish(ui->run_controller_button);
-  ui->run_controller_button->style()->polish(ui->run_controller_button);
-
-  ui->save_logged_data_btn->setStyleSheet(cmd_btn_style_sheet.c_str());
-  ui->save_logged_data_btn->style()->unpolish(ui->save_logged_data_btn);
-  ui->save_logged_data_btn->style()->polish(ui->save_logged_data_btn);
-
-  ui->clear_logged_data_btn->setStyleSheet(cmd_btn_style_sheet.c_str());
-  ui->clear_logged_data_btn->style()->unpolish(ui->clear_logged_data_btn);
-  ui->clear_logged_data_btn->style()->polish(ui->clear_logged_data_btn);
-
-  ui->register_startPose_btn->setStyleSheet(cmd_btn_style_sheet.c_str());
-  ui->register_startPose_btn->style()->unpolish(ui->register_startPose_btn);
-  ui->register_startPose_btn->style()->polish(ui->register_startPose_btn);
-
-  ui->move_to_start_btn->setStyleSheet(cmd_btn_style_sheet.c_str());
-  ui->move_to_start_btn->style()->unpolish(ui->move_to_start_btn);
-  ui->move_to_start_btn->style()->polish(ui->move_to_start_btn);
+  setStyleSheet(ui->freedrive_mode_button, cmd_btn_style_sheet.c_str());
+  setStyleSheet(ui->pause_program_button, cmd_btn_style_sheet.c_str());
+  setStyleSheet(ui->pause_program_button, cmd_btn_style_sheet.c_str());
+  setStyleSheet(ui->pause_program_button, cmd_btn_style_sheet.c_str());
+  setStyleSheet(ui->pause_program_button, cmd_btn_style_sheet.c_str());
+  setStyleSheet(ui->pause_program_button, cmd_btn_style_sheet.c_str());
+  setStyleSheet(ui->pause_program_button, cmd_btn_style_sheet.c_str());
+  setStyleSheet(ui->pause_program_button, cmd_btn_style_sheet.c_str());
 
   state = Ui::ProgramState::PAUSE_PROGRAM;
 
   save_training_data = false;
   load_training_data = false;
 
-  save_logged_data = false;
-  clear_logged_data = false;
-  log_on_enable = false;
+  log_controller = false;
+  save_controller_data = false;
+
+  log_modelRun = false;
+  save_modelRun_data = false;
+
   startPose_registered = false;
   current_pose_as_start = false;
   goto_start_pose = false;
@@ -88,12 +71,32 @@ void MainWindow::init()
   ui->msg_label3->setWordWrap(true);
   ui->mode_msg->setWordWrap(true);
 
+  // setStyleSheet(ui->msg_label, "QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 12pt \"DejaVu Serif\"}");
+  // setStyleSheet(ui->msg_label2, "QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 12pt \"DejaVu Serif\"}");
+  // setStyleSheet(ui->msg_label3, "QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 12pt \"DejaVu Serif\"}");
+
   setMsg("", Ui::MSG_TYPE::INFO);
   setMsg("", Ui::MSG_TYPE::INFO);
   setMsg("", Ui::MSG_TYPE::INFO);
   setModeMsg("");
 
   receiveMsgs_thread = std::thread(&MainWindow::checkForReceivedMsgs, this);
+}
+
+void MainWindow::setStyleSheet(QAbstractButton *btn, const std::string &style_sheet)
+{
+  btn->setStyleSheet(style_sheet.c_str());
+  btn->style()->unpolish(btn);
+  btn->style()->polish(btn);
+  btn->update();
+}
+
+void MainWindow::setStyleSheet(QLabel *label, const QString &style_sheet)
+{
+  label->setStyleSheet(style_sheet);
+  label->style()->unpolish(label);
+  label->style()->polish(label);
+  label->update();
 }
 
 void MainWindow::setState(const Ui::ProgramState &new_state)
@@ -211,68 +214,37 @@ void MainWindow::on_register_startPose_btn_clicked()
   // setMsg("Registered current pose as start.", Ui::MSG_TYPE::INFO);
 }
 
-void MainWindow::on_save_logged_data_btn_clicked()
-{
-  std::unique_lock<std::mutex> lck(btn_click_mtx);
-  if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
-  {
-    setMsg("Cannot save the logged data.\nThe program must be paused...", Ui::MSG_TYPE::WARNING);
-  }
-  else
-  {
-    save_logged_data = true;
-    // PRINT_INFO_MSG("Saving logged data...");
-  }
-
-}
-
-void MainWindow::on_clear_logged_data_btn_clicked()
-{
-  std::unique_lock<std::mutex> lck(btn_click_mtx);
-
-  clear_logged_data = true;
-  //PRINT_INFO_MSG("Clearing logged data.");
-}
-
-
-void MainWindow::on_data_logging_checkbox_toggled(bool checked)
-{
-  std::unique_lock<std::mutex> lck(btn_click_mtx);
-
-  log_on_enable = checked;
-  std::string msg = (checked?"Enabled":"Disabled");
-  msg += " data logging.";
-  setMsg(msg.c_str(), Ui::MSG_TYPE::INFO);
-}
-
-
 void MainWindow::PRINT_INFO_MSG(const std::string &msg)
 {
-  // ui->msg_label->setStyleSheet("QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 12pt \"DejaVu Serif\"}");
-  // ui->msg_label->style()->unpolish(ui->msg_label);
-  // ui->msg_label->style()->polish(ui->msg_label);
+  // setStyleSheet(ui->msg_label, "QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 12pt \"DejaVu Serif\"}");
+  QPalette palette = ui->msg_label->palette();
+  palette.setColor(ui->msg_label->backgroundRole(), Qt::white);
+  palette.setColor(ui->msg_label->foregroundRole(), Qt::blue);
+  ui->msg_label->setPalette(palette);
 
-  // ui->msg_label->setText(("[INFO]: " + msg).c_str());
   ui->msg_label->setText(msg.c_str());
 }
 
 void MainWindow::PRINT_WARN_MSG(const std::string &msg)
 {
-  // ui->msg_label->setStyleSheet("QLabel { background-color : rgb(238, 238, 236); color : rgb(245, 121, 0); font: 75 12pt \"DejaVu Serif\"}");
-  // ui->msg_label->style()->unpolish(ui->msg_label);
-  // ui->msg_label->style()->polish(ui->msg_label);
+  // setStyleSheet(ui->msg_label, "QLabel { background-color : rgb(238, 238, 236); color : rgb(245, 121, 0); font: 75 12pt \"DejaVu Serif\"}");
+  QPalette palette = ui->msg_label->palette();
+  palette.setColor(ui->msg_label->backgroundRole(), Qt::white);
+  palette.setColor(ui->msg_label->foregroundRole(), Qt::red);
+  ui->msg_label->setPalette(palette);
 
-  // ui->msg_label->setText(("[WARNING]: " + msg).c_str());
   ui->msg_label->setText(msg.c_str());
 }
 
 void MainWindow::PRINT_ERR_MSG(const std::string &msg)
 {
-  // ui->msg_label->setStyleSheet("QLabel { background-color : rgb(238, 238, 236); color : red; font: 75 12pt \"DejaVu Serif\"}");
-  // ui->msg_label->style()->unpolish(ui->msg_label);
-  // ui->msg_label->style()->polish(ui->msg_label);
+  // setStyleSheet(ui->msg_label, "QLabel { background-color : rgb(238, 238, 236); color : red; font: 75 12pt \"DejaVu Serif\"}");
 
-  // ui->msg_label->setText(("[ERROR]: " + msg).c_str());
+  QPalette palette = ui->msg_label->palette();
+  palette.setColor(ui->msg_label->backgroundRole(), Qt::white);
+  palette.setColor(ui->msg_label->foregroundRole(), Qt::red);
+  ui->msg_label->setPalette(palette);
+
   ui->msg_label->setText(msg.c_str());
 }
 
@@ -280,14 +252,12 @@ void MainWindow::setMsg(const std::string &msg, Ui::MSG_TYPE msg_type)
 {
   std::unique_lock<std::mutex> lck(msg_mtx);
 
-  // ui->msg_label3->setStyleSheet(ui->msg_label2->styleSheet());
-  // ui->msg_label3->style()->unpolish(ui->msg_label3);
-  // ui->msg_label3->style()->polish(ui->msg_label3);
+  // setStyleSheet(ui->msg_label3, ui->msg_label2->styleSheet());
+  ui->msg_label3->setPalette(ui->msg_label2->palette());
   ui->msg_label3->setText(ui->msg_label2->text());
 
-  // ui->msg_label2->setStyleSheet(ui->msg_label->styleSheet());
-  // ui->msg_label2->style()->unpolish(ui->msg_label2);
-  // ui->msg_label2->style()->polish(ui->msg_label2);
+  // setStyleSheet(ui->msg_label2, ui->msg_label->styleSheet());
+  ui->msg_label2->setPalette(ui->msg_label->palette());
   ui->msg_label2->setText(ui->msg_label->text());
 
   switch (msg_type)
@@ -307,9 +277,7 @@ void MainWindow::setMsg(const std::string &msg, Ui::MSG_TYPE msg_type)
 void MainWindow::setModeMsg(const std::string &msg)
 {
   std::unique_lock<std::mutex> lck(mode_msg_mtx);
-  // ui->mode_msg->setStyleSheet("QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 13pt \"DejaVu Serif\"}");
-  // ui->mode_msg->style()->unpolish(ui->mode_msg);
-  // ui->mode_msg->style()->polish(ui->mode_msg);
+  // setStyleSheet(ui->mode_msg, "QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 13pt \"DejaVu Serif\"}");
   ui->mode_msg->setText(msg.c_str());
 }
 
@@ -393,7 +361,6 @@ void MainWindow::on_stop_demo_record_btn_clicked()
     }
 }
 
-
 void MainWindow::on_train_model_btn_clicked()
 {
     std::unique_lock<std::mutex> lck(btn_click_mtx);
@@ -472,5 +439,53 @@ void MainWindow::on_load_training_data_btn_clicked()
     else
     {
       load_training_data = true;
+    }
+}
+
+void MainWindow::on_controller_log_checkbox_toggled(bool checked)
+{
+    std::unique_lock<std::mutex> lck(btn_click_mtx);
+
+    log_controller = checked;
+    std::string msg = (checked?"Enabled":"Disabled");
+    msg += " model-run data logging.";
+    setMsg(msg.c_str(), Ui::MSG_TYPE::INFO);
+}
+
+void MainWindow::on_save_controller_data_btn_clicked()
+{
+    std::unique_lock<std::mutex> lck(btn_click_mtx);
+    if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
+    {
+      setMsg("Cannot save logged data.\nThe program must be paused...", Ui::MSG_TYPE::WARNING);
+    }
+    else
+    {
+      save_controller_data = true;
+      // PRINT_INFO_MSG("Saving logged data...");
+    }
+}
+
+void MainWindow::on_modelRun_log_checkbox_toggled(bool checked)
+{
+    std::unique_lock<std::mutex> lck(btn_click_mtx);
+
+    log_modelRun = checked;
+    std::string msg = (checked?"Enabled":"Disabled");
+    msg += " controller data logging.";
+    setMsg(msg.c_str(), Ui::MSG_TYPE::INFO);
+}
+
+void MainWindow::on_save_modelRun_data_btn_clicked()
+{
+    std::unique_lock<std::mutex> lck(btn_click_mtx);
+    if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
+    {
+      setMsg("Cannot save logged data.\nThe program must be paused...", Ui::MSG_TYPE::WARNING);
+    }
+    else
+    {
+      save_modelRun_data = true;
+      // PRINT_INFO_MSG("Saving logged data...");
     }
 }

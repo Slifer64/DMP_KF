@@ -3,7 +3,8 @@
 #include <ros/package.h>
 #include <io_lib/parser.h>
 
-DMP_EKF_Controller::DMP_EKF_Controller(std::shared_ptr<Robot> &robot):Controller(robot)
+DMP_EKF_Controller::DMP_EKF_Controller(std::shared_ptr<Robot> &robot, const std::shared_ptr<GUI> gui):
+Controller(robot, gui)
 {
   can_clock_ptr.reset(new as64_::CanonicalClock(1.0));
   shape_attr_gating_ptr.reset(new as64_::SigmoidGatingFunction(1.0, 0.95));
@@ -63,6 +64,8 @@ void DMP_EKF_Controller::initExecution()
 {
   readExecutionParams();
 
+  if (gui->logControllerData()) exec_data.clear();
+
   this->robot->update();
   arma::vec p = this->robot->getTaskPosition();
 
@@ -75,15 +78,15 @@ void DMP_EKF_Controller::initExecution()
   U_dmp.zeros(3);
   U_total.zeros(3);
   f_ext.zeros(3);
+  f_ext_raw.zeros(3);
 
   Y_ref.zeros(3);
   dY_ref.zeros(3);
   ddY_ref.zeros(3);
 
   // model variables
-  int i_end = Timed.size()-1;
-  g_d = Yd_data.col(i_end);
-  tau_d = Timed(i_end);
+  g_d = train_data.getFinalPoint();
+  tau_d = train_data.getTimeDuration();
 
   Y0 = p;
   g_hat = g_d;
@@ -116,11 +119,13 @@ void DMP_EKF_Controller::execute()
     return;
   }
 
+  if (gui->logControllerData()) exec_data.log(t, Y, dY, ddY, f_ext_raw,f_ext, mf, theta, P_theta);
+
   this->robot->update();
 
   // ========  leader-follower role  ========
-  arma::vec f_ext_new = (robot->getTaskWrench()).subvec(0,2);
-  f_ext = (1-a_force)*f_ext + a_force*f_ext_new;
+  f_ext_raw = (robot->getTaskWrench()).subvec(0,2);
+  f_ext = (1-a_force)*f_ext + a_force*f_ext_raw;
   mf = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
 
   // ========  KF estimation  ========
@@ -167,10 +172,6 @@ void DMP_EKF_Controller::execute()
   tau_hat = theta(3);
   P_theta = P_theta + P_dot*Ts;
   x_hat = t/tau_hat;
-}
-
-void DMP_EKF_Controller::logExecData()
-{
 
 }
 
@@ -178,21 +179,15 @@ void DMP_EKF_Controller::initDemo()
 {
   readTrainingParams();
 
-  Timed.clear();
-  Yd_data.clear();
-  dYd_data.clear();
-  ddYd_data.clear();
   dmp.clear();
 
-  t_d = 0;
+  t = 0;
   p = p_prev = robot->getTaskPosition();
   dp = dp_prev = arma::vec().zeros(3);
   ddp = arma::vec().zeros(3);
 
-  Timed = arma::mat({0});
-  Yd_data = p;
-  dYd_data = dp;
-  ddYd_data = ddp;
+  train_data.clear();
+  train_data.log(t, p, dp, ddp);
 
   q_start = robot->getJointPosition();
   is_q_start_set = true;
@@ -203,7 +198,7 @@ void DMP_EKF_Controller::logDemoData()
   this->robot->update();
 
   double Ts = robot->getControlCycle();
-  t_d = t_d + Ts;
+  t = t + Ts;
 
   p_prev = p;
   p = robot->getTaskPosition();
@@ -213,42 +208,30 @@ void DMP_EKF_Controller::logDemoData()
 
   ddp = (1-a_filt)*ddp + a_filt*(dp - dp_prev)/Ts;
 
-  Timed = arma::join_horiz(Timed, arma::mat({t_d}));
-  Yd_data = arma::join_horiz(Yd_data, p);
-  dYd_data = arma::join_horiz(dYd_data, dp);
-  ddYd_data = arma::join_horiz(ddYd_data, ddp);
-}
-
-void DMP_EKF_Controller::clearDemoData()
-{
-  Timed.clear();
-  Yd_data.clear();
-  dYd_data.clear();
-  ddYd_data.clear();
+  train_data.log(t, p, dp, ddp);
 }
 
 bool DMP_EKF_Controller::train(std::string &err_msg)
 {
   start_train_flag = false;
 
-  if (Timed.size() == 0)
+  if (train_data.isempty())
   {
     err_msg = "Error training model: The training data are empty...";
     return false;
   }
 
-  int dim = Yd_data.n_rows;
+  int dim = train_data.Y_data.n_rows;
   dmp.resize(dim);
   for (int i=0; i<dim; i++)
   {
     dmp[i].reset(new as64_::DMP(N_kernels, a_z, b_z, can_clock_ptr, shape_attr_gating_ptr));
-    dmp[i]->train(train_method, Timed, Yd_data.row(i), dYd_data.row(i), ddYd_data.row(i));
+    dmp[i]->train(train_method, train_data.Time, train_data.Y_data.row(i), train_data.dY_data.row(i), train_data.ddY_data.row(i));
   }
   is_trained = true;
 
-  int n_data = Yd_data.n_cols;
-  g_d = Yd_data.col(n_data-1);
-  tau_d = Timed(n_data-1);
+  g_d = train_data.getFinalPoint();
+  tau_d = train_data.getTimeDuration();
 
   return true;
 }
@@ -333,22 +316,27 @@ bool DMP_EKF_Controller::loadTrainedModel(std::string &err_msg)
 
 void DMP_EKF_Controller::runModel()
 {
-  initExecution();
+  this->robot->update();
+  arma::vec p = this->robot->getTaskPosition();
 
-  arma::rowvec Time_data;
-  arma::mat Y_data;
-  arma::mat dY_data;
-  arma::mat ddY_data;
+  Y = p;
+  dY.zeros(3);
+  ddY.zeros(3);
+  Y0 = p;
+  g_hat = train_data.getFinalPoint();
+  tau_hat = train_data.getTimeDuration();
+  t = 0.0;
+  x_hat = t/tau_hat;
+  can_clock_ptr->setTau(tau_hat);
+
+  if (gui->logModelRunData()) modelRun_data.clear();
 
   while (true)
   {
     if (this->robot->isOk() == false) break;
     this->robot->update();
 
-    Time_data = arma::join_horiz(Time_data, arma::mat({t}));
-    Y_data = arma::join_horiz(Y_data, Y);
-    dY_data = arma::join_horiz(dY_data, dY);
-    ddY_data = arma::join_horiz(ddY_data, ddY);
+    if (gui->logModelRunData()) modelRun_data.log(t, Y, dY, ddY);
 
     int dim = dmp.size();
     for (int i=0; i<dim; i++)
@@ -375,20 +363,20 @@ void DMP_EKF_Controller::runModel()
     if (err < 0.5e-3) break;
   }
 
-  std::string data_file = ros::package::getPath(PACKAGE_NAME)+ "/data/model_run_data.bin";
-  bool binary = true;
-
-  std::ofstream out(data_file.c_str(), std::ios::binary);
-  if (!out)
-  {
-    throw std::ios_base::failure(std::string("Error saving training model data:\nCouldn't create file: \"" + data_file + "\""));
-  }
-
-  write_mat(Time_data, out, binary);
-  write_mat(Y_data, out, binary);
-  write_mat(dY_data, out, binary);
-  write_mat(ddY_data, out, binary);
-
-  out.close();
+  // std::string data_file = ros::package::getPath(PACKAGE_NAME)+ "/data/model_run_data.bin";
+  // bool binary = true;
+  //
+  // std::ofstream out(data_file.c_str(), std::ios::binary);
+  // if (!out)
+  // {
+  //   throw std::ios_base::failure(std::string("Error saving training model data:\nCouldn't create file: \"" + data_file + "\""));
+  // }
+  //
+  // write_mat(Time_data, out, binary);
+  // write_mat(Y_data, out, binary);
+  // write_mat(dY_data, out, binary);
+  // write_mat(ddY_data, out, binary);
+  //
+  // out.close();
 
 }

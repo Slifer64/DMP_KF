@@ -18,9 +18,9 @@ dmp_kf::dmp_kf()
   else if (!robot_type.compare("ur10")) robot.reset(new UR10_Robot());
   else if (!robot_type.compare("robot_sim")) robot.reset(new Sim_Robot());
 
-  controller.reset(new DMP_EKF_Controller(robot));
   gui.reset(new GUI());
-  log_data.reset(new LogData(robot, controller));
+  controller.reset(new DMP_EKF_Controller(robot, gui));
+
 }
 
 dmp_kf::~dmp_kf()
@@ -28,20 +28,12 @@ dmp_kf::~dmp_kf()
   this->finalize();
 }
 
-void dmp_kf::init()
+void dmp_kf::execute()
 {
   robot->init();
   robot->setMode(Robot::Mode::IDLE_MODE);
-  //gui->init();
-  log_data->init();
-}
-
-void dmp_kf::execute()
-{
-  init();
 
   bool exit_program = false;
-  std::string err_msg;
 
   robot->update();
 
@@ -70,7 +62,7 @@ void dmp_kf::execute()
           gui->printMsg("Initialized! Controller is running...",Ui::MSG_TYPE::INFO);
         }
         controller->execute();
-        if (gui->logOnEnable()) log_data->log();
+        //if (gui->logOnEnable()) log_data->log();
         break;
 
       case Ui::ProgramState::FREEDRIVE_MODE:
@@ -106,9 +98,21 @@ void dmp_kf::execute()
           gui->printMsg("Mode changed to idle!",Ui::MSG_TYPE::INFO);
         }
 
-        if (gui->saveLoggedData()) this->saveLogData();
-
         if (gui->gotoStartPose()) this->gotoStartPose();
+
+        if (gui->saveModelRunData())
+        {
+          if (controller->saveModelRunData(err_msg)) gui->printMsg("Saved model-run data successfully!",Ui::MSG_TYPE::INFO);
+          else gui->printMsg(err_msg.c_str(),Ui::MSG_TYPE::WARNING);
+          gui->resetSaveModelRunData();
+        }
+
+        if (gui->saveControllerData())
+        {
+          if (controller->saveExecutionData(err_msg)) gui->printMsg("Saved execution data successfully!",Ui::MSG_TYPE::INFO);
+          else gui->printMsg(err_msg.c_str(),Ui::MSG_TYPE::WARNING);
+          gui->resetSaveControllerData();
+        }
 
         if (gui->saveTrainedModel())
         {
@@ -177,9 +181,6 @@ void dmp_kf::execute()
       gui->resetCurrentPoseAsStart(); // reset gui flag
     }
 
-    if (gui->clearLoggedData()) this->clearLoggedData();
-
-
     robot->update();
   }
 
@@ -192,39 +193,27 @@ void dmp_kf::finalize()
 
 void dmp_kf::saveLogDataThreadFun()
 {
-  log_data->save();
+  //log_data->save();
   save_logData_finished = true;
 }
 
 void dmp_kf::saveLogData()
 {
-  PRINT_INFO_MSG("Saving logged data...\n");
-  gui->printMsg("Saving logged data...\n", Ui::MSG_TYPE::INFO);
-
-  save_logData_finished = false;
-  save_logData_thread.reset(new std::thread(&dmp_kf::saveLogDataThreadFun, this));
-  while (!save_logData_finished) // wait for logging thread to set 'log_data_finished'
-  {
-    robot->update();
-    robot->command();
-  }
-  if (save_logData_thread->joinable()) save_logData_thread->join();
-  gui->resetSaveLoggedData(); // reset gui flag
-
-  PRINT_INFO_MSG("Saved logged data!\n");
-  gui->printMsg("Saved logged data!\n", Ui::MSG_TYPE::INFO);
-}
-
-void dmp_kf::clearLoggedData()
-{
-  PRINT_INFO_MSG("Clearing logged data...\n");
-  gui->printMsg("Clearing logged data...\n", Ui::MSG_TYPE::INFO);
-
-  log_data->clear();
-  gui->resetClearLoggedData(); // reset gui flag
-
-  PRINT_INFO_MSG("Cleared logged data!\n");
-  gui->printMsg("Cleared logged data!\n", Ui::MSG_TYPE::INFO);
+  // PRINT_INFO_MSG("Saving logged data...\n");
+  // gui->printMsg("Saving logged data...\n", Ui::MSG_TYPE::INFO);
+  //
+  // save_logData_finished = false;
+  // save_logData_thread.reset(new std::thread(&dmp_kf::saveLogDataThreadFun, this));
+  // while (!save_logData_finished) // wait for logging thread to set 'log_data_finished'
+  // {
+  //   robot->update();
+  //   robot->command();
+  // }
+  // if (save_logData_thread->joinable()) save_logData_thread->join();
+  // gui->resetSaveLoggedData(); // reset gui flag
+  //
+  // PRINT_INFO_MSG("Saved logged data!\n");
+  // gui->printMsg("Saved logged data!\n", Ui::MSG_TYPE::INFO);
 }
 
 void dmp_kf::gotoStartPose()

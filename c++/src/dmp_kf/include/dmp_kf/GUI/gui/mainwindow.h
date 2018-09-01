@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QAbstractButton>
+#include <QLabel>
+#include <QString>
 #include <cstdlib>
 #include <vector>
 #include <thread>
@@ -55,10 +58,11 @@ public:
     bool train_model;
     bool model_trained;
 
-    bool log_on_enable;
+    bool log_controller;
+    bool save_controller_data;
 
-    bool save_logged_data;
-    bool clear_logged_data;
+    bool log_modelRun;
+    bool save_modelRun_data;
 
     bool goto_start_pose;
     bool current_pose_as_start;
@@ -84,10 +88,6 @@ private slots:
     void on_move_to_start_btn_clicked();
     void on_register_startPose_btn_clicked();
 
-    void on_save_logged_data_btn_clicked();
-    void on_data_logging_checkbox_toggled(bool checked);
-    void on_clear_logged_data_btn_clicked();
-
     void on_record_demo_clicked();
 
     void on_train_model_btn_clicked();
@@ -106,6 +106,14 @@ private slots:
 
     void on_stop_demo_record_btn_clicked();
 
+    void on_controller_log_checkbox_toggled(bool checked);
+
+    void on_save_controller_data_btn_clicked();
+
+    void on_modelRun_log_checkbox_toggled(bool checked);
+
+    void on_save_modelRun_data_btn_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -119,6 +127,9 @@ private:
     std::string receiv_msg;
     Ui::MSG_TYPE receiv_msg_type;
     std::condition_variable msg_receiv_cond;
+
+    void setStyleSheet(QAbstractButton *btn, const std::string &style_sheet);
+    void setStyleSheet(QLabel *label, const QString &style_sheet);
 
     void PRINT_INFO_MSG(const std::string &msg);
     void PRINT_WARN_MSG(const std::string &msg);

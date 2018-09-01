@@ -31,7 +31,7 @@
 #include <dmp_kf/utils.h>
 
 #include <dmp_kf/GUI/GUI.h>
-#include <dmp_kf/LogData.h>
+//#include <dmp_kf/LogData.h>
 #include <dmp_kf/Robot/Robot.h>
 #include <dmp_kf/Controller/Controller.h>
 
@@ -43,16 +43,16 @@ public:
   dmp_kf();
   ~dmp_kf();
 
-  void init();
   void execute();
   void finalize();
 
 private:
 
+  std::string err_msg;
+
   ros::NodeHandle n;
 
   std::shared_ptr<GUI> gui;
-  std::shared_ptr<LogData> log_data;
   std::shared_ptr<Robot> robot;
   std::shared_ptr<Controller> controller;
 
@@ -60,7 +60,6 @@ private:
   std::shared_ptr<std::thread> save_logData_thread;
   void saveLogDataThreadFun();
   void saveLogData();
-  void clearLoggedData();
 
   void gotoStartPose();
 };

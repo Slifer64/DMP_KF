@@ -22,19 +22,19 @@ public:
   void init();
   int guiThread();
 
-  bool logOnEnable() const { return gui_obj->log_on_enable; }
-
   bool recordDemo() const { return gui_obj->record_demo; }
   void resetRecordDemo() { gui_obj->record_demo = false; }
 
   bool trainModel() const { return gui_obj->train_model; }
   bool resetTrainModel() { gui_obj->train_model = false; }
 
-  bool saveLoggedData() const { return gui_obj->save_logged_data; }
-  void resetSaveLoggedData() { gui_obj->save_logged_data = false; }
+  bool saveControllerData() const { return gui_obj->save_controller_data; }
+  void resetSaveControllerData() { gui_obj->save_controller_data = false; }
+  bool logControllerData() const { return gui_obj->log_controller; }
 
-  bool clearLoggedData() const { return gui_obj->clear_logged_data; }
-  void resetClearLoggedData() { gui_obj->clear_logged_data = false; }
+  bool saveModelRunData() const { return gui_obj->save_modelRun_data; }
+  void resetSaveModelRunData() { gui_obj->save_modelRun_data = false; }
+  bool logModelRunData() const { return gui_obj->log_modelRun; }
 
   bool gotoStartPose() const { return gui_obj->goto_start_pose; }
   void resetGotoStartPose() { gui_obj->goto_start_pose = false; }

@@ -1,9 +1,10 @@
 #include <dmp_kf/Controller/Controller.h>
 #include <ros/package.h>
 
-Controller::Controller(std::shared_ptr<Robot> &robot)
+Controller::Controller(std::shared_ptr<Robot> &robot, const std::shared_ptr<GUI> gui)
 {
   this->robot = robot;
+  this->gui = gui;
   is_trained = false;
   is_q_start_set = false;
 }
@@ -25,9 +26,10 @@ bool Controller::saveTrainingData(std::string &err_msg)
     return false;
   }
 
-  if (Timed.size() == 0)
+  if (train_data.isempty())
   {
     err_msg = std::string("Error saving training data:\nNo training data were recorded...");
+    remove(data_file.c_str());
     return false;
   }
 
@@ -38,10 +40,10 @@ bool Controller::saveTrainingData(std::string &err_msg)
   }
 
   write_mat(q_start, out, binary);
-  write_mat(Timed, out, binary);
-  write_mat(Yd_data, out, binary);
-  write_mat(dYd_data, out, binary);
-  write_mat(ddYd_data, out, binary);
+  write_mat(train_data.Time, out, binary);
+  write_mat(train_data.Y_data, out, binary);
+  write_mat(train_data.dY_data, out, binary);
+  write_mat(train_data.ddY_data, out, binary);
 
   out.close();
 
@@ -61,14 +63,13 @@ bool Controller::loadTrainingData(std::string &err_msg)
   }
 
   read_mat(q_start, in, binary);
-  read_mat(Timed, in, binary);
-  read_mat(Yd_data, in, binary);
-  read_mat(dYd_data, in, binary);
-  read_mat(ddYd_data, in, binary);
+  read_mat(train_data.Time, in, binary);
+  read_mat(train_data.Y_data, in, binary);
+  read_mat(train_data.dY_data, in, binary);
+  read_mat(train_data.ddY_data, in, binary);
 
-  int n_data = Yd_data.n_cols;
-  g_d = Yd_data.col(n_data-1);
-  tau_d = Timed(n_data-1);
+  g_d = train_data.getFinalPoint();
+  tau_d = train_data.getTimeDuration();
 
   in.close();
 
@@ -80,4 +81,30 @@ void Controller::setStartPose()
   robot->update();
   q_start = robot->getJointPosition();
   is_q_start_set = true;
+}
+
+bool Controller::saveExecutionData(std::string &err_msg)
+{
+  if (exec_data.isempty())
+  {
+    err_msg = "Error saving execution data: The data are empty...";
+    return false;
+  }
+
+  std::string file_name = "execution_data.bin";
+
+  return exec_data.save(file_name, err_msg);
+}
+
+bool Controller::saveModelRunData(std::string &err_msg)
+{
+  if (modelRun_data.isempty())
+  {
+    err_msg = "Error saving model-run data: The data are empty...";
+    return false;
+  }
+
+  std::string file_name = "model_run_data.bin";
+
+  return modelRun_data.save(file_name, err_msg);
 }
