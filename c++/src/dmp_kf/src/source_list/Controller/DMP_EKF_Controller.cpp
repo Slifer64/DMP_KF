@@ -85,8 +85,8 @@ void DMP_EKF_Controller::initExecution()
   ddY_ref.zeros(3);
 
   // model variables
-  g_d = train_data.getFinalPoint();
-  tau_d = train_data.getTimeDuration();
+  g_d = g_d;
+  tau_d = tau_d;
 
   Y0 = p;
   g_hat = g_d;
@@ -148,17 +148,21 @@ void DMP_EKF_Controller::execute()
 
   U_total = mf*U_dmp + (1-mf)*(ff_gains%f_ext);
 
-  ddY = ( - D%dY - K%Y + U_total) / M;
+  ddY = ( - D%dY + U_total) / M;
 
   arma::vec Y_robot = this->robot->getTaskPosition();
   arma::vec V_cmd = arma::vec().zeros(6);
   V_cmd.subvec(0,2) = dY + k_click*(Y-Y_robot);
   robot->setTaskVelocity(V_cmd);
-
   // ========  KF update  ========
   arma::mat K_kf = P_theta*dC_dtheta.t()*inv_R_v;
   arma::vec theta_dot = K_kf * (ddY - ddY_ref);
   arma::mat P_dot = Q_w - K_kf*dC_dtheta*P_theta + 2*a_p*P_theta;
+
+  // std::cout << "f_ext = " << f_ext.t() << "\n";
+  // std::cout << "Y_robot = " << Y_robot.t() << "\n";
+  // std::cout << "V_cmd = " << V_cmd.t() << "\n";
+  // std::cout << "dY-ddY_ref = " << (dY-ddY_ref).t() << "\n";
 
   // ========  numerical integration  ========
   double Ts = robot->getControlCycle();
@@ -177,10 +181,6 @@ void DMP_EKF_Controller::execute()
 
 void DMP_EKF_Controller::initDemo()
 {
-  readTrainingParams();
-
-  dmp.clear();
-
   t = 0;
   p = p_prev = robot->getTaskPosition();
   dp = dp_prev = arma::vec().zeros(3);
@@ -189,8 +189,7 @@ void DMP_EKF_Controller::initDemo()
   train_data.clear();
   train_data.log(t, p, dp, ddp);
 
-  q_start = robot->getJointPosition();
-  is_q_start_set = true;
+  setStartPose();
 }
 
 void DMP_EKF_Controller::logDemoData()
@@ -213,6 +212,9 @@ void DMP_EKF_Controller::logDemoData()
 
 bool DMP_EKF_Controller::train(std::string &err_msg)
 {
+  dmp.clear();
+  readTrainingParams();
+
   start_train_flag = false;
 
   if (train_data.isempty())
@@ -323,8 +325,8 @@ void DMP_EKF_Controller::runModel()
   dY.zeros(3);
   ddY.zeros(3);
   Y0 = p;
-  g_hat = train_data.getFinalPoint();
-  tau_hat = train_data.getTimeDuration();
+  g_hat = g_d;
+  tau_hat = tau_d;
   t = 0.0;
   x_hat = t/tau_hat;
   can_clock_ptr->setTau(tau_hat);

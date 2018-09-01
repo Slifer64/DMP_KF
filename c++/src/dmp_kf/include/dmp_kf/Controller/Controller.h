@@ -40,7 +40,6 @@ public:
   bool is_trained;
 
   arma::vec q_start; ///< starting pose
-  bool is_q_start_set;
 
   double t; // current timestamp during controller execution
   arma::vec Y, dY, ddY; // produced by the target impedance model

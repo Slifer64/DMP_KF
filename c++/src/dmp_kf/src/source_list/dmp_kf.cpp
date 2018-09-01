@@ -54,9 +54,10 @@ void dmp_kf::execute()
       case Ui::ProgramState::RUN_CONTROLLER:
         if (robot->getMode() != Robot::Mode::VELOCITY_CONTROL)
         {
+          gui->printMsg("Entering RUN_CONTROLLER mode...",Ui::MSG_TYPE::INFO);
           robot->setMode(Robot::Mode::VELOCITY_CONTROL);
           gui->printModeMsg("== MODE: RUN_CONTROLLER ==");
-          gui->printMsg("Mode changed to velocity control.",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Mode changed to RUN_CONTROLLER!",Ui::MSG_TYPE::SUCCESS);
           gui->printMsg("Initializing controller...",Ui::MSG_TYPE::INFO);
           controller->initExecution();
           gui->printMsg("Initialized! Controller is running...",Ui::MSG_TYPE::INFO);
@@ -68,10 +69,10 @@ void dmp_kf::execute()
       case Ui::ProgramState::FREEDRIVE_MODE:
         if (robot->getMode() != Robot::Mode::FREEDRIVE_MODE)
         {
-          gui->printMsg("Entering freedrive mode...",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Entering FREEDRIVE mode...",Ui::MSG_TYPE::INFO);
           robot->setMode(Robot::Mode::FREEDRIVE_MODE);
           gui->printModeMsg("== MODE: FREEDRIVE ==");
-          gui->printMsg("Mode changed to freedrive!",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Mode changed to FREEDRIVE!",Ui::MSG_TYPE::SUCCESS);
         }
         break;
 
@@ -82,7 +83,7 @@ void dmp_kf::execute()
           robot->setMode(Robot::Mode::FREEDRIVE_MODE);
           controller->initDemo();
           gui->printModeMsg("== MODE: DEMO_RECORDING ==");
-          gui->printMsg("Mode changed to DEMO_RECORDING!",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Mode changed to DEMO_RECORDING!",Ui::MSG_TYPE::SUCCESS);
           gui->printMsg("Registered current pose as start.", Ui::MSG_TYPE::INFO);
         }
         if (gui->recordDemo()) controller->logDemoData();
@@ -92,38 +93,42 @@ void dmp_kf::execute()
 
         if (robot->getMode() != Robot::Mode::IDLE_MODE)
         {
-          gui->printMsg("Entering idle mode...",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Entering IDLE mode...",Ui::MSG_TYPE::INFO);
           robot->setMode(Robot::Mode::IDLE_MODE);
           gui->printModeMsg("== MODE: IDLE ==");
-          gui->printMsg("Mode changed to idle!",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Mode changed to IDLE!",Ui::MSG_TYPE::SUCCESS);
         }
 
         if (gui->gotoStartPose()) this->gotoStartPose();
 
         if (gui->saveModelRunData())
         {
-          if (controller->saveModelRunData(err_msg)) gui->printMsg("Saved model-run data successfully!",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Saving model run data...",Ui::MSG_TYPE::INFO);
+          if (controller->saveModelRunData(err_msg)) gui->printMsg("Saved model-run data successfully!",Ui::MSG_TYPE::SUCCESS);
           else gui->printMsg(err_msg.c_str(),Ui::MSG_TYPE::WARNING);
           gui->resetSaveModelRunData();
         }
 
         if (gui->saveControllerData())
         {
-          if (controller->saveExecutionData(err_msg)) gui->printMsg("Saved execution data successfully!",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Saving execution data...",Ui::MSG_TYPE::INFO);
+          if (controller->saveExecutionData(err_msg)) gui->printMsg("Saved execution data successfully!",Ui::MSG_TYPE::SUCCESS);
           else gui->printMsg(err_msg.c_str(),Ui::MSG_TYPE::WARNING);
           gui->resetSaveControllerData();
         }
 
         if (gui->saveTrainedModel())
         {
-          if (controller->saveTrainedModel(err_msg)) gui->printMsg("Trained model saved successfully!",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Saving trained model...",Ui::MSG_TYPE::INFO);
+          if (controller->saveTrainedModel(err_msg)) gui->printMsg("Trained model saved successfully!",Ui::MSG_TYPE::SUCCESS);
           else gui->printMsg(err_msg.c_str() ,Ui::MSG_TYPE::WARNING);
           gui->resetSaveTrainedModel();
         }
 
         if (gui->loadTrainedModel())
         {
-          if (controller->loadTrainedModel(err_msg)) gui->printMsg("Trained model loaded successfully!",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Loading trained model...",Ui::MSG_TYPE::INFO);
+          if (controller->loadTrainedModel(err_msg)) gui->printMsg("Trained model loaded successfully!",Ui::MSG_TYPE::SUCCESS);
           else gui->printMsg(err_msg.c_str() ,Ui::MSG_TYPE::WARNING);
           gui->resetLoadTrainedModel();
         }
@@ -134,14 +139,14 @@ void dmp_kf::execute()
           robot->setMode(Robot::Mode::VELOCITY_CONTROL);
           controller->runModel();
           robot->setMode(Robot::Mode::IDLE_MODE);
-          gui->printMsg("Finished running trained model!",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Finished running trained model!",Ui::MSG_TYPE::SUCCESS);
           gui->resetRunTrainedModel();
         }
 
         if (gui->saveTrainingData())
         {
           gui->printMsg("Saving training data...",Ui::MSG_TYPE::INFO);
-          if (controller->saveTrainingData(err_msg)) gui->printMsg("Training data saved successfully!",Ui::MSG_TYPE::INFO);
+          if (controller->saveTrainingData(err_msg)) gui->printMsg("Training data saved successfully!",Ui::MSG_TYPE::SUCCESS);
           else gui->printMsg(err_msg.c_str(),Ui::MSG_TYPE::WARNING);
           gui->resetSaveTrainingData();
         }
@@ -149,7 +154,7 @@ void dmp_kf::execute()
         if (gui->loadTrainingData())
         {
           gui->printMsg("Loading training data...",Ui::MSG_TYPE::INFO);
-          if (controller->loadTrainingData(err_msg)) gui->printMsg("Loaded training data successfully!",Ui::MSG_TYPE::INFO);
+          if (controller->loadTrainingData(err_msg)) gui->printMsg("Loaded training data successfully!",Ui::MSG_TYPE::SUCCESS);
           else gui->printMsg(err_msg.c_str(), Ui::MSG_TYPE::WARNING);
           gui->resetLoadTrainingData();
         }
@@ -157,7 +162,7 @@ void dmp_kf::execute()
         if (gui->trainModel())
         {
           gui->printMsg("Started training...",Ui::MSG_TYPE::INFO);
-          if (controller->train(err_msg)) gui->printMsg("Finished training!",Ui::MSG_TYPE::INFO);
+          if (controller->train(err_msg)) gui->printMsg("Finished training!",Ui::MSG_TYPE::SUCCESS);
           else gui->printMsg(err_msg,Ui::MSG_TYPE::WARNING);
           gui->resetTrainModel();
         }
@@ -168,7 +173,7 @@ void dmp_kf::execute()
         gui->printMsg("Terminating program...",Ui::MSG_TYPE::INFO);
         robot->setMode(Robot::Mode::IDLE_MODE);
         gui->printModeMsg("== MODE: STOP ==");
-        gui->printMsg("The program terminated!",Ui::MSG_TYPE::INFO);
+        gui->printMsg("The program terminated!",Ui::MSG_TYPE::SUCCESS);
         exit_program = true;
         raise(SIGINT);
         break;
@@ -177,7 +182,7 @@ void dmp_kf::execute()
     if (gui->currentPoseAsStart())
     {
       controller->setStartPose();
-      gui->printMsg("Registered current pose as start.", Ui::MSG_TYPE::INFO);
+      gui->printMsg("Registered current pose as start!", Ui::MSG_TYPE::SUCCESS);
       gui->resetCurrentPoseAsStart(); // reset gui flag
     }
 
@@ -233,7 +238,7 @@ void dmp_kf::gotoStartPose()
   if (arma::norm(q_current-controller->q_start) < 5e-3)
   {
     PRINT_CONFIRM_MSG("Reached start pose!\n");
-    gui->printMsg("Reached start pose!", Ui::MSG_TYPE::INFO);
+    gui->printMsg("Reached start pose!", Ui::MSG_TYPE::SUCCESS);
   }
   else
   {

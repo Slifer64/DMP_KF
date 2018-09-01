@@ -5,6 +5,9 @@
 #include <QAbstractButton>
 #include <QLabel>
 #include <QString>
+#include <QColor>
+#include <QPalette>
+#include <QFont>
 #include <cstdlib>
 #include <vector>
 #include <thread>
@@ -28,7 +31,8 @@ enum MSG_TYPE
 {
   INFO,
   WARNING,
-  ERROR
+  ERROR,
+  SUCCESS
 };
 
 class MainWindow;
@@ -66,7 +70,6 @@ public:
 
     bool goto_start_pose;
     bool current_pose_as_start;
-    bool startPose_registered; ///< true if a starting pose has been registered
 
     std::vector<std::string> stateName;
 
@@ -131,9 +134,15 @@ private:
     void setStyleSheet(QAbstractButton *btn, const std::string &style_sheet);
     void setStyleSheet(QLabel *label, const QString &style_sheet);
 
+    QColor info_color, warn_color, err_color, success_color;
+    QColor label_bg_clolor;
+    QFont msg_label_font;
+    QFont mode_label_font;
+
     void PRINT_INFO_MSG(const std::string &msg);
     void PRINT_WARN_MSG(const std::string &msg);
     void PRINT_ERR_MSG(const std::string &msg);
+    void PRINT_SUCCESS_MSG(const std::string &msg);
 
 };
 

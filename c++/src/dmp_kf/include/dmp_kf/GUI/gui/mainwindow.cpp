@@ -1,8 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QPalette>
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -15,6 +13,17 @@ MainWindow::MainWindow(QWidget *parent) :
   stateName[2] = "PAUSE_PROGRAM";
   stateName[3] = "STOP_PROGRAM";
   stateName[4] = "DEMO_RECORDING";
+
+  info_color = QColor(0, 0, 255); // blue
+  warn_color = QColor(200, 100, 0); // yellow-orange
+  err_color = QColor(255, 0, 0); // red
+  success_color = QColor(0, 125, 0); // green
+  label_bg_clolor = QColor(238, 238, 236);
+
+  msg_label_font = QFont("DejaVu Serif", 14);
+
+  mode_label_font = QFont("DejaVu Serif", 16);
+  mode_label_font.setBold(true);
 
   init();
 }
@@ -51,7 +60,6 @@ void MainWindow::init()
   log_modelRun = false;
   save_modelRun_data = false;
 
-  startPose_registered = false;
   current_pose_as_start = false;
   goto_start_pose = false;
 
@@ -67,13 +75,25 @@ void MainWindow::init()
   run_trained_model = false;
 
   ui->msg_label->setWordWrap(true);
-  ui->msg_label2->setWordWrap(true);
-  ui->msg_label3->setWordWrap(true);
-  ui->mode_msg->setWordWrap(true);
+  ui->msg_label->setAutoFillBackground(true);
+  ui->msg_label->setFont(msg_label_font);
 
-  // setStyleSheet(ui->msg_label, "QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 12pt \"DejaVu Serif\"}");
-  // setStyleSheet(ui->msg_label2, "QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 12pt \"DejaVu Serif\"}");
-  // setStyleSheet(ui->msg_label3, "QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 12pt \"DejaVu Serif\"}");
+  ui->msg_label2->setWordWrap(true);
+  ui->msg_label2->setAutoFillBackground(true);
+  ui->msg_label2->setFont(msg_label_font);
+
+  ui->msg_label3->setWordWrap(true);
+  ui->msg_label3->setAutoFillBackground(true);
+  ui->msg_label3->setFont(msg_label_font);
+
+  ui->mode_msg->setWordWrap(true);
+  ui->mode_msg->setAutoFillBackground(true);
+  ui->mode_msg->setFont(mode_label_font);
+
+  setStyleSheet(ui->mode_msg, "QLabel { background-color : rgb(238, 238, 236)}");
+  setStyleSheet(ui->msg_label, "QLabel { background-color : rgb(238, 238, 236)}"); //; color : blue; font: 75 12pt \"DejaVu Serif\"}");
+  setStyleSheet(ui->msg_label2, "QLabel { background-color : rgb(238, 238, 236)}"); //; color : blue; font: 75 12pt \"DejaVu Serif\"}");
+  setStyleSheet(ui->msg_label3, "QLabel { background-color : rgb(238, 238, 236)}"); //; color : blue; font: 75 12pt \"DejaVu Serif\"}");
 
   setMsg("", Ui::MSG_TYPE::INFO);
   setMsg("", Ui::MSG_TYPE::INFO);
@@ -193,10 +213,6 @@ void MainWindow::on_move_to_start_btn_clicked()
   {
     setMsg("The program must be paused\nto go to start pose...", Ui::MSG_TYPE::WARNING);
   }
-  else if (!startPose_registered)
-  {
-    setMsg("No start pose has been registered...", Ui::MSG_TYPE::WARNING);
-  }
   else
   {
     goto_start_pose = true;
@@ -209,7 +225,6 @@ void MainWindow::on_register_startPose_btn_clicked()
   std::unique_lock<std::mutex> lck(btn_click_mtx);
 
   current_pose_as_start = true;
-  startPose_registered = true;
 
   // setMsg("Registered current pose as start.", Ui::MSG_TYPE::INFO);
 }
@@ -218,8 +233,8 @@ void MainWindow::PRINT_INFO_MSG(const std::string &msg)
 {
   // setStyleSheet(ui->msg_label, "QLabel { background-color : rgb(238, 238, 236); color : blue; font: 75 12pt \"DejaVu Serif\"}");
   QPalette palette = ui->msg_label->palette();
-  palette.setColor(ui->msg_label->backgroundRole(), Qt::white);
-  palette.setColor(ui->msg_label->foregroundRole(), Qt::blue);
+  // palette.setColor(ui->msg_label->backgroundRole(), label_bg_clolor);
+  palette.setColor(ui->msg_label->foregroundRole(), info_color);
   ui->msg_label->setPalette(palette);
 
   ui->msg_label->setText(msg.c_str());
@@ -229,8 +244,8 @@ void MainWindow::PRINT_WARN_MSG(const std::string &msg)
 {
   // setStyleSheet(ui->msg_label, "QLabel { background-color : rgb(238, 238, 236); color : rgb(245, 121, 0); font: 75 12pt \"DejaVu Serif\"}");
   QPalette palette = ui->msg_label->palette();
-  palette.setColor(ui->msg_label->backgroundRole(), Qt::white);
-  palette.setColor(ui->msg_label->foregroundRole(), Qt::red);
+  // palette.setColor(ui->msg_label->backgroundRole(), label_bg_clolor);
+  palette.setColor(ui->msg_label->foregroundRole(), warn_color);
   ui->msg_label->setPalette(palette);
 
   ui->msg_label->setText(msg.c_str());
@@ -241,8 +256,20 @@ void MainWindow::PRINT_ERR_MSG(const std::string &msg)
   // setStyleSheet(ui->msg_label, "QLabel { background-color : rgb(238, 238, 236); color : red; font: 75 12pt \"DejaVu Serif\"}");
 
   QPalette palette = ui->msg_label->palette();
-  palette.setColor(ui->msg_label->backgroundRole(), Qt::white);
-  palette.setColor(ui->msg_label->foregroundRole(), Qt::red);
+  // palette.setColor(ui->msg_label->backgroundRole(), label_bg_clolor);
+  palette.setColor(ui->msg_label->foregroundRole(), err_color);
+  ui->msg_label->setPalette(palette);
+
+  ui->msg_label->setText(msg.c_str());
+}
+
+void MainWindow::PRINT_SUCCESS_MSG(const std::string &msg)
+{
+  // setStyleSheet(ui->msg_label, "QLabel { background-color : rgb(238, 238, 236); color : red; font: 75 12pt \"DejaVu Serif\"}");
+
+  QPalette palette = ui->msg_label->palette();
+  // palette.setColor(ui->msg_label->backgroundRole(), label_bg_clolor);
+  palette.setColor(ui->msg_label->foregroundRole(), success_color);
   ui->msg_label->setPalette(palette);
 
   ui->msg_label->setText(msg.c_str());
@@ -270,6 +297,9 @@ void MainWindow::setMsg(const std::string &msg, Ui::MSG_TYPE msg_type)
       break;
     case Ui::MSG_TYPE::ERROR:
       PRINT_ERR_MSG(msg.c_str());
+      break;
+    case Ui::MSG_TYPE::SUCCESS:
+      PRINT_SUCCESS_MSG(msg.c_str());
       break;
   }
 }
@@ -301,6 +331,9 @@ void MainWindow::checkForReceivedMsgs()
       case Ui::MSG_TYPE::ERROR:
         PRINT_ERR_MSG(receiv_msg.c_str());
         break;
+      case Ui::MSG_TYPE::SUCCESS:
+        PRINT_SUCCESS_MSG(receiv_msg.c_str());
+        break;
     }
   }
 }
@@ -327,7 +360,6 @@ void MainWindow::on_record_demo_clicked()
     else
     {
       setState(Ui::ProgramState::DEMO_RECORDING);
-      startPose_registered = true;
     }
 }
 
@@ -398,7 +430,6 @@ void MainWindow::on_load_trained_model_btn_clicked()
     {
       load_trained_model = true;
       model_trained = true;
-      startPose_registered = true;
     }
 }
 
@@ -448,7 +479,7 @@ void MainWindow::on_controller_log_checkbox_toggled(bool checked)
 
     log_controller = checked;
     std::string msg = (checked?"Enabled":"Disabled");
-    msg += " model-run data logging.";
+    msg += " controller data logging.";
     setMsg(msg.c_str(), Ui::MSG_TYPE::INFO);
 }
 
@@ -472,7 +503,7 @@ void MainWindow::on_modelRun_log_checkbox_toggled(bool checked)
 
     log_modelRun = checked;
     std::string msg = (checked?"Enabled":"Disabled");
-    msg += " controller data logging.";
+    msg += " model run data logging.";
     setMsg(msg.c_str(), Ui::MSG_TYPE::INFO);
 }
 

@@ -6,7 +6,8 @@ Controller::Controller(std::shared_ptr<Robot> &robot, const std::shared_ptr<GUI>
   this->robot = robot;
   this->gui = gui;
   is_trained = false;
-  is_q_start_set = false;
+
+  setStartPose();
 }
 
 Controller::~Controller()
@@ -30,12 +31,6 @@ bool Controller::saveTrainingData(std::string &err_msg)
   {
     err_msg = std::string("Error saving training data:\nNo training data were recorded...");
     remove(data_file.c_str());
-    return false;
-  }
-
-  if (!is_q_start_set)
-  {
-    err_msg = std::string("Error saving training data:\nNo starting pose has been registered...");
     return false;
   }
 
@@ -80,7 +75,6 @@ void Controller::setStartPose()
 {
   robot->update();
   q_start = robot->getJointPosition();
-  is_q_start_set = true;
 }
 
 bool Controller::saveExecutionData(std::string &err_msg)
