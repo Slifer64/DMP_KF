@@ -124,7 +124,7 @@ void DMP_EKF_Controller::execute()
 
   if (gui->logControllerData()) exec_data.log(t, Y, dY, ddY, f_ext_raw, f_ext, mf, theta, P_theta);
 
-  this->robot->update();
+  // this->robot->update();
 
   // ========  leader-follower role  ========
   f_ext_raw = (robot->getTaskWrench()).subvec(0,2);
@@ -297,7 +297,7 @@ void DMP_EKF_Controller::initDemo()
 
 void DMP_EKF_Controller::logDemoData()
 {
-  this->robot->update();
+  //this->robot->update();
 
   double Ts = robot->getControlCycle();
   t = t + Ts;
@@ -306,9 +306,11 @@ void DMP_EKF_Controller::logDemoData()
   p = robot->getTaskPosition();
 
   dp_prev = dp;
-  dp = (1-a_filt)*dp + a_filt*(p - p_prev)/Ts;
+  // dp = (1-a_filt)*dp + a_filt*(p - p_prev)/Ts;
+  dp = (p - p_prev)/Ts;
 
-  ddp = (1-a_filt)*ddp + a_filt*(dp - dp_prev)/Ts;
+  // ddp = (1-a_filt)*ddp + a_filt*(dp - dp_prev)/Ts;
+  ddp = (dp - dp_prev)/Ts;
 
   train_data.log(t, p, dp, ddp);
 }

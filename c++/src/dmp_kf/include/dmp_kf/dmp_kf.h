@@ -44,7 +44,6 @@ public:
   ~dmp_kf();
 
   void execute();
-  void finalize();
 
 private:
 
@@ -55,11 +54,6 @@ private:
   std::shared_ptr<GUI> gui;
   std::shared_ptr<Robot> robot;
   std::shared_ptr<Controller> controller;
-
-  bool save_logData_finished;
-  std::shared_ptr<std::thread> save_logData_thread;
-  void saveLogDataThreadFun();
-  void saveLogData();
 
   void gotoStartPose();
 };

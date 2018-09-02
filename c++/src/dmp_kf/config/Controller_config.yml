@@ -14,7 +14,7 @@ Q_W: [0.1; 0.1; 0.1; 0.1]
 a_p: 0.0
 
 # DMP goal and time scaling
-g_scale: [0.9; 0.9; 0.85]
+g_scale: [1.1; 1.2; 0.9]
 tau_scale: 1.4
 
 # starting conditions for controller run
@@ -26,8 +26,8 @@ K: [250; 250; 250.0]
 D: [50.0; 50.0; 50.0] #2*sqrt(M.*K)
 k_click: 0.5
 ff_gains: [1.0; 1.0; 1.0] # feedforward gains for the target impedance model
-a_force: 0.1 # iir 1st order filter coeff for filtering force measurements
+a_force: 0.001 # iir 1st order filter coeff for filtering force measurements
 
 # leader-follower sigmoid function params  1 / ( 1 + exp(a_m*(norm(F)-c_m)) )
 a_m: 9.0
-c_m: 1.2
+c_m: 3.0

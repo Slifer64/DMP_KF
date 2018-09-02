@@ -24,9 +24,7 @@ dmp_kf::dmp_kf()
 }
 
 dmp_kf::~dmp_kf()
-{
-  this->finalize();
-}
+{}
 
 void dmp_kf::execute()
 {
@@ -219,36 +217,6 @@ void dmp_kf::execute()
     robot->update();
   }
 
-}
-
-void dmp_kf::finalize()
-{
-  if (save_logData_thread->joinable()) save_logData_thread->join();
-}
-
-void dmp_kf::saveLogDataThreadFun()
-{
-  //log_data->save();
-  save_logData_finished = true;
-}
-
-void dmp_kf::saveLogData()
-{
-  // PRINT_INFO_MSG("Saving logged data...\n");
-  // gui->printMsg("Saving logged data...\n", Ui::MSG_TYPE::INFO);
-  //
-  // save_logData_finished = false;
-  // save_logData_thread.reset(new std::thread(&dmp_kf::saveLogDataThreadFun, this));
-  // while (!save_logData_finished) // wait for logging thread to set 'log_data_finished'
-  // {
-  //   robot->update();
-  //   robot->command();
-  // }
-  // if (save_logData_thread->joinable()) save_logData_thread->join();
-  // gui->resetSaveLoggedData(); // reset gui flag
-  //
-  // PRINT_INFO_MSG("Saved logged data!\n");
-  // gui->printMsg("Saved logged data!\n", Ui::MSG_TYPE::INFO);
 }
 
 void dmp_kf::gotoStartPose()

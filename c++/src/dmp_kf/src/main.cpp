@@ -31,8 +31,6 @@ int main(int argc, char** argv)
 
   std::cout << "[MAIN]: Exited loop...\n";
 
-  controller->finalize();
-
   ROS_INFO_STREAM("dmp_kf node is going down.");
 
   // Shutdown ROS node
