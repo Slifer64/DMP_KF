@@ -179,6 +179,57 @@ void DMP_EKF_Controller::execute()
 
 }
 
+void DMP_EKF_Controller::simulate()
+{
+  this->robot->update();
+  arma::vec p = this->robot->getTaskPosition();
+
+  Y = p;
+  dY.zeros(3);
+  ddY.zeros(3);
+  Y0 = p;
+  g_hat = g_d;
+  tau_hat = tau_d;
+  t = 0.0;
+  x_hat = t/tau_hat;
+  can_clock_ptr->setTau(tau_hat);
+
+  if (gui->logModelRunData()) modelRun_data.clear();
+
+  while (true)
+  {
+    if (this->robot->isOk() == false) break;
+    this->robot->update();
+
+    if (gui->logModelRunData()) modelRun_data.log(t, Y, dY, ddY);
+
+    int dim = dmp.size();
+    for (int i=0; i<dim; i++)
+    {
+      double y_c=0, z_c=0;
+      ddY(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, x_hat, g_hat(i), tau_hat);
+    }
+
+    arma::vec Y_robot = this->robot->getTaskPosition();
+    arma::vec V_cmd = arma::vec().zeros(6);
+    V_cmd.subvec(0,2) = dY + k_click*(Y-Y_robot);
+    robot->setTaskVelocity(V_cmd);
+    robot->command();
+
+    // ========  numerical integration  ========
+    double Ts = robot->getControlCycle();
+
+    t = t + Ts;
+    Y = Y + dY*Ts;
+    dY = dY + ddY*Ts;
+    x_hat = t/tau_hat;
+
+    double err = arma::norm(Y-g_hat);
+    if (err < 0.5e-3) break;
+  }
+
+}
+
 void DMP_EKF_Controller::initDemo()
 {
   t = 0;
@@ -364,21 +415,5 @@ void DMP_EKF_Controller::runModel()
     double err = arma::norm(Y-g_hat);
     if (err < 0.5e-3) break;
   }
-
-  // std::string data_file = ros::package::getPath(PACKAGE_NAME)+ "/data/model_run_data.bin";
-  // bool binary = true;
-  //
-  // std::ofstream out(data_file.c_str(), std::ios::binary);
-  // if (!out)
-  // {
-  //   throw std::ios_base::failure(std::string("Error saving training model data:\nCouldn't create file: \"" + data_file + "\""));
-  // }
-  //
-  // write_mat(Time_data, out, binary);
-  // write_mat(Y_data, out, binary);
-  // write_mat(dY_data, out, binary);
-  // write_mat(ddY_data, out, binary);
-  //
-  // out.close();
 
 }

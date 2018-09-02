@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>645</width>
-    <height>739</height>
+    <height>755</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,7 +21,7 @@
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>330</y>
+      <y>350</y>
       <width>391</width>
       <height>41</height>
      </rect>
@@ -37,7 +37,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>100</y>
+      <y>110</y>
       <width>141</width>
       <height>31</height>
      </rect>
@@ -49,7 +49,7 @@
    <widget class="QCommandLinkButton" name="pause_program_button">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>430</x>
       <y>0</y>
       <width>151</width>
       <height>31</height>
@@ -79,7 +79,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>130</y>
+      <y>140</y>
       <width>141</width>
       <height>26</height>
      </rect>
@@ -92,7 +92,7 @@
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>460</y>
+      <y>480</y>
       <width>451</width>
       <height>101</height>
      </rect>
@@ -124,7 +124,7 @@
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>380</y>
+      <y>400</y>
       <width>451</width>
       <height>81</height>
      </rect>
@@ -137,7 +137,7 @@
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>560</y>
+      <y>580</y>
       <width>451</width>
       <height>101</height>
      </rect>
@@ -149,8 +149,8 @@
    <widget class="QCommandLinkButton" name="record_demo">
     <property name="geometry">
      <rect>
-      <x>190</x>
-      <y>10</y>
+      <x>230</x>
+      <y>0</y>
       <width>131</width>
       <height>31</height>
      </rect>
@@ -162,8 +162,8 @@
    <widget class="QPushButton" name="stop_demo_record_btn">
     <property name="geometry">
      <rect>
-      <x>230</x>
-      <y>80</y>
+      <x>270</x>
+      <y>70</y>
       <width>61</width>
       <height>21</height>
      </rect>
@@ -175,8 +175,8 @@
    <widget class="QPushButton" name="start_demo_record_btn">
     <property name="geometry">
      <rect>
-      <x>230</x>
-      <y>50</y>
+      <x>270</x>
+      <y>40</y>
       <width>61</width>
       <height>21</height>
      </rect>
@@ -188,7 +188,7 @@
    <widget class="QPushButton" name="save_trained_model_btn">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>430</x>
       <y>40</y>
       <width>161</width>
       <height>27</height>
@@ -201,7 +201,7 @@
    <widget class="QPushButton" name="load_trained_model_btn">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>430</x>
       <y>80</y>
       <width>161</width>
       <height>27</height>
@@ -215,7 +215,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>160</y>
+      <y>170</y>
       <width>161</width>
       <height>27</height>
      </rect>
@@ -227,7 +227,7 @@
    <widget class="QPushButton" name="move_to_start_btn">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>430</x>
       <y>260</y>
       <width>161</width>
       <height>27</height>
@@ -240,7 +240,7 @@
    <widget class="QPushButton" name="register_startPose_btn">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>430</x>
       <y>300</y>
       <width>161</width>
       <height>27</height>
@@ -266,7 +266,7 @@
    <widget class="QPushButton" name="save_training_data_btn">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>430</x>
       <y>120</y>
       <width>161</width>
       <height>27</height>
@@ -279,7 +279,7 @@
    <widget class="QPushButton" name="load_training_data_btn">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>430</x>
       <y>160</y>
       <width>161</width>
       <height>27</height>
@@ -292,7 +292,7 @@
    <widget class="QPushButton" name="train_model_btn">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>430</x>
       <y>200</y>
       <width>161</width>
       <height>27</height>
@@ -328,6 +328,45 @@
      <string>save_logged_data</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="save_sim_data_btn">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>170</y>
+      <width>161</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>save_logged_data</string>
+    </property>
+   </widget>
+   <widget class="QCommandLinkButton" name="sim_controller_button">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>110</y>
+      <width>141</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Sim Controller</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="sim_log_checkbox">
+    <property name="geometry">
+     <rect>
+      <x>230</x>
+      <y>140</y>
+      <width>141</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Data logging</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -335,7 +374,7 @@
      <x>0</x>
      <y>0</y>
      <width>645</width>
-     <height>22</height>
+     <height>29</height>
     </rect>
    </property>
   </widget>

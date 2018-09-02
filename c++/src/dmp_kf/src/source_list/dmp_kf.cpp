@@ -117,6 +117,14 @@ void dmp_kf::execute()
           gui->resetSaveControllerData();
         }
 
+        if (gui->saveSimulationData())
+        {
+          gui->printMsg("Saving simulation data...",Ui::MSG_TYPE::INFO);
+          if (controller->saveSimulationData(err_msg)) gui->printMsg("Saved simulation data successfully!",Ui::MSG_TYPE::SUCCESS);
+          else gui->printMsg(err_msg.c_str(),Ui::MSG_TYPE::WARNING);
+          gui->resetSaveSimulationData();
+        }
+
         if (gui->saveTrainedModel())
         {
           gui->printMsg("Saving trained model...",Ui::MSG_TYPE::INFO);
@@ -131,6 +139,16 @@ void dmp_kf::execute()
           if (controller->loadTrainedModel(err_msg)) gui->printMsg("Trained model loaded successfully!",Ui::MSG_TYPE::SUCCESS);
           else gui->printMsg(err_msg.c_str() ,Ui::MSG_TYPE::WARNING);
           gui->resetLoadTrainedModel();
+        }
+
+        if (gui->runSimulation())
+        {
+          gui->printMsg("Running contoller simulation...",Ui::MSG_TYPE::INFO);
+          robot->setMode(Robot::Mode::VELOCITY_CONTROL);
+          controller->simulate();
+          robot->setMode(Robot::Mode::IDLE_MODE);
+          gui->printMsg("Finished controller simulation!",Ui::MSG_TYPE::SUCCESS);
+          gui->resetRunSimulation();
         }
 
         if (gui->runTrainedModel())

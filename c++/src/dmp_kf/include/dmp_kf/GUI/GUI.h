@@ -28,6 +28,12 @@ public:
   bool trainModel() const { return gui_obj->train_model; }
   bool resetTrainModel() { gui_obj->train_model = false; }
 
+  bool runSimulation() const { return gui_obj->run_sim; }
+  void resetRunSimulation() { gui_obj->run_sim = false; }
+  bool saveSimulationData() const { return gui_obj->save_sim_data; }
+  void resetSaveSimulationData() { gui_obj->save_sim_data = false; }
+  bool logSimulationData() const { return gui_obj->log_sim; }
+
   bool saveControllerData() const { return gui_obj->save_controller_data; }
   void resetSaveControllerData() { gui_obj->save_controller_data = false; }
   bool logControllerData() const { return gui_obj->log_controller; }

@@ -51,6 +51,10 @@ void MainWindow::init()
 
   state = Ui::ProgramState::PAUSE_PROGRAM;
 
+  run_sim = false;
+  log_sim = false;
+  save_sim_data = false;
+
   save_training_data = false;
   load_training_data = false;
 
@@ -355,7 +359,7 @@ void MainWindow::on_record_demo_clicked()
 
     if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
     {
-      setMsg("The program must be paused\nto enter DEMO recording state...", Ui::MSG_TYPE::WARNING);
+      setMsg("The program must be paused\nto enter DEMO_RECORDING state...", Ui::MSG_TYPE::WARNING);
     }
     else
     {
@@ -488,7 +492,7 @@ void MainWindow::on_save_controller_data_btn_clicked()
     std::unique_lock<std::mutex> lck(btn_click_mtx);
     if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
     {
-      setMsg("Cannot save logged data.\nThe program must be paused...", Ui::MSG_TYPE::WARNING);
+      setMsg("Cannot save execution data.\nThe program must be paused...", Ui::MSG_TYPE::WARNING);
     }
     else
     {
@@ -512,11 +516,52 @@ void MainWindow::on_save_modelRun_data_btn_clicked()
     std::unique_lock<std::mutex> lck(btn_click_mtx);
     if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
     {
-      setMsg("Cannot save logged data.\nThe program must be paused...", Ui::MSG_TYPE::WARNING);
+      setMsg("Cannot save model-run data.\nThe program must be paused...", Ui::MSG_TYPE::WARNING);
     }
     else
     {
       save_modelRun_data = true;
       // PRINT_INFO_MSG("Saving logged data...");
+    }
+}
+
+void MainWindow::on_sim_log_checkbox_toggled(bool checked)
+{
+    std::unique_lock<std::mutex> lck(btn_click_mtx);
+
+    log_sim = checked;
+    std::string msg = (checked?"Enabled":"Disabled");
+    msg += " simulation data logging.";
+    setMsg(msg.c_str(), Ui::MSG_TYPE::INFO);
+}
+
+void MainWindow::on_save_sim_data_btn_clicked()
+{
+    std::unique_lock<std::mutex> lck(btn_click_mtx);
+    if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
+    {
+      setMsg("Cannot save simulation data.\nThe program must be paused...", Ui::MSG_TYPE::WARNING);
+    }
+    else
+    {
+      save_sim_data = true;
+    }
+}
+
+void MainWindow::on_sim_controller_button_clicked()
+{
+    std::unique_lock<std::mutex> lck(btn_click_mtx);
+
+    if (getState() != Ui::ProgramState::PAUSE_PROGRAM)
+    {
+      setMsg("The program must be paused\nto start simulating the controller...", Ui::MSG_TYPE::WARNING);
+    }
+    else if (model_trained == false)
+    {
+      setMsg("There is no trained model to run...", Ui::MSG_TYPE::WARNING);
+    }
+    else
+    {
+      run_sim = true;
     }
 }

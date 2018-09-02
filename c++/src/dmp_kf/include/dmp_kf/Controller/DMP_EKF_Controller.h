@@ -22,6 +22,8 @@ public:
   void initExecution();
   void execute();
 
+  void simulate();
+
   void initDemo();
   void logDemoData();
   bool train(std::string &err_msg);

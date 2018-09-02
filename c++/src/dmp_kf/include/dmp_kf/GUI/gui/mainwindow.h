@@ -62,6 +62,10 @@ public:
     bool train_model;
     bool model_trained;
 
+    bool run_sim;
+    bool log_sim;
+    bool save_sim_data;
+
     bool log_controller;
     bool save_controller_data;
 
@@ -116,6 +120,12 @@ private slots:
     void on_modelRun_log_checkbox_toggled(bool checked);
 
     void on_save_modelRun_data_btn_clicked();
+
+    void on_sim_log_checkbox_toggled(bool checked);
+
+    void on_save_sim_data_btn_clicked();
+
+    void on_sim_controller_button_clicked();
 
 private:
     Ui::MainWindow *ui;

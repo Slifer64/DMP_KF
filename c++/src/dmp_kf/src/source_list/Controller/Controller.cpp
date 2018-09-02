@@ -90,6 +90,19 @@ bool Controller::saveExecutionData(std::string &err_msg)
   return exec_data.save(file_name, err_msg);
 }
 
+bool Controller::saveSimulationData(std::string &err_msg)
+{
+  if (sim_data.isempty())
+  {
+    err_msg = "Error saving simulation data: The data are empty...";
+    return false;
+  }
+
+  std::string file_name = "simulation_data.bin";
+
+  return sim_data.save(file_name, err_msg);
+}
+
 bool Controller::saveModelRunData(std::string &err_msg)
 {
   if (modelRun_data.isempty())

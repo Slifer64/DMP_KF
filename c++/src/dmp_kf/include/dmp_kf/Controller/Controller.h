@@ -23,6 +23,9 @@ public:
   virtual void execute() = 0;
   bool saveExecutionData(std::string &err_msg);
 
+  virtual void simulate() = 0;
+  bool saveSimulationData(std::string &err_msg);
+
   virtual void initDemo() = 0;
   virtual void logDemoData() = 0;
   virtual bool train(std::string &err_msg) = 0;
@@ -58,6 +61,10 @@ public:
   double tau_d; // time scale from demo used for initializing tau_hat
 
   ExecutionData exec_data;
+
+  arma::vec g_scale;
+  double tau_scale;
+  ExecutionData sim_data;
 protected:
 
   std::shared_ptr<Robot> robot;
