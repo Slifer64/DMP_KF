@@ -22,7 +22,7 @@ public:
   void initExecution();
   void execute();
 
-  void simulate();
+  bool simulate();
 
   void initDemo();
   void logDemoData();
@@ -31,11 +31,11 @@ public:
   bool loadTrainedModel(std::string &err_msg);
   bool saveTrainedModel(std::string &err_msg);
 
-  void runModel();
+  bool runModel();
 
 private:
 
-  void readExecutionParams(const char *params_file = NULL);
+  void readControllerParams(const char *params_file = NULL);
   bool startExecution();
 
   void readTrainingParams(const char *params_file = NULL);

@@ -145,9 +145,15 @@ void dmp_kf::execute()
         {
           gui->printMsg("Running contoller simulation...",Ui::MSG_TYPE::INFO);
           robot->setMode(Robot::Mode::VELOCITY_CONTROL);
-          controller->simulate();
-          robot->setMode(Robot::Mode::IDLE_MODE);
-          gui->printMsg("Finished controller simulation!",Ui::MSG_TYPE::SUCCESS);
+          if (controller->simulate())
+          {
+            robot->setMode(Robot::Mode::IDLE_MODE);
+            gui->printMsg("Finished controller simulation!",Ui::MSG_TYPE::SUCCESS);
+          }
+          else
+          {
+            gui->printMsg("Error during controller simulation...",Ui::MSG_TYPE::ERROR);
+          }
           gui->resetRunSimulation();
         }
 
@@ -155,9 +161,15 @@ void dmp_kf::execute()
         {
           gui->printMsg("Running trained model...",Ui::MSG_TYPE::INFO);
           robot->setMode(Robot::Mode::VELOCITY_CONTROL);
-          controller->runModel();
-          robot->setMode(Robot::Mode::IDLE_MODE);
-          gui->printMsg("Finished running trained model!",Ui::MSG_TYPE::SUCCESS);
+          if (controller->runModel())
+          {
+            robot->setMode(Robot::Mode::IDLE_MODE);
+            gui->printMsg("Finished running trained model!",Ui::MSG_TYPE::SUCCESS);
+          }
+          else
+          {
+            gui->printMsg("Error during model simulation...",Ui::MSG_TYPE::ERROR);
+          }
           gui->resetRunTrainedModel();
         }
 

@@ -1,5 +1,0 @@
-# =====  Simulation params  ======
-
-# DMP goal and time scaling
-g_scale: [1.0; 1.0; 1.0]
-tau_scale: 1.0

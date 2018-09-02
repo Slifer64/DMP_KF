@@ -23,7 +23,7 @@ public:
   virtual void execute() = 0;
   bool saveExecutionData(std::string &err_msg);
 
-  virtual void simulate() = 0;
+  virtual bool simulate() = 0;
   bool saveSimulationData(std::string &err_msg);
 
   virtual void initDemo() = 0;
@@ -35,7 +35,7 @@ public:
   bool saveTrainingData(std::string &err_msg);
   bool loadTrainingData(std::string &err_msg);
 
-  virtual void runModel() = 0;
+  virtual bool runModel() = 0;
   bool saveModelRunData(std::string &err_msg);
 
   void setStartPose();
