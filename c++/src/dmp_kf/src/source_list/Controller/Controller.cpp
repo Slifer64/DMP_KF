@@ -1,11 +1,12 @@
 #include <dmp_kf/Controller/Controller.h>
 #include <ros/package.h>
 
-Controller::Controller(std::shared_ptr<Robot> &robot, const std::shared_ptr<GUI> gui)
+Controller::Controller(std::shared_ptr<Robot> &robot, std::shared_ptr<GUI> &gui)
 {
   this->robot = robot;
   this->gui = gui;
   is_trained = false;
+  err_msg = "";
 
   setStartPose();
 }

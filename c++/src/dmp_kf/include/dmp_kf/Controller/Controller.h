@@ -16,7 +16,7 @@ class Controller
 {
 public:
 
-  Controller(std::shared_ptr<Robot> &robot, const std::shared_ptr<GUI> gui);
+  Controller(std::shared_ptr<Robot> &robot, std::shared_ptr<GUI> &gui);
   ~Controller();
 
   virtual void initExecution() = 0;
@@ -39,6 +39,9 @@ public:
   bool saveModelRunData(std::string &err_msg);
 
   void setStartPose();
+
+  std::string getErrMsg() const { return err_msg; }
+  void setErrMsg(cosnt std::string &msg) { err_msg = msg; }
 
   bool is_trained;
 
@@ -67,8 +70,10 @@ public:
   ExecutionData sim_data;
 protected:
 
+  std::string err_msg;
+
   std::shared_ptr<Robot> robot;
-  std::shared_ptr<const GUI> gui;
+  std::shared_ptr<GUI> gui;
 };
 
 #endif // CONTROLLER_OL_2D_RUP_H

@@ -4,14 +4,15 @@ clear;
 
 set_matlab_utils_path();
 
-load('data/demo_data.mat','Data');
+% load('data/demo_data.mat','Data');
+load('data/training_data.mat','Data');
 
 N = length(Data);
 
 N_kernels = 30;
 a_z = 16;
 b_z = a_z/4;
-train_method = 'LS';
+train_method = 'LWR';
 dt = 0.005;
 
 can_clock_ptr = CanonicalClock();
@@ -34,7 +35,7 @@ for n=1:N
     dmp = cell(D,1);
     
     for i=1:D
-        shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.99);
+        shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.97);
 %         shapeAttrGatingPtr = LinGatingFunction(1.0, 0.0);
 %         shapeAttrGatingPtr = ExpGatingFunction(1.0, 0.05);
         dmp{i} = DMP(N_kernels, a_z, b_z, can_clock_ptr, shapeAttrGatingPtr);
@@ -161,7 +162,7 @@ for n=1:N
 
 end
 
-ax = cell(N,1);
+ax = cell(D,1);
 
 figure;
 for i=1:D

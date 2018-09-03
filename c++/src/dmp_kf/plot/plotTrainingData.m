@@ -15,10 +15,18 @@ y_data = read_mat(fid, binary);
 dy_data = read_mat(fid, binary);
 ddy_data = read_mat(fid, binary);
 
+% Data{1} = struct('Time',Time, 'Y',y_data, 'dY',dy_data, 'ddY',ddy_data);
+% save('training_data.mat','Data');
+
 fclose(fid);
 
 if (isempty(Time))
     error('The loaded data are empty %s\n', filename);
+end
+
+ddy = zeros(size(dy_data));
+for i=1:size(ddy,1)
+   ddy(i,2:end) = diff(dy_data(i,:))/0.002; 
 end
 
 D = size(y_data,1);

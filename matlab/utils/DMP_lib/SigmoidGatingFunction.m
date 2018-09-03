@@ -32,7 +32,7 @@ classdef SigmoidGatingFunction < handle
       %  @param[in] u_end: Final value of the gating function.
       function init(gating_fun, u0, u_end)
 
-          gating_fun.a_u = 750.0;
+          gating_fun.a_u = 700.0;
           gating_fun.u0 = u0;
           gating_fun.c = 1.0 - (1.0/gating_fun.a_u)*log((gating_fun.u0-u_end)/u_end);
 

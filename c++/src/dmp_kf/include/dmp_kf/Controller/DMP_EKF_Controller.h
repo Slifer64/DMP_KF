@@ -16,7 +16,7 @@
 class DMP_EKF_Controller: public Controller
 {
 public:
-  DMP_EKF_Controller(std::shared_ptr<Robot> &robot, const std::shared_ptr<GUI> gui);
+  DMP_EKF_Controller(std::shared_ptr<Robot> &robot, std::shared_ptr<GUI> &gui);
   ~DMP_EKF_Controller() {}
 
   void initExecution();

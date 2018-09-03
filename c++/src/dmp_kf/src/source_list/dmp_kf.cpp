@@ -160,14 +160,14 @@ void dmp_kf::execute()
           gui->printMsg("Running trained model...",Ui::MSG_TYPE::INFO);
           robot->setMode(Robot::Mode::VELOCITY_CONTROL);
           if (controller->runModel())
-          {
-            robot->setMode(Robot::Mode::IDLE_MODE);
+          {  
             gui->printMsg("Finished running trained model!",Ui::MSG_TYPE::SUCCESS);
           }
           else
           {
-            gui->printMsg("Error during model simulation...",Ui::MSG_TYPE::ERROR);
+            gui->printMsg(getErrMsg(), Ui::MSG_TYPE::ERROR);
           }
+          robot->setMode(Robot::Mode::IDLE_MODE);
           gui->resetRunTrainedModel();
         }
 

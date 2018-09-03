@@ -3,11 +3,11 @@
 #include <ros/package.h>
 #include <io_lib/parser.h>
 
-DMP_EKF_Controller::DMP_EKF_Controller(std::shared_ptr<Robot> &robot, const std::shared_ptr<GUI> gui):
+DMP_EKF_Controller::DMP_EKF_Controller(std::shared_ptr<Robot> &robot, std::shared_ptr<GUI> &gui):
 Controller(robot, gui)
 {
   can_clock_ptr.reset(new as64_::CanonicalClock(1.0));
-  shape_attr_gating_ptr.reset(new as64_::SigmoidGatingFunction(1.0, 0.95));
+  shape_attr_gating_ptr.reset(new as64_::SigmoidGatingFunction(1.0, 0.97));
 
   robot->update();
   q_start = robot->getJointPosition();
@@ -330,11 +330,18 @@ bool DMP_EKF_Controller::train(std::string &err_msg)
 
   int dim = train_data.Y_data.n_rows;
   dmp.resize(dim);
+  arma::vec train_err(dim);
   for (int i=0; i<dim; i++)
   {
     dmp[i].reset(new as64_::DMP(N_kernels, a_z, b_z, can_clock_ptr, shape_attr_gating_ptr));
-    dmp[i]->train(train_method, train_data.Time, train_data.Y_data.row(i), train_data.dY_data.row(i), train_data.ddY_data.row(i));
+    train_err(i) = dmp[i]->train(train_method, train_data.Time, train_data.Y_data.row(i), train_data.dY_data.row(i), train_data.ddY_data.row(i), true);
   }
+  std::ostringstream out;
+  out << "Training error:\n" << train_err;
+  gui->printMsg(out.str().c_str(), Ui::MSG_TYPE::INFO);
+  // std::cout << "train_err = \n" << train_err << "\n";
+
+
   is_trained = true;
 
   g_d = train_data.getFinalPoint();
@@ -441,8 +448,18 @@ bool DMP_EKF_Controller::runModel()
   // ========  model run loop  ========
   while (true)
   {
+    if (gui->getState() != Ui::ProgramState::PAUSE_PROGRAM)
+    {
+      setErrMsg("Model run execution was interrupted");
+      return false;
+    }
+
     // ========  robot update  ========
-    if (this->robot->isOk() == false) return false;
+    if (this->robot->isOk() == false)
+    {
+      gui->printMsg("Robot is not ok... Stopping execution.", Ui::MSG_TYPE::ERROR);
+      return false;
+    }
     this->robot->update();
 
     // ========  robot command  ========
