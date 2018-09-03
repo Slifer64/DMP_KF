@@ -37,6 +37,7 @@ void Robot::setMode(arl::robot::Mode mode, int chain_index)
       {
         stopController();
       }
+      saveLastJointPosition();
       break;
     case arl::robot::Mode::POSITION_CONTROL :
       if (this->mode != arl::robot::Mode::POSITION_CONTROL)
@@ -498,11 +499,13 @@ void Robot::stopController()
     // set commanded joint positions to current commanded
     FRI->GetCommandedJointPositions(q);
     FRI->GetCommandedJointPositionOffsets(qoff);
+
     for (int i = 0; i < 7; i++)
     {
       q[i] += qoff[i];
       torques[i] = 0.0;
     }
+
     FRI->SetCommandedJointPositions(q);
 
     // set commanded pose  to current commanded
@@ -513,11 +516,15 @@ void Robot::stopController()
       pose[i] += poseoff[i];
     }
     FRI->SetCommandedCartPose(pose);
+
     // set joint torques to zero
     FRI->SetCommandedJointTorques(torques);
+
+    std::cout << "StopRobot...\n";
     // call stanford command
     FRI->StopRobot();
     this->mode = arl::robot::Mode::STOPPED;
+    std::cout << "Done!\n";
   }
   // lower the flag
   std::cout << "[KukaController::stopController] " << "Finished" << std::endl;

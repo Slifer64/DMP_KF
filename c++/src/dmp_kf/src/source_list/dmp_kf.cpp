@@ -91,10 +91,10 @@ void dmp_kf::execute()
 
         if (robot->getMode() != Robot::Mode::IDLE_MODE)
         {
-          gui->printMsg("Entering IDLE mode...",Ui::MSG_TYPE::INFO);
+          gui->printMsg("Entering PAUSED mode...",Ui::MSG_TYPE::INFO);
           robot->setMode(Robot::Mode::IDLE_MODE);
-          gui->printModeMsg("== MODE: IDLE ==");
-          gui->printMsg("Mode changed to IDLE!",Ui::MSG_TYPE::SUCCESS);
+          gui->printModeMsg("== MODE: PAUSED ==");
+          gui->printMsg("Mode changed to PAUSED!",Ui::MSG_TYPE::SUCCESS);
         }
 
         if (gui->gotoStartPose()) this->gotoStartPose();
@@ -168,6 +168,7 @@ void dmp_kf::execute()
             gui->printMsg(controller->getErrMsg(), Ui::MSG_TYPE::ERROR);
           }
           robot->setMode(Robot::Mode::IDLE_MODE);
+          std::cout << "q2 = " << robot->getJointPosition().t() << "\n"; 
           gui->resetRunTrainedModel();
         }
 

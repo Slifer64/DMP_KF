@@ -511,8 +511,10 @@ bool DMP_EKF_Controller::runModel()
     // ========  stopping criteria  ========
     double err = arma::norm(Y-Yg);
     // if (err < 0.5e-3) break;
-    if (t >= tau) break;
+    if (t>=tau && err<0.5e-3) break;
   }
+
+  std::cout << "RunModel END: \nq = " << robot->getJointPosition().t() << "\n";
 
   return true;
 

@@ -90,6 +90,12 @@ void LWR4p_Robot::setMode(const Robot::Mode &mode)
       PRINT_INFO_MSG("Robot set in FREEDRIVE MODE.\n");
       break;
     case IDLE_MODE:
+      // for (int i=0;i<10;i++)
+      // {
+      //   robot->setJointVelocity(arma::vec().zeros(7));
+      //   update();
+      // }
+      // robot->setMode(arl::robot::Mode::POSITION_CONTROL);
       robot->setMode(arl::robot::Mode::STOPPED);
       PRINT_INFO_MSG("Robot set in IDLE MODE.\n");
       break;
