@@ -6,6 +6,9 @@
 DMP_EKF_Controller::DMP_EKF_Controller(std::shared_ptr<Robot> &robot, std::shared_ptr<GUI> &gui):
 Controller(robot, gui)
 {
+  readControllerParams();
+  readTrainingParams();
+
   can_clock_ptr.reset(new as64_::CanonicalClock(1.0));
   shape_attr_gating_ptr.reset(new as64_::SigmoidGatingFunction(1.0, 0.97));
 
@@ -215,8 +218,18 @@ bool DMP_EKF_Controller::simulate()
   // ========  Simulation loop  ========
   while (true)
   {
+    if (gui->getState() == Ui::ProgramState::STOP_PROGRAM)
+    {
+      setErrMsg("Controller simulation was interrupted!");
+      return false;
+    }
+
     // ========  Robot update  ========
-    if (this->robot->isOk() == false) return false;
+    if (this->robot->isOk() == false)
+    {
+      setErrMsg(robot->getErrMsg() + "\nStopping execution.");
+      return false;
+    }
     this->robot->update();
 
     // ========  Robot command  ========
@@ -430,6 +443,9 @@ bool DMP_EKF_Controller::loadTrainedModel(std::string &err_msg)
 
 bool DMP_EKF_Controller::runModel()
 {
+  // ========  Read parameters  ========
+  readControllerParams();
+
   this->robot->update();
   arma::vec p = this->robot->getTaskPosition();
 
@@ -437,7 +453,7 @@ bool DMP_EKF_Controller::runModel()
   dY.zeros(3);
   ddY.zeros(3);
   Y0 = p;
-  arma::vec g = g_d;
+  arma::vec Yg = g_d;
   double tau = tau_d;
   t = 0.0;
   double x = t/tau;
@@ -445,19 +461,21 @@ bool DMP_EKF_Controller::runModel()
 
   if (gui->logModelRunData()) modelRun_data.clear();
 
+  arma::vec q = robot->getJointPosition();
+
   // ========  model run loop  ========
   while (true)
   {
-    if (gui->getState() != Ui::ProgramState::PAUSE_PROGRAM)
+    if (gui->getState() == Ui::ProgramState::STOP_PROGRAM)
     {
-      setErrMsg("Model run execution was interrupted");
+      setErrMsg("Model run execution was interrupted!");
       return false;
     }
 
     // ========  robot update  ========
     if (this->robot->isOk() == false)
     {
-      gui->printMsg("Robot is not ok... Stopping execution.", Ui::MSG_TYPE::ERROR);
+      setErrMsg(robot->getErrMsg() + "\nStopping execution.");
       return false;
     }
     this->robot->update();
@@ -466,6 +484,7 @@ bool DMP_EKF_Controller::runModel()
     arma::vec Y_robot = this->robot->getTaskPosition();
     arma::vec V_cmd = arma::vec().zeros(6);
     V_cmd.subvec(0,2) = dY + k_click*(Y-Y_robot);
+
     robot->setTaskVelocity(V_cmd);
     robot->command();
 
@@ -476,8 +495,10 @@ bool DMP_EKF_Controller::runModel()
     for (int i=0; i<dim; i++)
     {
       double y_c=0, z_c=0;
-      ddY(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, x, g(i), tau);
+      ddY(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, x, Yg(i), tau);
     }
+
+    double dx = can_clock_ptr->getPhaseDot(x);
 
     // ========  numerical integration  ========
     double Ts = robot->getControlCycle();
@@ -485,10 +506,10 @@ bool DMP_EKF_Controller::runModel()
     t = t + Ts;
     Y = Y + dY*Ts;
     dY = dY + ddY*Ts;
-    x = t/tau_hat;
+    x = x + dx*Ts;
 
     // ========  stopping criteria  ========
-    double err = arma::norm(Y-g);
+    double err = arma::norm(Y-Yg);
     // if (err < 0.5e-3) break;
     if (t >= tau) break;
   }

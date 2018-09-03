@@ -14,8 +14,8 @@ Q_W: [0.1; 0.1; 0.1; 0.1]
 a_p: 0.0
 
 # DMP goal and time scaling
-g_scale: [1.1; 1.2; 0.9]
-tau_scale: 1.4
+g_scale: [1.0; 1.0; 1.0]
+tau_scale: 1.0
 
 # starting conditions for controller run
 f_thres: -1.0 # norm(force)

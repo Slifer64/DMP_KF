@@ -145,13 +145,13 @@ void dmp_kf::execute()
           robot->setMode(Robot::Mode::VELOCITY_CONTROL);
           if (controller->simulate())
           {
-            robot->setMode(Robot::Mode::IDLE_MODE);
             gui->printMsg("Finished controller simulation!",Ui::MSG_TYPE::SUCCESS);
           }
           else
           {
-            gui->printMsg("Error during controller simulation...",Ui::MSG_TYPE::ERROR);
+            gui->printMsg(controller->getErrMsg(),Ui::MSG_TYPE::ERROR);
           }
+          robot->setMode(Robot::Mode::IDLE_MODE);
           gui->resetRunSimulation();
         }
 
@@ -160,12 +160,12 @@ void dmp_kf::execute()
           gui->printMsg("Running trained model...",Ui::MSG_TYPE::INFO);
           robot->setMode(Robot::Mode::VELOCITY_CONTROL);
           if (controller->runModel())
-          {  
+          {
             gui->printMsg("Finished running trained model!",Ui::MSG_TYPE::SUCCESS);
           }
           else
           {
-            gui->printMsg(getErrMsg(), Ui::MSG_TYPE::ERROR);
+            gui->printMsg(controller->getErrMsg(), Ui::MSG_TYPE::ERROR);
           }
           robot->setMode(Robot::Mode::IDLE_MODE);
           gui->resetRunTrainedModel();
@@ -198,12 +198,12 @@ void dmp_kf::execute()
         break;
 
       case Ui::ProgramState::STOP_PROGRAM:
-        gui->printMsg("Terminating program...",Ui::MSG_TYPE::INFO);
-        robot->setMode(Robot::Mode::IDLE_MODE);
-        gui->printModeMsg("== MODE: STOP ==");
-        gui->printMsg("The program terminated!",Ui::MSG_TYPE::SUCCESS);
-        exit_program = true;
-        raise(SIGINT);
+        // gui->printMsg("Terminating program...",Ui::MSG_TYPE::INFO);
+        // robot->setMode(Robot::Mode::IDLE_MODE);
+        // gui->printModeMsg("== MODE: STOP ==");
+        // gui->printMsg("The program terminated!",Ui::MSG_TYPE::SUCCESS);
+        // exit_program = true;
+        // raise(SIGINT);
         break;
     }
 

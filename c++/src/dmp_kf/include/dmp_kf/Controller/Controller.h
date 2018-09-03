@@ -41,7 +41,7 @@ public:
   void setStartPose();
 
   std::string getErrMsg() const { return err_msg; }
-  void setErrMsg(cosnt std::string &msg) { err_msg = msg; }
+  void setErrMsg(const std::string &msg) { err_msg = msg; }
 
   bool is_trained;
 

@@ -168,7 +168,7 @@ void MainWindow::on_pause_program_button_clicked()
   }
 
   setState(Ui::ProgramState::PAUSE_PROGRAM);
-  // setModeMsg("== MODE: " + stateName[state] + " ==");
+  setModeMsg("== MODE: PAUSED ==");
   // setMsg("Pausing program. Entering idle state.", Ui::MSG_TYPE::INFO);
 }
 
@@ -183,7 +183,7 @@ void MainWindow::on_stop_program_button_clicked()
   }
 
   setState(Ui::ProgramState::STOP_PROGRAM);
-  // setModeMsg("== MODE: STOP ==");
+  setModeMsg("== MODE: STOPPED ==");
   // setMsg("Stopping program execution. Exiting...", Ui::MSG_TYPE::INFO);
 }
 
