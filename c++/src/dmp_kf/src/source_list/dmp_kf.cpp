@@ -21,10 +21,42 @@ dmp_kf::dmp_kf()
   gui.reset(new GUI());
   controller.reset(new DMP_EKF_Controller(robot, gui));
 
+  print_robot_state_cycle = 30; // 30 ms
+  print_robot_state_thread = std::thread(&dmp_kf::printRobotState, this);
+
 }
 
 dmp_kf::~dmp_kf()
-{}
+{
+  if (print_robot_state_thread.joinable()) print_robot_state_thread.join();
+}
+
+void dmp_kf::printRobotState()
+{
+  arma::vec q;
+  arma::vec pos;
+
+  double j_low_lim[7] = {-170, -120, -170, -120, -170, -120, -170};
+  double j_up_lim[7] = {170, 120, 170, 120, 170, 120, 170};
+  double scale = 100;
+
+  // gui->gui_obj->ui->j1_slider->setMinimum(j_low_lim[0]/scale);
+  // gui->gui_obj->ui->j1_slider->setMaximum(j_up_lim[0]/scale);
+
+  while (ros::ok() && robot->isOk())
+  {
+    q = robot->getJointPosition();
+    pos = robot->getTaskPosition();
+
+    q = q*180/3.14159;
+
+
+
+    gui->printRobotState(q, pos);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(print_robot_state_cycle));
+  }
+}
 
 void dmp_kf::execute()
 {

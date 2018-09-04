@@ -56,6 +56,10 @@ private:
   std::shared_ptr<Controller> controller;
 
   void gotoStartPose();
+
+  std::thread print_robot_state_thread;
+  void printRobotState();
+  long print_robot_state_cycle; // in milliseconds
 };
 
 #endif // DMP_KALMAN_FILTER_H

@@ -12,6 +12,8 @@
 
 #include <mainwindow.h>
 
+#include <armadillo>
+
 class GUI
 {
 public:
@@ -21,6 +23,8 @@ public:
 
   void init();
   int guiThread();
+
+  void printRobotState(const arma::vec &q, const arma::vec &pos);
 
   bool recordDemo() const { return gui_obj->record_demo; }
   void resetRecordDemo() { gui_obj->record_demo = false; }
@@ -69,10 +73,11 @@ public:
   void printMsg(const std::string &msg, Ui::MSG_TYPE msg_type=Ui::MSG_TYPE::INFO) { gui_obj->setMsg(msg, msg_type); }
   void printModeMsg(const std::string &msg) { gui_obj->setModeMsg(msg); }
 
+  std::shared_ptr<MainWindow> gui_obj;
 private:
   std::shared_ptr<std::thread> gui_thread;
 
-  std::shared_ptr<MainWindow> gui_obj;
+
   std::shared_ptr<QApplication> q_app;
   std::condition_variable start_cond;
 };

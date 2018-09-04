@@ -8,13 +8,20 @@
 #include <QColor>
 #include <QPalette>
 #include <QFont>
+#include <QString>
+#include <QSlider>
+
 #include <cstdlib>
 #include <vector>
 #include <thread>
 #include <mutex>
 #include <cstring>
 #include <memory>
+#include <sstream>
 #include <condition_variable>
+
+#include <QLineEdit>
+#include <QSlider>
 
 namespace Ui {
 
@@ -128,7 +135,14 @@ private slots:
     void on_sim_controller_button_clicked();
 
 private:
+    std::vector<std::shared_ptr<QLineEdit>> j_pos_box;
+    std::vector<std::shared_ptr<QSlider>> j_slider;
+
+    void createSlider(int i);
+
     Ui::MainWindow *ui;
+
+    QWidget *parent;
 
     std::mutex msg_mtx;
     std::mutex mode_msg_mtx;

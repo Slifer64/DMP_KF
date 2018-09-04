@@ -7,6 +7,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
   ui->setupUi(this);
 
+  this->parent = parent;
+
   stateName.resize(5);
   stateName[0] = "RUN_CONTROLLER";
   stateName[1] = "FREEDRIVE_MODE";
@@ -25,7 +27,21 @@ MainWindow::MainWindow(QWidget *parent) :
   mode_label_font = QFont("DejaVu Serif", 16);
   mode_label_font.setBold(true);
 
+  j_slider.resize(7);
+  // for (int i=0;i<7;i++) createSlider(i);
+
   init();
+}
+
+void MainWindow::createSlider(int i)
+{
+  std::ostringstream slider_name;
+  slider_name << "j" << i << "_slider";
+
+  j_slider[i].reset(new QSlider(parent));
+  j_slider[i]->setObjectName(QString(slider_name.str().c_str()));
+  j_slider[i]->setGeometry(QRect(660, 90 + i*30, 161, 21));
+  j_slider[i]->setOrientation(Qt::Horizontal);
 }
 
 MainWindow::~MainWindow()
