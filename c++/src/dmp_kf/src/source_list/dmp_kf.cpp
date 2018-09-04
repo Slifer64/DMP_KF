@@ -168,7 +168,6 @@ void dmp_kf::execute()
             gui->printMsg(controller->getErrMsg(), Ui::MSG_TYPE::ERROR);
           }
           robot->setMode(Robot::Mode::IDLE_MODE);
-          std::cout << "q2 = " << robot->getJointPosition().t() << "\n"; 
           gui->resetRunTrainedModel();
         }
 

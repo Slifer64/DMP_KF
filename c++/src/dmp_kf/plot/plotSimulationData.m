@@ -27,7 +27,7 @@ end
 
 g = Y_data(:,end);
 tau = Time(end);
-plot_1sigma = true;
+plot_1sigma = false;
 g_hat_data = theta_data(1:3,:);
 tau_hat_data = theta_data(4,:);
 plot_estimation_results(Time, g, g_hat_data, tau, tau_hat_data, Sigma_theta_data, Fext_filt_data, mf_data, plot_1sigma);

@@ -514,8 +514,6 @@ bool DMP_EKF_Controller::runModel()
     if (t>=tau && err<0.5e-3) break;
   }
 
-  std::cout << "RunModel END: \nq = " << robot->getJointPosition().t() << "\n";
-
   return true;
 
 }
