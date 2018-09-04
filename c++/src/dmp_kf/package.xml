@@ -31,8 +31,8 @@
   <build_depend>dmp_lib</build_depend>
   <run_depend>dmp_lib</run_depend>
 
-  <build_depend>ur10_robot</build_depend>
-  <run_depend>ur10_robot</run_depend>
+  <build_depend>ur10</build_depend>
+  <run_depend>ur10</run_depend>
 
   <build_depend>robot_sim</build_depend>
   <run_depend>robot_sim</run_depend>
@@ -43,26 +43,7 @@
   <build_depend>math_lib</build_depend>
   <run_depend>math_lib</run_depend>
 
-<!--
-  <build_depend>ur10_robot</build_depend>
-  <run_depend>ur10_robot</run_depend>
--->
-
-  <build_depend>autharl_core</build_depend>
-  <run_depend>autharl_core</run_depend>
-
-  <build_depend>kuka_lwr</build_depend>
-  <run_depend>kuka_lwr</run_depend>
-
-  <build_depend>autharl_robot</build_depend>
-  <run_depend>autharl_robot</run_depend>
-
-  <build_depend>lwr_robot</build_depend>
-  <run_depend>lwr_robot</run_depend>
-
-<!--
-  <build_depend>robot_sim</build_depend>
-  <run_depend>robot_sim</run_depend>
--->
+  <build_depend>lwr4p</build_depend>
+  <run_depend>lwr4p</run_depend>
 
 </package>

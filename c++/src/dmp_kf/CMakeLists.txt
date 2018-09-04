@@ -21,9 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   dmp_lib
   io_lib
-  ur10_robot
-  autharl_core
-  lwr_robot
+  ur10
+  lwr4p
   robot_sim
   math_lib
 )
@@ -120,11 +119,9 @@ target_link_libraries(dmp_kf
   ${Boost_LIBRARIES}
   dmp-lib
   io-lib
-  ur10-robot
-  autharl-robot
-  autharl-utils
-  lwr-robot
-  ${Qt_LIBRARIES}
-  robot_sim
   math-lib
+  ur10
+  lwr4p
+  robot_sim
+  ${Qt_LIBRARIES}
 )

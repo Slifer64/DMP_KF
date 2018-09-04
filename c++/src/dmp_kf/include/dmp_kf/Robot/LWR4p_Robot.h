@@ -3,10 +3,7 @@
 
 #include <dmp_kf/Robot/Robot.h>
 
-#include <lwr_robot/lwr_model.h>
-#include <lwr_robot/lwr_robot.h>
-#include <autharl_core/robot/robot_sim.h>
-#include <autharl_core/robot/controller.h>
+#include <lwr4p/Robot.h>
 
 class LWR4p_Robot: public Robot
 {
@@ -43,7 +40,7 @@ public:
 
 private:
   const int N_JOINTS;
-  std::shared_ptr<arl::robot::Robot> robot;
+  std::shared_ptr<lwr4p::Robot> robot;
 
 };
 

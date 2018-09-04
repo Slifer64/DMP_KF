@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package>
+  <name>lwr4p</name>
+  <version>1.0.0</version>
+  <description>The lwr4p robot package</description>
+
+  <maintainer email="antosidi646@gmail.com">Antonis Sidiropoulos</maintainer>
+
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>orocos_kdl</build_depend>
+  <build_depend>armadillo</build_depend>
+  <build_depend>kdl_parser</build_depend>
+
+  <run_depend>roscpp</run_depend>
+
+  <export></export>
+</package>

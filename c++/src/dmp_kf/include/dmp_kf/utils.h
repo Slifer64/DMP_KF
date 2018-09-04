@@ -41,4 +41,6 @@ void read_scalar(T &scalar, std::istream &in = std::cin, bool binary = false)
 void read_mat(arma::mat &m, long n_rows, long n_cols, std::istream &in = std::cin, bool binary = false);
 void read_mat(arma::mat &m, std::istream &in = std::cin, bool binary = false);
 
+arma::mat get5thOrder(double t, arma::vec p0, arma::vec pT, double totalTime);
+
 #endif // DMP_KF_GLOBAL_DEFS_H

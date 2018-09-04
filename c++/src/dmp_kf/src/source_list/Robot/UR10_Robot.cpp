@@ -2,7 +2,7 @@
 
 UR10_Robot::UR10_Robot()
 {
-  robot.reset(new as64_::ur10_::Robot());
+  robot.reset(new ur10_::Robot());
 }
 
 UR10_Robot::~UR10_Robot()
@@ -59,15 +59,15 @@ void UR10_Robot::setMode(const Robot::Mode &mode)
 
   switch (mode){
     case VELOCITY_CONTROL:
-      robot->setMode(as64_::ur10_::Mode::VELOCITY_CONTROL);
+      robot->setMode(ur10_::Mode::VELOCITY_CONTROL);
       PRINT_INFO_MSG("Robot set in VELOCITY_CONTROL MODE.\n");
       break;
     case FREEDRIVE_MODE:
-      robot->setMode(as64_::ur10_::Mode::FREEDRIVE_MODE);
+      robot->setMode(ur10_::Mode::FREEDRIVE_MODE);
       PRINT_INFO_MSG("Robot set in FREEDRIVE MODE.\n");
       break;
     case IDLE_MODE:
-      robot->setMode(as64_::ur10_::Mode::POSITION_CONTROL);
+      robot->setMode(ur10_::Mode::POSITION_CONTROL);
       PRINT_INFO_MSG("Robot set in IDLE MODE.\n");
       break;
   }

@@ -2,7 +2,7 @@
 #define UR10_ROBOT_OL_2D_RUP_H
 
 #include <dmp_kf/Robot/Robot.h>
-#include <ur10_robot/ur10_robot.h>
+#include <ur10/Robot.h>
 
 class UR10_Robot: public Robot
 {
@@ -36,7 +36,7 @@ public:
   arma::vec getTaskWrench() const;
 
 private:
-  std::shared_ptr<as64_::ur10_::Robot> robot;
+  std::shared_ptr<ur10_::Robot> robot;
 
 };
 

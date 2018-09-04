@@ -21,6 +21,42 @@ void PRINT_ERROR_MSG(const std::string &msg, std::ostream &out)
   std::cout << "\033[1m" << "\033[31m" << "[ERROR]: " << msg << "\033[0m";
 }
 
+arma::mat get5thOrder(double t, arma::vec p0, arma::vec pT, double totalTime)
+{
+  arma::mat retTemp = arma::zeros<arma::mat>(p0.n_rows, 3);
+
+  if (t < 0)
+  {
+    // before start
+    retTemp.col(0) = p0;
+  }
+  else if (t > totalTime)
+  {
+    // after the end
+    retTemp.col(0) = pT;
+  }
+  else
+  {
+    // somewhere betweeen ...
+    // position
+    retTemp.col(0) = p0 +
+                     (pT - p0) * (10 * pow(t / totalTime, 3) -
+                     15 * pow(t / totalTime, 4) +
+                     6 * pow(t / totalTime, 5));
+    // vecolity
+    retTemp.col(1) = (pT - p0) * (30 * pow(t, 2) / pow(totalTime, 3) -
+                     60 * pow(t, 3) / pow(totalTime, 4) +
+                     30 * pow(t, 4) / pow(totalTime, 5));
+    // acceleration
+    retTemp.col(2) = (pT - p0) * (60 * t / pow(totalTime, 3) -
+                     180 * pow(t, 2) / pow(totalTime, 4) +
+                     120 * pow(t, 3) / pow(totalTime, 5));
+  }
+
+  // return vector
+  return retTemp;
+}
+
 void write_mat(const arma::mat &m, int n_rows, int n_cols, std::ostream &out, bool binary, int precision)
 {
   if (binary)
