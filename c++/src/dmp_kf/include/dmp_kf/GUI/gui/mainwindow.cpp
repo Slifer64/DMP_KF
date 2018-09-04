@@ -28,21 +28,68 @@ MainWindow::MainWindow(QWidget *parent) :
   mode_label_font.setBold(true);
 
   j_slider.resize(7);
-  // for (int i=0;i<7;i++) createSlider(i);
+  j_pos_box.resize(7);
+  j_pos_units_box.resize(7);
+  j_name_box.resize(7);
+  for (int i=0;i<7;i++) createJointSlider(i);
 
   init();
 }
 
-void MainWindow::createSlider(int i)
+void MainWindow::createJointSlider(int i)
 {
   std::ostringstream slider_name;
   slider_name << "j" << i << "_slider";
 
-  j_slider[i].reset(new QSlider(parent));
+  j_slider[i].reset(new QSlider(this));
   j_slider[i]->setObjectName(QString(slider_name.str().c_str()));
-  j_slider[i]->setGeometry(QRect(660, 90 + i*30, 161, 21));
+  j_slider[i]->setGeometry(QRect(660, 90 + i*30, 161, 25));
   j_slider[i]->setOrientation(Qt::Horizontal);
+
+  j_pos_box[i].reset(new QLineEdit(this));
+  j_pos_box[i]->setObjectName(QString::fromUtf8("j_pos_box"));
+  j_pos_box[i]->setGeometry(QRect(830, 90 + i*30, 41, 25));
+  j_pos_box[i]->setText("0");
+
+  j_pos_units_box[i].reset(new QLineEdit(this));
+  j_pos_units_box[i]->setObjectName(QString::fromUtf8("j_pos_units_box"));
+  j_pos_units_box[i]->setGeometry(QRect(880, 90 + i*30, 41, 25));
+  j_pos_units_box[i]->setText("rad");
+
+  j_name_box[i].reset(new QLineEdit(this));
+  j_name_box[i]->setObjectName(QString::fromUtf8("j_name_box"));
+  j_name_box[i]->setGeometry(QRect(640, 90 + i*30, 20, 20));
+  std::ostringstream joint_name;
+  joint_name << "j" << i+1;
+  j_name_box[i]->setText(joint_name.str().c_str());
+
+  setJointSliderLimits(-1000, 1000, i);
 }
+
+void MainWindow::setJointSliderPos(double pos, double min, double max, int i)
+{
+    int min_int, max_int, pos_int;
+    getJointSliderLimits(min_int, max_int, i);
+    pos_int = min_int + (pos-min)*(double)(max_int-min_int)/(max-min);
+    j_slider[i]->setSliderPosition(pos_int);
+    std::ostringstream val;
+    val << std::setprecision(3) << pos;
+    j_pos_box[i]->setText(val.str().c_str());
+}
+
+void MainWindow::setJointSliderLimits(int min, int max, int i)
+{
+    j_slider[i]->setMinimum(min);
+    j_slider[i]->setMaximum(max);
+}
+
+void MainWindow::getJointSliderLimits(int &min, int &max, int i)
+{
+    min = j_slider[i]->minimum();
+    max = j_slider[i]->maximum();
+}
+
+
 
 MainWindow::~MainWindow()
 {

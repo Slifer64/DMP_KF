@@ -12,9 +12,12 @@ GUI::~GUI()
   if (gui_thread->joinable()) gui_thread->join();
 }
 
-void GUI::printRobotState(const arma::vec &q, const arma::vec &pos)
+void GUI::printRobotState(const arma::vec &q, const arma::vec &q_min, const arma::vec &q_max, const arma::vec &pos)
 {
-  // gui_obj->ui->j1_slider->setSliderPosition(q(0));
+  for (int i=0;i<q.size();i++)
+  {
+    gui_obj->setJointSliderPos(q(i), q_min(i), q_max(i), i);
+  }
 }
 
 void GUI::init()

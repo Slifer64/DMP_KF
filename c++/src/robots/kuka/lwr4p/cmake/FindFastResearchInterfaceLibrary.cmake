@@ -1,21 +1,21 @@
 # Try to find FastResearchInterfaceLibrary Lib
 
 find_path( FastResearchInterfaceLibrary_INCLUDE_DIR FastResearchInterface.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/../FRILibrary/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/FRILibrary/include
 )
 
 find_library( FastResearchInterfaceLibrary_LIBRARY_DEBUG
   LIBRARY_NAMES
     FastResearchInterfaceLibrary
   PATHS
-  ${CMAKE_CURRENT_SOURCE_DIR}/../FRILibrary/Linux/x64/debug/lib
+  ${CMAKE_CURRENT_SOURCE_DIR}/FRILibrary/Linux/x64/debug/lib
 )
 
 find_library( FastResearchInterfaceLibrary_LIBRARY_RELEASE
   LIBRARY_NAMES
     FastResearchInterfaceLibrary
   PATHS
-  ${CMAKE_CURRENT_SOURCE_DIR}/../FRILibrary/Linux/x64/release/lib
+  ${CMAKE_CURRENT_SOURCE_DIR}/FRILibrary/Linux/x64/release/lib
 )
 
 if(FastResearchInterfaceLibrary_INCLUDE_DIR AND

@@ -22,7 +22,7 @@ sudo apt-get update > /dev/null && \
 sudo apt-get install -y gcc-multilib g++-multilib > /dev/null && \
 
 # cd $MAIN_WS_DIR/src/autharl_fri && \
-fri_folder_path=$(find $MAIN_WS_DIR/src/ -name 'autharl_fri' -print | head -n 1) && \
+fri_folder_path=$(find $MAIN_WS_DIR/src/ -name 'lwr4p' -print | head -n 1) && \
 cd $fri_folder_path && \
 
 echo -e $COLOR_BLUE"Downloading FRILibrary..."$COLOR_RESET

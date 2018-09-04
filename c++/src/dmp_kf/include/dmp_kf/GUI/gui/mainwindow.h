@@ -11,6 +11,7 @@
 #include <QString>
 #include <QSlider>
 
+#include <iostream>
 #include <cstdlib>
 #include <vector>
 #include <thread>
@@ -19,6 +20,7 @@
 #include <memory>
 #include <sstream>
 #include <condition_variable>
+#include <iomanip>
 
 #include <QLineEdit>
 #include <QSlider>
@@ -90,6 +92,8 @@ public:
     Ui::ProgramState getState();
     void setState(const Ui::ProgramState &new_state);
 
+    void setJointSliderPos(double pos, double min, double max, int i);
+
     void finalize();
 
 private slots:
@@ -136,9 +140,13 @@ private slots:
 
 private:
     std::vector<std::shared_ptr<QLineEdit>> j_pos_box;
+    std::vector<std::shared_ptr<QLineEdit>> j_name_box;
+    std::vector<std::shared_ptr<QLineEdit>> j_pos_units_box;
     std::vector<std::shared_ptr<QSlider>> j_slider;
 
-    void createSlider(int i);
+    void createJointSlider(int i);
+    void setJointSliderLimits(int min, int max, int i);
+    void getJointSliderLimits(int &min, int &max, int i);
 
     Ui::MainWindow *ui;
 

@@ -9,7 +9,7 @@
 namespace lwr4p
 {
 
-Robot::Robot(const char *path_to_FRI_init): N_JOINTS(N_JOINTS)
+Robot::Robot(const char *path_to_FRI_init): N_JOINTS(7)
 {
   if (path_to_FRI_init == NULL)
     FRI.reset(new FastResearchInterface("/home/user/lwr/980500-FRI-Driver.init"));
@@ -514,6 +514,7 @@ void Robot::startJointTorqueController()
     stiffnessCart[i] = 0;
     dampingCart[i] = 0;
   }
+
   // set stiffness to zero
   FRI->SetCommandedJointStiffness(stiffness);
   // set stiffness to zero
@@ -538,6 +539,7 @@ void Robot::startJointTorqueController()
     stopController();
     return;
   }
+
   std::cout << "[KukaTorqueController::startController] " << "Finished" << std::endl;
 }
 
@@ -597,8 +599,8 @@ void Robot::stopController()
     // printouts
     std::cout << "[KukaController::stopController] Stopping  control." << std::endl;
 
-    float pose[12];
-    float poseoff[12];
+    static float pose[12];
+    static float poseoff[12];
 
     float q[N_JOINTS];
     float qoff[N_JOINTS];

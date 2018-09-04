@@ -24,7 +24,7 @@ public:
   void init();
   int guiThread();
 
-  void printRobotState(const arma::vec &q, const arma::vec &pos);
+  void printRobotState(const arma::vec &q, const arma::vec &q_min, const arma::vec &q_max, const arma::vec &pos);
 
   bool recordDemo() const { return gui_obj->record_demo; }
   void resetRecordDemo() { gui_obj->record_demo = false; }
