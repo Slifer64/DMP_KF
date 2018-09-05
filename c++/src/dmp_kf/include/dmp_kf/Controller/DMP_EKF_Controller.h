@@ -69,8 +69,9 @@ private:
 
   // ========= Controller params ===========
   arma::mat M; ///< impedance controller inertia matrix
-  arma::mat K; ///< impedance controller stiffness matrix
   arma::mat D; ///< impedance controller damping matrix
+  arma::mat D_d; ///< impedance controller desired damping matrix
+  arma::mat K_d; ///< impedance controller desired stiffness matrix
   arma::vec U_dmp; ///< control produced from dmp ref_model
   arma::vec U_total; ///< U_dmp + feedforward force
   double k_click; // click

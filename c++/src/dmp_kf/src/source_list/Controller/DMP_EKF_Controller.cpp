@@ -55,8 +55,9 @@ void DMP_EKF_Controller::readControllerParams(const char *params_file)
 
   // target impedance params
   if (!parser.getParam("M", M)) M = arma::vec({1.0, 1.0, 1.0});
-  if (!parser.getParam("K", K)) K = arma::vec({200.0, 200.0, 200.0});
-  if (!parser.getParam("D", D)) D = 2*arma::sqrt(M%K);
+  if (!parser.getParam("D", D)) D = arma::vec({40.0, 40.0, 40.0});
+  if (!parser.getParam("K_d", K_d)) K_d = arma::vec({200.0, 200.0, 200.0});
+  if (!parser.getParam("D_d", D_d)) D_d = 2*arma::sqrt(M%K_d);
   if (!parser.getParam("k_click", k_click)) k_click = 0.0;
   if (!parser.getParam("ff_gains", ff_gains)) ff_gains = arma::vec({1.0, 1.0, 1.0}); // feedforward gains for the target impedance model
   if (!parser.getParam("a_force", a_force)) a_force = 1.0;
@@ -150,9 +151,10 @@ void DMP_EKF_Controller::execute()
   Y_ref = Y;
 
   // ========  Controller  ========
-  U_dmp = -K%(Y - Y_ref) + D%dY_ref + M%ddY_ref;
+  U_dmp = -K_d%(Y - Y_ref) - D_d%(dY-dY_ref) + D%dY + M%ddY_ref;
 
   U_total = mf*U_dmp + (1-mf)*(ff_gains%f_ext);
+  // U_total = ff_gains%f_ext;
 
   ddY = ( - D%dY + U_total) / M;
 

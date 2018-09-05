@@ -1,9 +1,11 @@
-function plotSimulationData()
+function plotSimulationData(filename)
+
+if (nargin<1), filename = 'simulation_data'; end
 
 addpath('utils/');
 
 binary = true;
-filename = '../data/simulation_data.bin';
+filename = ['../data/' filename '.bin'];
 fid = fopen(filename);
 if (fid < 0)
     error('Could not load %s\n', filename);

@@ -35,7 +35,7 @@ public:
   arma::vec getTaskPosition() const;
   arma::vec getTaskOrientation() const;
 
-  arma::vec getTaskWrench() const;
+  arma::vec getTaskWrench();
 
   arma::vec getBaseWrench() const;
 

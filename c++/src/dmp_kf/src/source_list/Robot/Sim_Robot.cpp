@@ -129,7 +129,7 @@ arma::vec Sim_Robot::getTaskOrientation() const
   return robot->getTaskOrientation();
 }
 
-arma::vec Sim_Robot::getTaskWrench() const
+arma::vec Sim_Robot::getTaskWrench()
 {
   arma::vec Fext = robot->getExternalForce();
 

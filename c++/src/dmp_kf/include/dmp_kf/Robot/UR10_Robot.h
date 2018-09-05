@@ -33,7 +33,7 @@ public:
   arma::vec getTaskPosition() const;
   arma::vec getTaskOrientation() const;
 
-  arma::vec getTaskWrench() const;
+  arma::vec getTaskWrench();
 
 private:
   std::shared_ptr<ur10_::Robot> robot;

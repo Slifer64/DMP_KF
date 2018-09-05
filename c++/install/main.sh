@@ -14,14 +14,7 @@ COLOR_RESET="\033[0m"
 cd $INSTALL_SCRIPTS_DIR
 AS64_ERROR=0
 
-if [ $# -eq 0 ]; then
-  declare -a arr=("frilibrary" "optoforce") # "qt5" "frilibrary" "ati_sensor" "barretthand" "ros_deps" "eigen3" "armadillo" "optoforce" "ur_simulator" "Kinect_OpenNI_PrimeSense")
-elif [ "$1" = "-a" ]; then
-  declare -a arr=("latest_armadillo" "latest_eigen3" "frilibrary" "ati_sensor" "barretthand" "mujoco" "ros_deps")
-else
-  echo -e $COLOR_YELLOW"The provided option does not exist..."$COLOR_RESET
-  exit 1
-fi
+declare -a arr=("frilibrary" "optoforce" "ati_sensor") # "qt5" "frilibrary" "ati_sensor" "barretthand" "ros_deps" "eigen3" "armadillo" "optoforce" "ur_simulator" "Kinect_OpenNI_PrimeSense")
 
 echo -e $COLOR_BLUE"Installing as64_ws..."$COLOR_RESET
 

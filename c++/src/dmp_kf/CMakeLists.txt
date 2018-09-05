@@ -25,6 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
   lwr4p
   robot_sim
   math_lib
+  ati_sensor
 )
 
 # Find Qt5
@@ -123,5 +124,6 @@ target_link_libraries(dmp_kf
   ur10
   lwr4p
   robot_sim
+  ati_sensor
   ${Qt_LIBRARIES}
 )

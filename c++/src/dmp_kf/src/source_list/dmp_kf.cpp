@@ -22,7 +22,7 @@ dmp_kf::dmp_kf()
   controller.reset(new DMP_EKF_Controller(robot, gui));
 
   print_robot_state_cycle = 100; // ms
-  print_robot_state_thread = std::thread(&dmp_kf::printRobotState, this);
+  // print_robot_state_thread = std::thread(&dmp_kf::printRobotState, this);
 
 }
 

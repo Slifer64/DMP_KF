@@ -5,6 +5,10 @@ LWR4p_Robot::LWR4p_Robot():N_JOINTS(7)
   // Initialize generic robot with the kuka-lwr model
   robot.reset(new lwr4p::Robot());
   ROS_INFO_STREAM("Robot created successfully.");
+
+  ftsensor.init("192.168.2.1");
+  ftsensor.setTimeout(1.0);
+  ftsensor.setBias();
 }
 
 LWR4p_Robot::~LWR4p_Robot()
@@ -130,12 +134,26 @@ arma::vec LWR4p_Robot::getTaskOrientation() const
   return task_orient;
 }
 
-arma::vec LWR4p_Robot::getTaskWrench() const
+arma::vec LWR4p_Robot::getTaskWrench()
 {
-  arma::vec Fext;
+  static double measurements[6];
+  uint32_t rdt(0),ft(0);
+  ftsensor.getMeasurements(measurements,rdt,ft);
 
-  Fext = robot->getExternalWrench();
-  Fext = -Fext;
+  arma::vec Fext(6);
+  Fext(0) = measurements[0];
+  Fext(1) = measurements[1];
+  Fext(2) = measurements[2];
+  Fext(3) = measurements[3];
+  Fext(4) = measurements[4];
+  Fext(5) = measurements[5];
+
+  arma::mat R = robot->getTaskOrientation();
+  Fext.subvec(0,2) = R*Fext.subvec(0,2);
+  Fext.subvec(3,5) = R*Fext.subvec(3,5);
+
+  // Fext = robot->getExternalWrench();
+  // Fext = -Fext;
 
   arma::vec sign_Fext = arma::sign(Fext);
   arma::vec Fext2 = Fext - sign_Fext%Fext_dead_zone;

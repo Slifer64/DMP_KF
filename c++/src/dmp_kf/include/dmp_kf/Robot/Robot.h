@@ -147,7 +147,7 @@ public:
   /**
    *  @return The task wrench as a 6x1 vector (expressed in the base frame).
    */
-  virtual arma::vec getTaskWrench() const = 0;
+  virtual arma::vec getTaskWrench() = 0;
 
 protected:
 

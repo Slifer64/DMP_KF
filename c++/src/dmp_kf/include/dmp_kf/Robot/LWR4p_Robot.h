@@ -5,6 +5,8 @@
 
 #include <lwr4p/Robot.h>
 
+#include <ati_sensor/ft_sensor.h>
+
 class LWR4p_Robot: public Robot
 {
 public:
@@ -34,13 +36,14 @@ public:
   arma::vec getTaskPosition() const;
   arma::vec getTaskOrientation() const;
 
-  arma::vec getTaskWrench() const;
+  arma::vec getTaskWrench();
 
   arma::vec getBaseWrench() const;
 
 private:
   const int N_JOINTS;
   std::shared_ptr<lwr4p::Robot> robot;
+  ati::FTSensor ftsensor;
 
 };
 

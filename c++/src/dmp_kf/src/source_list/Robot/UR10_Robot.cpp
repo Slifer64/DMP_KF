@@ -113,7 +113,7 @@ arma::vec UR10_Robot::getTaskOrientation() const
   return robot->getTaskOrientation();
 }
 
-arma::vec UR10_Robot::getTaskWrench() const
+arma::vec UR10_Robot::getTaskWrench()
 {
   arma::vec Fext = robot->getTaskWrench();
   arma::vec sign_Fext = arma::sign(Fext);

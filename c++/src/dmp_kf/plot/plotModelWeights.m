@@ -1,9 +1,11 @@
-function plotModelWeights()
+function plotModelWeights(filename)
+
+if (nargin<1), filename = 'model_data'; end
 
 addpath('utils/');
 
 binary = true;
-filename = '../data/model_data.bin';
+filename = ['../data/' filename '.bin'];
 fid = fopen(filename);
 if (fid < 0)
     error('Could not load %s\n', filename);
