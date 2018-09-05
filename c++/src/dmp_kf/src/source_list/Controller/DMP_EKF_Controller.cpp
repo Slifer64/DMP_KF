@@ -310,8 +310,6 @@ void DMP_EKF_Controller::initDemo()
 
 void DMP_EKF_Controller::logDemoData()
 {
-  //this->robot->update();
-
   double Ts = robot->getControlCycle();
   t = t + Ts;
 

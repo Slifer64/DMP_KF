@@ -66,7 +66,8 @@ public:
     bool save_trained_model;
     bool load_trained_model;
 
-    bool record_demo;
+    bool start_demo_record;
+    bool stop_demo_record;
     bool demo_recorded; ///< true if a demo has been recorded
     bool train_model;
     bool model_trained;
@@ -93,6 +94,7 @@ public:
     void setState(const Ui::ProgramState &new_state);
 
     void setJointSliderPos(double pos, double min, double max, int i);
+    void setEndEffectorPosition(double x, double y, double z);
 
     void finalize();
 
@@ -139,13 +141,20 @@ private slots:
     void on_sim_controller_button_clicked();
 
 private:
+    std::shared_ptr<QLabel> j_pos_label;
     std::vector<std::shared_ptr<QLineEdit>> j_pos_box;
     std::vector<std::shared_ptr<QLineEdit>> j_name_box;
     std::vector<std::shared_ptr<QLineEdit>> j_pos_units_box;
     std::vector<std::shared_ptr<QSlider>> j_slider;
+    void createJointPositionsDisplay();
+
+    std::shared_ptr<QLabel> ee_pos_label;
+    std::vector<std::shared_ptr<QLineEdit>> ee_pos_box;
+    std::vector<std::shared_ptr<QLineEdit>> ee_pos_name_box;
+    std::vector<std::shared_ptr<QLineEdit>> ee_pos_units_box;
+    void createEndEffectorPositionDisplay();
 
     void createJointSlider(int i);
-    void setJointSliderLimits(int min, int max, int i);
     void getJointSliderLimits(int &min, int &max, int i);
 
     Ui::MainWindow *ui;

@@ -46,7 +46,7 @@ void LWR4p_Robot::command()
   switch (this->getMode())
   {
     case Robot::Mode::VELOCITY_CONTROL:
-      J = robot->getJacobian();
+      J = robot->getRobotJacobian();
       dq = arma::pinv(J)*vel_cmd;
       robot->setJointVelocity(dq);
       break;

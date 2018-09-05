@@ -18,6 +18,7 @@ void GUI::printRobotState(const arma::vec &q, const arma::vec &q_min, const arma
   {
     gui_obj->setJointSliderPos(q(i), q_min(i), q_max(i), i);
   }
+  gui_obj->setEndEffectorPosition(pos(0), pos(1), pos(2));
 }
 
 void GUI::init()

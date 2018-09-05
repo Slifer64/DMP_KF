@@ -108,12 +108,17 @@ void dmp_kf::execute()
         {
           gui->printMsg("Entering DEMO_RECORDING mode...",Ui::MSG_TYPE::INFO);
           robot->setMode(Robot::Mode::FREEDRIVE_MODE);
-          controller->initDemo();
+          // controller->initDemo();
           gui->printModeMsg("== MODE: DEMO_RECORDING ==");
           gui->printMsg("Mode changed to DEMO_RECORDING!",Ui::MSG_TYPE::SUCCESS);
-          gui->printMsg("Registered current pose as start.", Ui::MSG_TYPE::INFO);
         }
-        if (gui->recordDemo()) controller->logDemoData();
+        if (gui->startDemoRecord())
+        {
+          controller->initDemo();
+          gui->printMsg("Registered current pose as start.", Ui::MSG_TYPE::INFO);
+          gui->resetStartDemoRecord();
+        }
+        if (gui->stopDemoRecord() == false) controller->logDemoData();
         break;
 
       case Ui::ProgramState::PAUSE_PROGRAM:

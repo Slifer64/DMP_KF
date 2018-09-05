@@ -26,8 +26,10 @@ public:
 
   void printRobotState(const arma::vec &q, const arma::vec &q_min, const arma::vec &q_max, const arma::vec &pos);
 
-  bool recordDemo() const { return gui_obj->record_demo; }
-  void resetRecordDemo() { gui_obj->record_demo = false; }
+  bool startDemoRecord() const { return gui_obj->start_demo_record; }
+  void resetStartDemoRecord() { gui_obj->start_demo_record = false; }
+  bool stopDemoRecord() const { return gui_obj->stop_demo_record; }
+  void resetStopDemoRecord() { gui_obj->stop_demo_record = false; }
 
   bool trainModel() const { return gui_obj->train_model; }
   bool resetTrainModel() { gui_obj->train_model = false; }

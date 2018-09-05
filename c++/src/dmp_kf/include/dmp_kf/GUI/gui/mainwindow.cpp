@@ -27,13 +27,70 @@ MainWindow::MainWindow(QWidget *parent) :
   mode_label_font = QFont("DejaVu Serif", 16);
   mode_label_font.setBold(true);
 
+  createJointPositionsDisplay();
+  createEndEffectorPositionDisplay();
+
+  init();
+}
+
+void MainWindow::createJointPositionsDisplay()
+{
   j_slider.resize(7);
   j_pos_box.resize(7);
   j_pos_units_box.resize(7);
   j_name_box.resize(7);
   for (int i=0;i<7;i++) createJointSlider(i);
+}
 
-  init();
+void MainWindow::createEndEffectorPositionDisplay()
+{
+  ee_pos_box.resize(3);
+  ee_pos_name_box.resize(3);
+  ee_pos_units_box.resize(3);
+
+  const char *pos_name[3] = {"X", "Y", "Z"};
+
+  ee_pos_label.reset(new QLabel(this));
+  ee_pos_label->setObjectName(QString::fromUtf8("ee_pos_label"));
+  ee_pos_label->setGeometry(QRect(670, 310, 161, 41));
+  ee_pos_label->setStyleSheet(QString::fromUtf8("font: 75 13pt \"Waree\";"));
+  ee_pos_label->setText("End-effector Position");
+
+  int height = 25;
+
+  for (unsigned i=0; i<ee_pos_box.size(); i++)
+  {
+      ee_pos_box[i].reset(new QLineEdit(this));
+      ee_pos_box[i]->setObjectName(QString::fromUtf8("ee_pos_box"));
+      ee_pos_box[i]->setGeometry(QRect(720, 315 + (i+1)*30, 51, height));
+      ee_pos_box[i]->setText("1.0");
+
+      ee_pos_name_box[i].reset(new QLineEdit(this));
+      ee_pos_name_box[i]->setObjectName(QString::fromUtf8("ee_pos_name_box"));
+      ee_pos_name_box[i]->setGeometry(QRect(680, 315 + (i+1)*30, 21, height));
+      ee_pos_name_box[i]->setText(pos_name[i]);
+
+      ee_pos_units_box[i].reset(new QLineEdit(this));
+      ee_pos_units_box[i]->setObjectName(QString::fromUtf8("ee_pos_units_box"));
+      ee_pos_units_box[i]->setGeometry(QRect(790, 315 + (i+1)*30, 31, height));
+      ee_pos_units_box[i]->setText("m");
+  }
+
+  setEndEffectorPosition(0.0, 0.0, 0.0);
+
+
+}
+
+void MainWindow::setEndEffectorPosition(double x, double y, double z)
+{
+    double pos[3] = {x, y, z};
+
+    for (unsigned i=0; i<ee_pos_box.size(); i++)
+    {
+        std::ostringstream out;
+        out << std::setprecision(3) << pos[i];
+        ee_pos_box[i]->setText(out.str().c_str());
+    }
 }
 
 void MainWindow::createJointSlider(int i)
@@ -41,10 +98,18 @@ void MainWindow::createJointSlider(int i)
   std::ostringstream slider_name;
   slider_name << "j" << i << "_slider";
 
+  j_pos_label.reset(new QLabel(this));
+  j_pos_label->setObjectName(QString::fromUtf8("j_pos_label"));
+  j_pos_label->setGeometry(QRect(700, 40, 111, 41));
+  j_pos_label->setStyleSheet(QString::fromUtf8("font: 75 13pt \"Waree\";"));
+  j_pos_label->setText("Joint Positions");
+
   j_slider[i].reset(new QSlider(this));
   j_slider[i]->setObjectName(QString(slider_name.str().c_str()));
   j_slider[i]->setGeometry(QRect(660, 90 + i*30, 161, 25));
   j_slider[i]->setOrientation(Qt::Horizontal);
+  j_slider[i]->setMinimum(-1000);
+  j_slider[i]->setMaximum(1000);
 
   j_pos_box[i].reset(new QLineEdit(this));
   j_pos_box[i]->setObjectName(QString::fromUtf8("j_pos_box"));
@@ -62,8 +127,6 @@ void MainWindow::createJointSlider(int i)
   std::ostringstream joint_name;
   joint_name << "j" << i+1;
   j_name_box[i]->setText(joint_name.str().c_str());
-
-  setJointSliderLimits(-1000, 1000, i);
 }
 
 void MainWindow::setJointSliderPos(double pos, double min, double max, int i)
@@ -77,19 +140,11 @@ void MainWindow::setJointSliderPos(double pos, double min, double max, int i)
     j_pos_box[i]->setText(val.str().c_str());
 }
 
-void MainWindow::setJointSliderLimits(int min, int max, int i)
-{
-    j_slider[i]->setMinimum(min);
-    j_slider[i]->setMaximum(max);
-}
-
 void MainWindow::getJointSliderLimits(int &min, int &max, int i)
 {
     min = j_slider[i]->minimum();
     max = j_slider[i]->maximum();
 }
-
-
 
 MainWindow::~MainWindow()
 {
@@ -130,7 +185,8 @@ void MainWindow::init()
   current_pose_as_start = false;
   goto_start_pose = false;
 
-  record_demo = false;
+  start_demo_record = false;
+  stop_demo_record = false;
   demo_recorded = false;
 
   train_model = false;
@@ -426,6 +482,8 @@ void MainWindow::on_record_demo_clicked()
     }
     else
     {
+      start_demo_record = false;
+      stop_demo_record = true;
       setState(Ui::ProgramState::DEMO_RECORDING);
     }
 }
@@ -440,7 +498,8 @@ void MainWindow::on_start_demo_record_btn_clicked()
     }
     else
     {
-      record_demo = true;
+      start_demo_record = true;
+      stop_demo_record = false;
       setMsg("Started recording!", Ui::MSG_TYPE::INFO);
     }
 }
@@ -455,7 +514,8 @@ void MainWindow::on_stop_demo_record_btn_clicked()
     }
     else
     {
-      record_demo = false;
+      start_demo_record = false;
+      stop_demo_record = true;
       setMsg("Stopped recording!", Ui::MSG_TYPE::INFO);
     }
 }
