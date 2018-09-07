@@ -22,8 +22,8 @@ theta_data = read_mat(fid, binary);
 Sigma_theta_data = read_mat(fid, binary);
 g = read_mat(fid, binary);
 
-figure;
-plot(Fext_data')
+% figure;
+% plot(Fext_data')
 
 fclose(fid);
 
@@ -38,8 +38,8 @@ tau_hat_data = theta_data(4,:);
 plot_estimation_results(Time, g, g_hat_data, tau, tau_hat_data, Sigma_theta_data, Fext_filt_data, mf_data, plot_1sigma, Y_data);
 
 
-Exec_Data{1} = struct('Time',Time, 'Y',Y_data, 'dY',dY_data, 'ddY',ddY_data);
-plotData(Exec_Data);
+% Exec_Data{1} = struct('Time',Time, 'Y',Y_data, 'dY',dY_data, 'ddY',ddY_data);
+% plotData(Exec_Data);
 
 
 end
