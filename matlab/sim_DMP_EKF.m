@@ -7,13 +7,13 @@ clear;
 est_g = true;
 est_tau = true;
 
-goal_scale = [1.5 0.2 -1.8]';
-time_scale = 0.6; 
+goal_scale = [1.5 -1.5 1.5]';
+time_scale = 1.5; 
 
 process_noise = 0.0; % Q
-msr_noise = 0.005; % R
+msr_noise = 0.01; % R
 init_params_variance = 1; % P
-a_p = 0.0; % instability term in modified EKF
+a_p = 0.9; % instability term in modified EKF
 
 plot_1sigma = false;
 
@@ -28,7 +28,7 @@ load('data/dmp_data.mat', 'DMP_data');
 dmp = DMP_data{1};
 can_clock_ptr = dmp{1}.can_clock_ptr;
 
-load('data/demo_data.mat','Data');
+load('data/training_data.mat','Data');
 
 N = length(Data);
 

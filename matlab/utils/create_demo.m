@@ -15,7 +15,7 @@ g = y0 + [1.0; 0.79; 0.9];
 D = size(g,1);
 N_data = length(Time);
 
-y_data = y0 + (g-y0)*(10*(Time/t_end).^3 - 15*(Time/t_end).^4 + 6*(Time/t_end).^5) + 0.8*[0.2; 0.3; 0.1]*exp(-2*(Time-3.0).^2) + 0.85*[0.2; 0.3; 0.1]*exp(-1.5*(Time-1.9).^2);
+y_data = y0 + (g-y0)*(10*(Time/t_end).^3 - 15*(Time/t_end).^4 + 6*(Time/t_end).^5);% + 0.8*[0.2; 0.3; 0.1]*exp(-2*(Time-3.0).^2) + 0.85*[0.2; 0.3; 0.1]*exp(-1.5*(Time-1.9).^2);
 dy_data = (g-y0)*(3*10*(Time/t_end).^2 - 4*15*(Time/t_end).^3 + 5*6*(Time/t_end).^4)/t_end;
 ddy_data = (g-y0)*(2*3*10*(Time/t_end).^1 - 3*4*15*(Time/t_end).^2 + 4*5*6*(Time/t_end).^3)/t_end^2;
 
@@ -43,7 +43,7 @@ plot_demos(Data);
 figure;
 plot(y_data(1,:), y_data(2,:));
 
-save('data/demo_data.mat','Data');
+save('data/training_data.mat','Data');
 
 end
 

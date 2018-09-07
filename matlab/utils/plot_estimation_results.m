@@ -1,8 +1,10 @@
 function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma)
 
-    fontsize = 14;
+    fontsize = 16;
     
     D = length(g);
+    
+    axis_name = {'x', 'y', 'z'};
     
     figure;
     for i=1:D
@@ -10,14 +12,16 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
         hold on;
         plot([Time(1) Time(end)],[g(i) g(i)],'r--', 'LineWidth',2);
         plot(Time,g_data(i,:),'b-', 'LineWidth',1.5);
-        legend_labels = {['$g_' num2str(i) '$'], ['$\hat{g}_' num2str(i) '$']};
+        legend_labels = {['$y_{g,' num2str(i) '}$'], ['$\hat{y}_{g,' num2str(i) '}$']};
         if (plot_1sigma)
             plot(Time,g_data(i,:)+P_data(i,:),'c-.', 'LineWidth',1.5);
         	plot(Time,g_data(i,:)-P_data(i,:),'c-.', 'LineWidth',1.5);
             legend_labels = [legend_labels, ['$\pm1\sigma$ bound']];
         end
+        ylabel([axis_name{i} ' [$m$]'],'interpreter','latex','fontsize',fontsize);
         legend(legend_labels,'interpreter','latex','fontsize',fontsize);
-        if (i==1), title('EKF-matlab prediction','interpreter','latex','fontsize',fontsize); end
+        if (i==1), title('EKF prediction','interpreter','latex','fontsize',fontsize); end
+        axis tight;
         hold off;
     end
     subplot(D+1,1,D+1);
@@ -31,7 +35,9 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
         legend_labels = [legend_labels, ['$\pm1\sigma$ bound']];
     end
     legend(legend_labels,'interpreter','latex','fontsize',fontsize);
+    ylabel('$\tau$ [$s$]','interpreter','latex','fontsize',fontsize);
     xlabel('time [$s$]','interpreter','latex','fontsize',fontsize);
+    axis tight;
     hold off;
     
     f_label = {'f_x', 'f_y', 'f_z'};
