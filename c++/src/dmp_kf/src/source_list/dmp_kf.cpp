@@ -19,6 +19,7 @@ dmp_kf::dmp_kf()
   else if (!robot_type.compare("robot_sim")) robot.reset(new Sim_Robot());
 
   gui.reset(new GUI());
+
   controller.reset(new DMP_EKF_Controller(robot, gui));
 
   print_robot_state_cycle = 100; // ms
@@ -66,6 +67,7 @@ void dmp_kf::execute()
 
   while (!exit_program && ros::ok())
   {
+
     if (!robot->isOk())
     {
       gui->setState(Ui::ProgramState::PAUSE_PROGRAM);
@@ -246,6 +248,16 @@ void dmp_kf::execute()
       controller->setStartPose();
       gui->printMsg("Registered current pose as start!", Ui::MSG_TYPE::SUCCESS);
       gui->resetCurrentPoseAsStart(); // reset gui flag
+    }
+
+    if (gui->printPosition())
+    {
+      arma::vec p = robot->getTaskPosition();
+      std::ostringstream out;
+      out << "End-effector position:\n" << p;
+      gui->printMsg(out.str().c_str(), Ui::MSG_TYPE::INFO);
+      controller->y_g = p;
+      gui->resetPrintPosition();
     }
 
     robot->update();

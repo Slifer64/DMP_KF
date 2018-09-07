@@ -59,6 +59,8 @@ public:
 
     Ui::ProgramState state;
 
+    bool print_pos;
+
     bool save_training_data;
     bool load_training_data;
 
@@ -139,6 +141,8 @@ private slots:
     void on_save_sim_data_btn_clicked();
 
     void on_sim_controller_button_clicked();
+
+    void on_print_pos_btn_clicked();
 
 private:
     std::shared_ptr<QLabel> j_pos_label;

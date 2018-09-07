@@ -69,7 +69,9 @@ public:
   arma::mat theta_data;
   arma::mat Sigma_theta_data;
 
-  ExecutionData() {};
+  arma::vec y_g; // goal position
+
+  ExecutionData();
 
   // saves the data in "ros::package::getPath(PACKAGE_NAME)+ "/data/" + file_name"
   // On success returns true, otherwise false and the error message in 'err_msg'

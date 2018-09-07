@@ -169,6 +169,8 @@ void MainWindow::init()
 
   state = Ui::ProgramState::PAUSE_PROGRAM;
 
+  print_pos = false;
+
   run_sim = false;
   log_sim = false;
   save_sim_data = false;
@@ -687,4 +689,9 @@ void MainWindow::on_sim_controller_button_clicked()
     {
       run_sim = true;
     }
+}
+
+void MainWindow::on_print_pos_btn_clicked()
+{
+    print_pos = true;
 }

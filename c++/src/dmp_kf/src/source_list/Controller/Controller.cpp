@@ -87,6 +87,7 @@ bool Controller::saveExecutionData(std::string &err_msg)
   }
 
   std::string file_name = "execution_data.bin";
+  exec_data.y_g = y_g;
 
   return exec_data.save(file_name, err_msg);
 }

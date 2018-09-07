@@ -52,6 +52,11 @@ void KinematicData::clear()
 // ===========  ExecutionData  ===========
 // =======================================
 
+ExecutionData::ExecutionData()
+{
+  y_g = arma::vec().zeros(3);
+}
+
 bool ExecutionData::save(const std::string &file_name, std::string &err_msg)
 {
 	std::string f_name = ros::package::getPath(PACKAGE_NAME)+ "/data/" + file_name;
@@ -75,6 +80,8 @@ bool ExecutionData::save(const std::string &file_name, std::string &err_msg)
 
 	write_mat(theta_data, out, binary);
 	write_mat(Sigma_theta_data, out, binary);
+
+  write_mat(y_g, out, binary);
 
 	out.close();
 

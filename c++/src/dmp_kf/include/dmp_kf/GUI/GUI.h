@@ -26,6 +26,9 @@ public:
 
   void printRobotState(const arma::vec &q, const arma::vec &q_min, const arma::vec &q_max, const arma::vec &pos);
 
+  bool printPosition() const { return gui_obj->print_pos; }
+  void resetPrintPosition() { gui_obj->print_pos = false; }
+
   bool startDemoRecord() const { return gui_obj->start_demo_record; }
   void resetStartDemoRecord() { gui_obj->start_demo_record = false; }
   bool stopDemoRecord() const { return gui_obj->stop_demo_record; }

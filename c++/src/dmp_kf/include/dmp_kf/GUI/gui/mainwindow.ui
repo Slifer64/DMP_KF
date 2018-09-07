@@ -367,6 +367,19 @@
      <string>Data logging</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="print_pos_btn">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>340</y>
+      <width>161</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>print position</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

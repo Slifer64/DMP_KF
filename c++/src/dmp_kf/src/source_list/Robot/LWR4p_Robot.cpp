@@ -4,9 +4,11 @@ LWR4p_Robot::LWR4p_Robot():N_JOINTS(7)
 {
   // Initialize generic robot with the kuka-lwr model
   robot.reset(new lwr4p::Robot());
-  ROS_INFO_STREAM("Robot created successfully.");
+  std::cout << "Robot created successfully!\n";
 
-  ftsensor.init("192.168.2.1");
+  std::string ft_sensor_ip = "192.168.2.1";
+  std::cout << "Initializing F/T sensor at ip: " << ft_sensor_ip << "\n";
+  ftsensor.init(ft_sensor_ip.c_str());
   ftsensor.setTimeout(1.0);
   ftsensor.setBias();
 }
