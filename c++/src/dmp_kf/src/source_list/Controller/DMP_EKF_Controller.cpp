@@ -65,6 +65,9 @@ void DMP_EKF_Controller::readControllerParams(const char *params_file)
   // leader-follower sigmoid function params  1 / ( 1 + exp(a_m*(norm(F)-c_m)) )
   if (!parser.getParam("a_m", a_m)) a_m = 3.5;
   if (!parser.getParam("c_m", c_m)) c_m = 1.3;
+
+  if (!parser.getParam("k_p", k_p)) k_p = 0.0;
+  if (!parser.getParam("k_i", k_i)) k_i = 0.0;
 }
 
 void DMP_EKF_Controller::initExecution()
@@ -104,6 +107,8 @@ void DMP_EKF_Controller::initExecution()
   x_hat = t/tau_hat;
   mf = 1.0;
   can_clock_ptr->setTau(tau_hat);
+
+  f_int.zeros(3);
 }
 
 bool DMP_EKF_Controller::startExecution()
@@ -128,12 +133,18 @@ void DMP_EKF_Controller::execute()
 
   if (gui->logControllerData()) exec_data.log(t, Y, dY, ddY, f_ext_raw, f_ext, mf, theta, P_theta);
 
+  double Ts = robot->getControlCycle();
   // this->robot->update();
 
   // ========  leader-follower role  ========
   f_ext_raw = (robot->getTaskWrench()).subvec(0,2);
   f_ext = (1-a_force)*f_ext + a_force*f_ext_raw;
   mf = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
+  f_int += f_ext*Ts;
+
+  arma::vec ddY_ref2(3);
+
+  arma::vec Z_c(3);
 
   // ========  KF estimation  ========
   int dim = dmp.size();
@@ -142,18 +153,25 @@ void DMP_EKF_Controller::execute()
   for (int i=0; i<dim; i++)
   {
     double y_c=0, z_c=0;
+    z_c = k_p*f_ext(i) + k_i*f_int(i);
+    Z_c(i) = z_c;
     ddY_ref(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, x_hat, g_hat(i), tau_hat);
+    ddY_ref2(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, 0.0, x_hat, g_hat(i), tau_hat);
     arma::vec dC_dtheta_i = dmp[i]->getAcellPartDev_g_tau(t, Y(i), dY(i), Y0(i), x_hat, g_hat(i), tau_hat);
     dC_dtheta(i,i) = dC_dtheta_i(0);
     dC_dtheta(i,n_theta-1) = dC_dtheta_i(1);
   }
   dY_ref = dY;
   Y_ref = Y;
+  // ddY = ddY_ref;
+
+  // std::cout << "Z_c = " << Z_c.t() << "\n";
 
   // ========  Controller  ========
   U_dmp = -K_d%(Y - Y_ref) - D_d%(dY-dY_ref) + D%dY + M%ddY_ref;
+  U_total = U_dmp;
+  // U_total = mf*U_dmp + (1-mf)*(ff_gains%f_ext);
 
-  U_total = mf*U_dmp + (1-mf)*(ff_gains%f_ext);
   // U_total = ff_gains%f_ext;
 
   ddY = ( - D%dY + U_total) / M;
@@ -164,11 +182,10 @@ void DMP_EKF_Controller::execute()
   robot->setTaskVelocity(V_cmd);
   // ========  KF update  ========
   arma::mat K_kf = P_theta*dC_dtheta.t()*inv_R_v;
-  arma::vec theta_dot = K_kf * (ddY - ddY_ref);
+  arma::vec theta_dot = K_kf * (ddY - ddY_ref2);
   arma::mat P_dot = Q_w - K_kf*dC_dtheta*P_theta + 2*a_p*P_theta;
 
   // ========  numerical integration  ========
-  double Ts = robot->getControlCycle();
 
   t = t + Ts;
   Y = Y + dY*Ts;

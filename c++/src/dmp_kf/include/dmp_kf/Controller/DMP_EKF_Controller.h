@@ -91,6 +91,9 @@ private:
   // leader-follower sigmoid function params  1 / ( 1 + exp(a_m*(norm(f_ext)-c_m)) )
   double a_m; // sigmoid steepness
   double c_m; // sigmoid center
+
+  arma::vec f_int;
+  double k_p, k_i;
 };
 
 #endif // DMP_EKF_CONTROLLER_H
