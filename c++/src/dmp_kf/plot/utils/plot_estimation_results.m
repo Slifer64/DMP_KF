@@ -75,14 +75,14 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     hold off;
     
     
-%     figure;
-%     hold on;
-%     plot(Time, mf_data,'b-', 'LineWidth',1.5);
-%     plot(Time, 1-mf_data,'g-', 'LineWidth',1.5);
-%     title('Leader-follower role','interpreter','latex','fontsize',fontsize);
-%     legend({'leader','$follower$'},'interpreter','latex','fontsize',fontsize);
-%     ylabel('activation','interpreter','latex','fontsize',fontsize);
-%     xlabel('time [$s$]','interpreter','latex','fontsize',fontsize);
-%     hold off;
+    figure;
+    hold on;
+    plot(Time, mf_data,'b-', 'LineWidth',1.5);
+    plot(Time, 1-mf_data,'g-', 'LineWidth',1.5);
+    title('Leader-follower role','interpreter','latex','fontsize',fontsize);
+    legend({'leader','$follower$'},'interpreter','latex','fontsize',fontsize);
+    ylabel('activation','interpreter','latex','fontsize',fontsize);
+    xlabel('time [$s$]','interpreter','latex','fontsize',fontsize);
+    hold off;
 
 end

@@ -60,6 +60,14 @@ private:
   double a_p; // instability term for P_dot in modified EKF
   arma::mat Q_w; // process noise variance matrix
 
+  double p1;
+  double p2;
+  double p_r;
+  double tau_e;
+  double p_turos;
+
+  int dmp_mod;
+
   // Training data for the DMP
   bool start_train_flag; // if true logTrainData() can start
   arma::vec p, p_prev, dp, dp_prev, ddp; // store current and previous positions and velocities for numerical diff

@@ -37,6 +37,13 @@ g_hat_data = theta_data(1:3,:);
 tau_hat_data = theta_data(4,:);
 plot_estimation_results(Time, g, g_hat_data, tau, tau_hat_data, Sigma_theta_data, Fext_filt_data, mf_data, plot_1sigma, Y_data);
 
+g_norm_data = zeros(length(Time),1);
+for i=1:length(g_norm_data)
+    g_norm_data(i) = norm(g_hat_data(:,i));
+end
+figure;
+plot(Time, g_norm_data);
+
 
 % Exec_Data{1} = struct('Time',Time, 'Y',Y_data, 'dY',dY_data, 'ddY',ddY_data);
 % plotData(Exec_Data);

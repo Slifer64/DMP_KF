@@ -47,6 +47,13 @@ void DMP_EKF_Controller::readControllerParams(const char *params_file)
   Q_w = arma::diagmat(Q_w);
   if (!parser.getParam("a_p", a_p)) a_p = 0.0;
 
+  if (!parser.getParam("p1", p1)) p1 = 0.001;
+  if (!parser.getParam("p2", p2)) p2 = 1000;
+  if (!parser.getParam("p_r", p_r)) p_r = 0.5;
+  if (!parser.getParam("tau_e", tau_e)) tau_e = 0.01;
+  if (!parser.getParam("p_turos", p_turos)) p_turos = 0.02;
+
+
   if (!parser.getParam("g_scale", g_scale)) g_scale = arma::vec({1.0, 1.0, 1.0});
   if (!parser.getParam("tau_scale", tau_scale)) tau_scale = 1.0;
 
@@ -65,6 +72,8 @@ void DMP_EKF_Controller::readControllerParams(const char *params_file)
   // leader-follower sigmoid function params  1 / ( 1 + exp(a_m*(norm(F)-c_m)) )
   if (!parser.getParam("a_m", a_m)) a_m = 3.5;
   if (!parser.getParam("c_m", c_m)) c_m = 1.3;
+
+  if (!parser.getParam("dmp_mod", dmp_mod)) dmp_mod = 1.0;
 }
 
 void DMP_EKF_Controller::initExecution()
@@ -153,10 +162,14 @@ void DMP_EKF_Controller::execute()
   // ========  Controller  ========
   U_dmp = -K_d%(Y - Y_ref) - D_d%(dY-dY_ref) + D%dY + M%ddY_ref;
 
-  U_total = mf*U_dmp + (1-mf)*(ff_gains%f_ext);
+  // U_total = mf*U_dmp + (1-mf)*(ff_gains%f_ext);
   // U_total = ff_gains%f_ext;
+  // ddY = ( - D%dY + U_total) / M;
 
-  ddY = ( - D%dY + U_total) / M;
+  if (dmp_mod == 1) ddY = mf*ddY_ref + (1-mf)*(- D%dY + ff_gains%f_ext)/M;
+  else if (dmp_mod == 2) ddY = ( - D%dY + ff_gains%f_ext) / M;
+  else if (dmp_mod == 3) ddY = ddY_ref + 0.05*(ff_gains%f_ext)/M;
+  else ddY.zeros(3);
 
   arma::vec Y_robot = this->robot->getTaskPosition();
   arma::vec V_cmd = arma::vec().zeros(6);
@@ -174,11 +187,53 @@ void DMP_EKF_Controller::execute()
   Y = Y + dY*Ts;
   dY = dY + ddY*Ts;
 
+  // Calculate the surface gradient
+  double g_hat_norm = arma::norm(g_hat);
+  arma::vec dg_S(4);
+  if (tau_hat <= tau_e)
+  {
+    dg_S = arma::vec({0,0,0,-1});
+    tau_hat = tau_e; // enforce to avoid numerical deviation
+  }
+  else if (tau_hat >= p_turos+tau_e)
+  {
+    dg_S.subvec(0,2) = g_hat/g_hat_norm;
+    dg_S(3) = 0.0;
+  }
+  else
+  {
+    dg_S.subvec(0,2) = (g_hat_norm-p_r+p_turos)*g_hat/(p_turos*g_hat_norm);
+    dg_S(3) = (tau_hat - p_turos - tau_e)/p_turos;
+  }
+
+  // apply gradient projection
+  if (g_hat_norm >= p_r && arma::dot(theta_dot,dg_S)>0)
+  {
+    std::cerr << "=============> Gradient Projection!!!!\n";
+    theta_dot = (arma::mat().eye(4,4) - P_theta*dg_S*dg_S.t() / arma::dot(dg_S, P_theta*dg_S) )*theta_dot;
+    g_hat = g_hat*g_hat_norm/p_r; // enforce to avoid numerical deviation
+  }
+
+  double P_norm = arma::norm(P_theta);
+  // covariance saturate
+  if (P_norm >= p2)
+  {
+    std::cerr << "=============> Covariance SATURATION!!!!\n";
+    P_dot = arma::mat().zeros(4,4);
+  }
+
   theta = theta + theta_dot*Ts;
   g_hat = theta.subvec(0,2);
   tau_hat = theta(3);
   P_theta = P_theta + P_dot*Ts;
   x_hat = t/tau_hat;
+
+  // covariance reset
+  if (P_norm < p1)
+  {
+    std::cerr << "=============> Covariance RESET!!!!\n";
+    P_theta = arma::mat().eye(4,4)*p1;
+  }
 
 }
 
