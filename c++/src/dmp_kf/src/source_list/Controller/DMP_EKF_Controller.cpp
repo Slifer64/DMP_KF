@@ -53,6 +53,8 @@ void DMP_EKF_Controller::readControllerParams(const char *params_file)
   if (!parser.getParam("tau_e", tau_e)) tau_e = 0.01;
   if (!parser.getParam("p_turos", p_turos)) p_turos = 0.02;
 
+  if (!parser.getParam("a_py", a_py)) a_py = 0.1;
+  if (!parser.getParam("a_px", a_px)) a_px = 100;
 
   if (!parser.getParam("g_scale", g_scale)) g_scale = arma::vec({1.0, 1.0, 1.0});
   if (!parser.getParam("tau_scale", tau_scale)) tau_scale = 1.0;
@@ -96,7 +98,7 @@ void DMP_EKF_Controller::initExecution()
   f_ext.zeros(3);
   f_ext_raw.zeros(3);
 
-  Y_ref.zeros(3);
+  Y_ref = Y;
   dY_ref.zeros(3);
   ddY_ref.zeros(3);
 
@@ -144,31 +146,46 @@ void DMP_EKF_Controller::execute()
   f_ext = (1-a_force)*f_ext + a_force*f_ext_raw;
   mf = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
 
+  arma::vec Y_c = arma::vec().zeros(3);
+  arma::vec Z_c = arma::vec().zeros(3);
+
+  if (dmp_mod != 4)
+  {
+    dY_ref = dY;
+    Y_ref = Y;
+  }
+
+  if (dmp_mod == 4)
+  {
+    Y_c = a_py*(Y-Y_ref);
+  }
+
   // ========  KF estimation  ========
   int dim = dmp.size();
   int n_theta = theta.size();
   arma::mat dC_dtheta = arma::mat().zeros(dim, n_theta);
   for (int i=0; i<dim; i++)
   {
-    double y_c=0, z_c=0;
-    ddY_ref(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, x_hat, g_hat(i), tau_hat);
-    arma::vec dC_dtheta_i = dmp[i]->getAcellPartDev_g_tau(t, Y(i), dY(i), Y0(i), x_hat, g_hat(i), tau_hat);
+    // double y_c=0, z_c=0;
+    ddY_ref(i) = dmp[i]->getAccel(Y_ref(i), dY_ref(i), Y0(i), Y_c(i), Z_c(i), x_hat, g_hat(i), tau_hat);
+    arma::vec dC_dtheta_i = dmp[i]->getAcellPartDev_g_tau(t, Y_ref(i), dY_ref(i), Y0(i), x_hat, g_hat(i), tau_hat);
     dC_dtheta(i,i) = dC_dtheta_i(0);
     dC_dtheta(i,n_theta-1) = dC_dtheta_i(1);
   }
-  dY_ref = dY;
-  Y_ref = Y;
 
   // ========  Controller  ========
-  U_dmp = -K_d%(Y - Y_ref) - D_d%(dY-dY_ref) + D%dY + M%ddY_ref;
+  // U_dmp = -K_d%(Y - Y_ref) - D_d%(dY-dY_ref) + D%dY + M%ddY_ref;
 
   // U_total = mf*U_dmp + (1-mf)*(ff_gains%f_ext);
   // U_total = ff_gains%f_ext;
   // ddY = ( - D%dY + U_total) / M;
 
-  if (dmp_mod == 1) ddY = mf*ddY_ref + (1-mf)*(- D%dY + ff_gains%f_ext)/M;
+  arma::vec F = ff_gains%f_ext;
+
+  if (dmp_mod == 1) ddY = mf*ddY_ref + (1-mf)*(- D%dY + F)/M;
   else if (dmp_mod == 2) ddY = ( - D%dY + ff_gains%f_ext) / M;
-  else if (dmp_mod == 3) ddY = ddY_ref + 0.05*(ff_gains%f_ext)/M;
+  else if (dmp_mod == 3) ddY = ddY_ref + 0.05*F/M;
+  else if (dmp_mod == 4) ddY = ddY_ref + ( -D%(dY-dY_ref) - K_d%(Y-Y_ref) + F )/M;
   else ddY.zeros(3);
 
   arma::vec Y_robot = this->robot->getTaskPosition();
@@ -186,6 +203,8 @@ void DMP_EKF_Controller::execute()
   t = t + Ts;
   Y = Y + dY*Ts;
   dY = dY + ddY*Ts;
+  Y_ref = Y_ref + dY_ref*Ts;
+  dY_ref = dY_ref + ddY_ref*Ts;
 
   // Calculate the surface gradient
   double g_hat_norm = arma::norm(g_hat);
@@ -209,18 +228,18 @@ void DMP_EKF_Controller::execute()
   // apply gradient projection
   if (g_hat_norm >= p_r && arma::dot(theta_dot,dg_S)>0)
   {
-    std::cerr << "=============> Gradient Projection!!!!\n";
+    // std::cerr << "=============> Gradient Projection!!!!\n";
     theta_dot = (arma::mat().eye(4,4) - P_theta*dg_S*dg_S.t() / arma::dot(dg_S, P_theta*dg_S) )*theta_dot;
     g_hat = g_hat*g_hat_norm/p_r; // enforce to avoid numerical deviation
   }
 
   double P_norm = arma::norm(P_theta);
   // covariance saturate
-  if (P_norm >= p2)
-  {
-    std::cerr << "=============> Covariance SATURATION!!!!\n";
-    P_dot = arma::mat().zeros(4,4);
-  }
+  // if (P_norm >= p2)
+  // {
+  //   std::cerr << "=============> Covariance SATURATION!!!!\n";
+  //   P_dot = arma::mat().zeros(4,4);
+  // }
 
   theta = theta + theta_dot*Ts;
   g_hat = theta.subvec(0,2);
@@ -229,11 +248,11 @@ void DMP_EKF_Controller::execute()
   x_hat = t/tau_hat;
 
   // covariance reset
-  if (P_norm < p1)
-  {
-    std::cerr << "=============> Covariance RESET!!!!\n";
-    P_theta = arma::mat().eye(4,4)*p1;
-  }
+  // if (P_norm < p1)
+  // {
+  //   std::cerr << "=============> Covariance RESET!!!!\n";
+  //   P_theta = arma::mat().eye(4,4)*p1;
+  // }
 
 }
 

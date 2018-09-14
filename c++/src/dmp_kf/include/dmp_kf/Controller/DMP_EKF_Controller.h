@@ -66,6 +66,9 @@ private:
   double tau_e;
   double p_turos;
 
+  double a_py;
+  double a_px;
+
   int dmp_mod;
 
   // Training data for the DMP
