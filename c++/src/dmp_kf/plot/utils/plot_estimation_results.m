@@ -13,9 +13,10 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
         hold on;
         plot([Time(1) Time(end)],[g(i) g(i)],'r--', 'LineWidth',2);
         plot(Time,g_data(i,:),'b-', 'LineWidth',linewidth);
+        plot(Time,Y_data(i,:),'g-', 'LineWidth',linewidth);
 %         plot(Time,Y_data(i,:),'g-.', 'LineWidth',1.2);
-        legend_labels = {['$y_{g,' num2str(i) '}$'], ['$\hat{y}_{g,' num2str(i) '}$']};
-%         legend_labels = {['$y_{g,' num2str(i) '}$'], ['$\hat{y}_{g,' num2str(i) '}$'], ['$y_' num2str(i) '$']};
+%         legend_labels = {['$y_{g,' num2str(i) '}$'], ['$\hat{y}_{g,' num2str(i) '}$']};
+        legend_labels = {['$y_{g,' num2str(i) '}$'], ['$\hat{y}_{g,' num2str(i) '}$'], ['$y_' num2str(i) '$']};
         if (plot_1sigma)
             plot(Time,g_data(i,:)+P_data(i,:),'c-.', 'LineWidth',linewidth);
         	plot(Time,g_data(i,:)-P_data(i,:),'c-.', 'LineWidth',linewidth);
