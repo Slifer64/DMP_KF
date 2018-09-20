@@ -133,6 +133,4 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     follower = sum(mf_data <= 0.01)/n
     mix = sum(mf_data>0.01 & mf_data<0.99)/n
     
-    leader+follower+mix
-
 end

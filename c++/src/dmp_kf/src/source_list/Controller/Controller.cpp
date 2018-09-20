@@ -120,7 +120,7 @@ bool Controller::saveModelRunData(std::string &err_msg)
 
 void Controller::initMixingFun(double x1, double x2)
 {
-  arma::vec p(p_5th, 6, 1, false);
+  arma::vec p(p_5th, 6, false);
 
   arma::vec b = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
@@ -136,17 +136,21 @@ void Controller::initMixingFun(double x1, double x2)
 
 double Controller::mixingFun(double f)
 {
+  double ret;
+
   if (f <= f1_)
   {
-    return 1.0;
+    ret = 1.0;
   }
   else if (f<f2_)
   {
-    return ( p_5th[0] + p_5th[1]*f + p_5th[2]*std::pow(f,2) \
-            + p_5th[3]*std::pow(f,3) + p_5th[4]*std::pow(f,4) + p_5th[5]*std::pow(f,5) );
+    ret =  ( p_5th[0] + p_5th[1]*f + p_5th[2]*std::pow(f,2) \
+    + p_5th[3]*std::pow(f,3) + p_5th[4]*std::pow(f,4) + p_5th[5]*std::pow(f,5) );
   }
   else
   {
-    return 0.0;
+    ret = 0.0;
   }
+
+  return ret;
 }

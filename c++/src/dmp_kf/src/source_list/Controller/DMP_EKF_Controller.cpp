@@ -188,9 +188,10 @@ void DMP_EKF_Controller::execute()
   arma::vec F = ff_gains%f_ext;
 
   if (dmp_mod == 1) ddY = mf*ddY_ref + (1-mf)*(- D%dY + F)/M;
-  else if (dmp_mod == 2) ddY = ( - D%dY + ff_gains%f_ext) / M;
+  else if (dmp_mod == 2) ddY = ( - D%dY + F) / M;
   else if (dmp_mod == 3) ddY = ddY_ref + 0.05*F/M;
   else if (dmp_mod == 4) ddY = ddY_ref + ( -D%(dY-dY_ref) - K_d%(Y-Y_ref) + F )/M;
+  else if (dmp_mod == 5) ddY = ( - D%dY -K_d%(Y-y_g) + F) / M;
   else ddY.zeros(3);
 
   arma::vec Y_robot = this->robot->getTaskPosition();
@@ -212,33 +213,33 @@ void DMP_EKF_Controller::execute()
   dY_ref = dY_ref + ddY_ref*Ts;
 
   // Calculate the surface gradient
-  double g_hat_norm = arma::norm(g_hat);
-  arma::vec dg_S(4);
-  if (tau_hat <= tau_e)
-  {
-    dg_S = arma::vec({0,0,0,-1});
-    tau_hat = tau_e; // enforce to avoid numerical deviation
-  }
-  else if (tau_hat >= p_turos+tau_e)
-  {
-    dg_S.subvec(0,2) = g_hat/g_hat_norm;
-    dg_S(3) = 0.0;
-  }
-  else
-  {
-    dg_S.subvec(0,2) = (g_hat_norm-p_r+p_turos)*g_hat/(p_turos*g_hat_norm);
-    dg_S(3) = (tau_hat - p_turos - tau_e)/p_turos;
-  }
+  // double g_hat_norm = arma::norm(g_hat);
+  // arma::vec dg_S(4);
+  // if (tau_hat <= tau_e)
+  // {
+  //   dg_S = arma::vec({0,0,0,-1});
+  //   tau_hat = tau_e; // enforce to avoid numerical deviation
+  // }
+  // else if (tau_hat >= p_turos+tau_e)
+  // {
+  //   dg_S.subvec(0,2) = g_hat/g_hat_norm;
+  //   dg_S(3) = 0.0;
+  // }
+  // else
+  // {
+  //   dg_S.subvec(0,2) = (g_hat_norm-p_r+p_turos)*g_hat/(p_turos*g_hat_norm);
+  //   dg_S(3) = (tau_hat - p_turos - tau_e)/p_turos;
+  // }
 
   // apply gradient projection
-  if (g_hat_norm >= p_r && arma::dot(theta_dot,dg_S)>0)
-  {
-    // std::cerr << "=============> Gradient Projection!!!!\n";
-    theta_dot = (arma::mat().eye(4,4) - P_theta*dg_S*dg_S.t() / arma::dot(dg_S, P_theta*dg_S) )*theta_dot;
-    g_hat = g_hat*g_hat_norm/p_r; // enforce to avoid numerical deviation
-  }
+  // if (g_hat_norm >= p_r && arma::dot(theta_dot,dg_S)>0)
+  // {
+  //   // std::cerr << "=============> Gradient Projection!!!!\n";
+  //   theta_dot = (arma::mat().eye(4,4) - P_theta*dg_S*dg_S.t() / arma::dot(dg_S, P_theta*dg_S) )*theta_dot;
+  //   g_hat = g_hat*g_hat_norm/p_r; // enforce to avoid numerical deviation
+  // }
 
-  double P_norm = arma::norm(P_theta);
+  // double P_norm = arma::norm(P_theta);
   // covariance saturate
   // if (P_norm >= p2)
   // {
