@@ -2,22 +2,50 @@ clc;
 close all;
 clear;
 
+format compact;
+
+set_matlab_utils_path();
+
 %% ###################################################################
 
 est_g = true;
 est_tau = true;
 
-goal_scale = [1.5 -1.5 1.5]';
-time_scale = 1.5; 
+goal_scale = [2.6 -2.9 2.4]';
+time_scale = 0.8; 
 
-process_noise = 0.0; % Q
+process_noise = 0.001; % Q
 msr_noise = 0.01; % R
-init_params_variance = 1; % P
+init_params_variance = 10; % P
 a_p = 0.9; % instability term in modified EKF
 
-plot_1sigma = false;
+p1 = 0.01 * 1e-280;
+p2 = 50.0 * 1e280;
+p_r = 6.0;
+tau_e = 0.1;
+p_turos = 0.001;
+
+plot_1sigma = true;
+
+c_m = 1.0;
+a_m = 4.0;
+m1_fun = @(x) (1 + exp(a_m*(-c_m))) ./ (1 + exp(a_m*(x-c_m)));
+
+f1_ = 1.0;
+f2_ = 2.0;
+p_5th = get5thOrderParams(f1_, f2_, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+m2_fun = @(x) (x<=f1_)*1 + ((x>f1_) & (x<f2_)).*(p_5th(1) + p_5th(2)*x + p_5th(3)*x.^2 + p_5th(4)*x.^3 + p_5th(5)*x.^4 + p_5th(6)*x.^5) + (x>=f2_)*0;
+
+m_fun = m2_fun;
 
 dt = 0.002;
+
+% x = 0:0.002:5;
+% y = m_fun(x);
+% figure;
+% plot(x,y);
+% 
+% return
 
 %% ###################################################################
 
@@ -68,7 +96,7 @@ for n=1:1
     mf_data = [];
     P_data = [];
     
-    mr = 1;   
+    mr = 10;   
     Mr = eye(3,3) * mr;
 
     N_data = size(yd_data,2);
@@ -154,7 +182,9 @@ for n=1:1
         
         %% Interaction force calculation
         F = Mr*(y_out-y_out_hat);
-        mf = 1 / (1 + exp(4*(norm(F)-1)));
+        norm_f = norm(F);
+        mf = m_fun(norm_f);
+%         mf = 1 / (1 + exp(4*(norm(F)-1)));
 
         %% Update phase variable
         dx = can_clock_ptr.getPhaseDot(x);
@@ -170,17 +200,73 @@ for n=1:1
             warning('Time limit reached. Stopping simulation...\n');
             break;
         end
+
+        % Calculate the surface gradient
+        g_hat_norm = norm(g_hat);
+        dg_S = zeros(4,1);
+        
+        if (tau_hat <= tau_e)   
+            dg_S = [0; 0; 0; -1];
+        else
+            dg_S(1:3) = g_hat/g_hat_norm;
+            dg_S(4) = 0.0;
+        end
+
+%         if (tau_hat <= tau_e)   
+%             dg_S = [0; 0; 0; -1];
+%             tau_hat = tau_e; % enforce to avoid numerical deviation
+%         elseif (tau_hat >= p_turos+tau_e)
+%             dg_S(1:3) = g_hat/g_hat_norm;
+%             dg_S(4) = 0.0;
+%         else
+%             dg_S(1:3) = (g_hat_norm-p_r+p_turos)*g_hat/(p_turos*g_hat_norm);
+%             dg_S(4) = (tau_hat - p_turos - tau_e)/p_turos;
+%         end
+
+        P_norm = norm(P_theta);
         
         %% KF update
         K_kf = P_theta*dC_dtheta'*inv_R;
         theta_dot = K_kf * (y_out - y_out_hat);
         P_dot = Q - K_kf*dC_dtheta*P_theta + 2*a_p*P_theta;
+
+        % apply gradient projection
+        if ( (g_hat_norm >= p_r || tau_hat <= tau_e) && (theta_dot'*dg_S > 0) )
+            theta_dot_init = theta_dot;
+            theta_dot = (eye(4,4) - (P_theta*dg_S)*dg_S' / (dg_S'*P_theta*dg_S) )*theta_dot;
+            P_dot = zeros(4,4);
+            if (g_hat_norm >= p_r), g_hat = g_hat*g_hat_norm/p_r; end % enforce to avoid numerical deviation
+            if (tau_hat <= tau_e), tau_hat = tau_e; end % enforce to avoid numerical deviation
+            theta = params2theta(tau_hat, g_hat, est_tau, est_g);
+            disp('Gradient Projection!');
+            t
+            norm_f
+            g_hat_norm
+            tau_hat
+            dg_S
+            theta_dot
+            theta_dot_init
+            norm(g)
+            pause
+        end
+
+        % covariance saturation
+        if (P_norm >= p2)
+            P_dot = zeros(4,4); 
+            disp('Covariance Saturation!');
+        end
         
         theta = theta + theta_dot*dt;
         P_theta = P_theta + P_dot*dt;
         
         [tau_hat, g_hat] = theta2params(theta, tau, g, est_tau, est_g);
         x_hat = t/tau_hat; 
+
+        % covariance reset
+        if (P_norm < p1)
+            P_theta = eye(4,4)*p1;
+            disp('Covariance Reset!');
+        end
         
         %% Numerical integration
         t = t + dt;
@@ -195,9 +281,9 @@ for n=1:1
     
     Data_sim{n} = struct('Time',Time, 'Y',y_data, 'dY',dy_data, 'ddY',ddy_data);
     
-    plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma);
+    plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, y_data);
     
-    plotData(Data_sim);
+%     plotData(Data_sim);
 
 end
 

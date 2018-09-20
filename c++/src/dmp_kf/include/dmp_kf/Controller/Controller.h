@@ -43,6 +43,11 @@ public:
   std::string getErrMsg() const { return err_msg; }
   void setErrMsg(const std::string &msg) { err_msg = msg; }
 
+  double mixingFun(double f);
+  void initMixingFun(double x1, double x2);
+  double p_5th[6];
+  double f1_, f2_;
+
   bool is_trained;
 
   arma::vec q_start; ///< starting pose

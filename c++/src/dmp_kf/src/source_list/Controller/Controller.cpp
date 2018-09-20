@@ -117,3 +117,36 @@ bool Controller::saveModelRunData(std::string &err_msg)
 
   return modelRun_data.save(file_name, err_msg);
 }
+
+void Controller::initMixingFun(double x1, double x2)
+{
+  arma::vec p(p_5th, 6, 1, false);
+
+  arma::vec b = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+  arma::mat A = { { 1,  x1,  std::pow(x1,2),   std::pow(x1,3),    std::pow(x1,4)  ,    std::pow(x1,5)   },
+                  { 1,  x2,  std::pow(x2,2),   std::pow(x2,3),    std::pow(x2,4)  ,    std::pow(x2,5)   },
+                  { 0,   1,       2*x1     ,  3*std::pow(x1,2),   4*std::pow(x1,3),    5*std::pow(x1,4) },
+                  { 0,   1,       2*x2     ,  3*std::pow(x2,2),   4*std::pow(x2,3),    5*std::pow(x2,4) },
+                  { 0,   0,         2      ,        6*x1      ,  12*std::pow(x1,2),   20*std::pow(x1,3) },
+                  { 0,   0,         2      ,        6*x2      ,  12*std::pow(x2,2),   20*std::pow(x2,3) } };
+
+  p = arma::pinv(A)*b;
+}
+
+double Controller::mixingFun(double f)
+{
+  if (f <= f1_)
+  {
+    return 1.0;
+  }
+  else if (f<f2_)
+  {
+    return ( p_5th[0] + p_5th[1]*f + p_5th[2]*std::pow(f,2) \
+            + p_5th[3]*std::pow(f,3) + p_5th[4]*std::pow(f,4) + p_5th[5]*std::pow(f,5) );
+  }
+  else
+  {
+    return 0.0;
+  }
+}

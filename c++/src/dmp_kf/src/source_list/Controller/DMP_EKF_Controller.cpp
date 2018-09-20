@@ -75,6 +75,10 @@ void DMP_EKF_Controller::readControllerParams(const char *params_file)
   if (!parser.getParam("a_m", a_m)) a_m = 3.5;
   if (!parser.getParam("c_m", c_m)) c_m = 1.3;
 
+  if (!parser.getParam("f1_", f1_)) f1_ = 0.5;
+  if (!parser.getParam("f2_", f2_)) f2_ = 1.5;
+  initMixingFun(f1_, f2_);
+
   if (!parser.getParam("dmp_mod", dmp_mod)) dmp_mod = 1.0;
 }
 
@@ -144,7 +148,8 @@ void DMP_EKF_Controller::execute()
   // ========  leader-follower role  ========
   f_ext_raw = (robot->getTaskWrench()).subvec(0,2);
   f_ext = (1-a_force)*f_ext + a_force*f_ext_raw;
-  mf = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
+  // mf = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
+  mf = mixingFun(arma::norm(f_ext));
 
   arma::vec Y_c = arma::vec().zeros(3);
   arma::vec Z_c = arma::vec().zeros(3);

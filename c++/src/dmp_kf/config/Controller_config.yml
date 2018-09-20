@@ -42,3 +42,6 @@ a_force: 0.01 # iir 1st order filter coeff for filtering force measurements
 # leader-follower sigmoid function params  1 / ( 1 + exp(a_m*(norm(F)-c_m)) )
 a_m: 2.0
 c_m: 4.5
+
+f1_: 2.0
+f2_: 4.5
