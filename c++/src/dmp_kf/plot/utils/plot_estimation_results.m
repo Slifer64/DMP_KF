@@ -1,6 +1,6 @@
 function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, Y_data, dY_data)
 
-    fontsize = 16;
+    fontsize = 18;
     linewidth = 1.5;
     
     D = length(g);
@@ -36,7 +36,7 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
         legend_labels_i = [legend_labels_i, ['$\mathbf{y}_{' axis_name{i} '}$']];
         legend_labels = [legend_labels, legend_labels_i];
     end
-    ylabel('target - target estimation - position [$m$]','interpreter','latex','fontsize',fontsize, 'Parent',axes1);
+    ylabel('target estimation [$m$]','interpreter','latex','fontsize',fontsize, 'Parent',axes1);
     legend(axes1, legend_labels,'interpreter','latex', 'fontsize',fontsize, ...
           'Orientation','horizontal', 'Position',[0.04 0.938 0.927 0.046]);
     axis(axes1,'tight');
@@ -91,7 +91,7 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     plot(Time, mf_data,'b-', 'LineWidth',1.5);
     plot(Time, 1-mf_data,'g-', 'LineWidth',1.5);
     %title('Leader-follower role','interpreter','latex','fontsize',fontsize);
-    legend({'m','1-m'},'interpreter','latex','fontsize',fontsize);
+    legend({'DMP','admittance'},'interpreter','latex','fontsize',fontsize, 'orientation','horizontal');
     ylabel('m($\mathbf{f}_{ext}$)','interpreter','latex','fontsize',fontsize);
     xlabel('time [$s$]','interpreter','latex','fontsize',fontsize);
     hold off;
@@ -102,18 +102,18 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     effort = 0.0;
     sum_f2 = 0.0;
     P = zeros(length(Time),1);
-    F_norm = zeros(length(Time),1);
+    F_square = zeros(length(Time),1);
     for i=1:size(F_data,2)
         P(i) = F_data(:,i)'*dY_data(:,i);
         effort = effort + P(i)*dt;
-        F_norm(i) = norm(F_data(:,i));
-        sum_f2 = sum_f2 + F_norm(i)^2*dt;
+        F_square(i) = F_data(:,i)'*F_data(:,i);
+        sum_f2 = sum_f2 + F_square(i)*dt;
     end
 
     effort
     sum_f2
+    goal_err = norm(g-g_data(:,end))
 
-    fontsize = 16;
     linewidth = 2.0;
     figure;
     subplot(2,1,1);
@@ -123,14 +123,15 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     axis tight;
 
     subplot(2,1,2);
-    plot(Time, F_norm, 'LineWidth',linewidth)
+    plot(Time, F_square, 'LineWidth',linewidth)
     xlabel('time [$s$]', 'interpreter','latex', 'fontsize',fontsize);
-    ylabel('$||\mathbf{f}_{ext}||$ [$N$]', 'interpreter','latex', 'fontsize',fontsize);
+    ylabel('$||\mathbf{f}_{ext}||^2$ [$N$]', 'interpreter','latex', 'fontsize',fontsize);
     axis tight;
     
     n = length(mf_data);
     leader = sum(mf_data >= 0.99)/n
     follower = sum(mf_data <= 0.01)/n
     mix = sum(mf_data>0.01 & mf_data<0.99)/n
+    
     
 end
