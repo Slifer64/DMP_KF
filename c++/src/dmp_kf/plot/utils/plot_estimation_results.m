@@ -1,9 +1,13 @@
-function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, Y_data, dY_data)
+function plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, Y_data, dY_data)
+
+
+%% ==============================================================
+%% ==========   Target and time scaling est plot ================
 
     fontsize = 18;
     linewidth = 1.5;
     
-    D = length(g);
+    D = length(Yg);
     
     axis_name = {'x', 'y', 'z'};
     
@@ -24,12 +28,12 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     hold(axes1,'on');
     legend_labels = {};
     for i=1:D
-        plot([Time(1) Time(end)],[g(i) g(i)], 'LineStyle','--', 'Color',goal_color{i} ,'LineWidth',2, 'Parent',axes1);
-        plot(Time,g_data(i,:), 'LineStyle','-', 'Color',goal_est_color{i}, 'LineWidth',linewidth, 'Parent',axes1);
+        plot([Time(1) Time(end)],[Yg(i) Yg(i)], 'LineStyle','--', 'Color',goal_color{i} ,'LineWidth',2, 'Parent',axes1);
+        plot(Time,Yg_data(i,:), 'LineStyle','-', 'Color',goal_est_color{i}, 'LineWidth',linewidth, 'Parent',axes1);
         legend_labels_i = {['$\mathbf{y}_{g,' axis_name{i} '}$'], ['$\hat{\mathbf{y}}_{g,' axis_name{i} '}$']};
         if (plot_1sigma)
-            plot(Time,g_data(i,:)+P_data(i,:)*s1_scale, 'LineStyle',':', 'Color',goal_est_color{i}*0.75, 'LineWidth',linewidth, 'Parent',axes1);
-        	plot(Time,g_data(i,:)-P_data(i,:)*s1_scale, 'LineStyle',':', 'Color',goal_est_color{i}*0.75, 'LineWidth',linewidth, 'Parent',axes1, 'HandleVisibility','off');
+            plot(Time,Yg_data(i,:)+P_data(i,:)*s1_scale, 'LineStyle',':', 'Color',goal_est_color{i}*0.75, 'LineWidth',linewidth, 'Parent',axes1);
+        	plot(Time,Yg_data(i,:)-P_data(i,:)*s1_scale, 'LineStyle',':', 'Color',goal_est_color{i}*0.75, 'LineWidth',linewidth, 'Parent',axes1, 'HandleVisibility','off');
             legend_labels_i = [legend_labels_i, ['$\pm1\sigma$']];
         end
         plot(Time,Y_data(i,:), 'LineStyle','-.', 'Color',pos_color{i}, 'LineWidth',linewidth, 'Parent',axes1);
@@ -63,6 +67,10 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     axis(axes2,'tight');
     hold(axes2,'off');
     
+%% ==========================================================
+%% ==========================================================
+    
+    
 %     f_label = {'f_x', 'f_y', 'f_z'};
 %     figure;
 %     hold on;
@@ -84,8 +92,19 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
 %     legend({'$X$','$Y$','$Z$'}, 'interpreter','latex', 'fontsize',fontsize);
 %     title('Robot end-effector Cartesian position','interpreter','latex','fontsize',fontsize);
 %     hold off;
+
+
+%% ===========================================================
+%% =================  Calc mixing results  ===================
+
+    n = length(mf_data);
+    leader = sum(mf_data >= 0.99)/n;
+    follower = sum(mf_data <= 0.01)/n;
+    mix = sum(mf_data>0.01 & mf_data<0.99)/n;
     
-    
+%% =============================================
+%% =============  Mixing results ===============
+
     figure;
     hold on;
     plot(Time, mf_data,'b-', 'LineWidth',1.5);
@@ -95,6 +114,9 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     ylabel('m($\mathbf{f}_{ext}$)','interpreter','latex','fontsize',fontsize);
     xlabel('time [$s$]','interpreter','latex','fontsize',fontsize);
     hold off;
+    
+%% ==================================================
+%% ===============   Calc effort  ===================
     
     
     dt = Time(2)-Time(1);
@@ -109,10 +131,10 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
         F_square(i) = F_data(:,i)'*F_data(:,i);
         sum_f2 = sum_f2 + F_square(i)*dt;
     end
-
-    effort
-    sum_f2
-    goal_err = norm(g-g_data(:,end))
+    goal_err = norm(Yg-Yg_data(:,end));
+    
+%% ================================================
+%% ================  Plot effort  =================
 
     linewidth = 2.0;
     figure;
@@ -128,10 +150,123 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     ylabel('$||\mathbf{f}_{ext}||^2$ [$N$]', 'interpreter','latex', 'fontsize',fontsize);
     axis tight;
     
-    n = length(mf_data);
-    leader = sum(mf_data >= 0.99)/n
-    follower = sum(mf_data <= 0.01)/n
-    mix = sum(mf_data>0.01 & mf_data<0.99)/n
+
+%% ========================================================
+%% ================  Plot goal estimates  ================= 
+
+% p_set = 0.1; % settling at p_set % of the final position    
+% 
+% fig = figure('pos',[70 70 1800 1300]);
+% ax_cell = cell(3,1);
+% ax_cell{1} = axes('Parent',fig, 'Position',[0.026 0.10 0.30 0.82]);
+% ax_cell{2} = axes('Parent',fig, 'Position',[0.357 0.10 0.30 0.82]);
+% ax_cell{3} = axes('Parent',fig, 'Position',[0.691 0.10 0.30 0.82]);
+% 
+% for i=1:3
+%     y_data = Y_data(i,:);
+%     yg_data = Yg_data(i,:);
+%     yg = Yg(i);
+%     
+%     d_y_yg = abs(y_data-yg)/abs(yg);
+%     j = find( d_y_yg>p_set , 1, 'last');
+%     t_y = Time(j);
+%     
+%     d_yg_yg = abs(yg_data-yg)/abs(yg);
+%     j = find( d_yg_yg>p_set , 1, 'last');
+%     t_yg = Time(j);
+%     
+%     p_t = (t_y-t_yg)/Time(end)*100;
+%     
+%     ind = find(d_yg_yg<d_y_yg);
+%     p_t2 = length(ind)/length(Time)*100;
+% 
+%     ax = ax_cell{i};
+%     hold(ax, 'on');
+%     plot([Time(1) Time(end)], [yg yg], 'LineStyle','-.', 'Color',goal_color{i}, 'LineWidth',1.5, 'Parent',ax);
+%     plot(Time, yg_data, 'LineStyle','-', 'Color',goal_est_color{i}, 'LineWidth',1.5, 'Parent',ax);
+%     plot(Time, y_data, 'LineStyle',':', 'Color',pos_color{i}, 'LineWidth',1.5, 'Parent',ax);
+%     axis(ax, 'tight');
+%     y_lim = ylim(ax);
+%     y_lim = y_lim + [-0.1 0.1];
+%     ylim(ax, y_lim);
+%     plot([t_yg t_yg], y_lim, 'LineStyle','--', 'Color',[0.85 0.33 0.1], 'LineWidth',1.5, 'Parent',ax);%, 'HandleVisibility','off');
+%     plot([t_y t_y], y_lim, 'LineStyle','--', 'Color',[0 0 0], 'LineWidth',1.5, 'Parent',ax);%, 'HandleVisibility','off');
+%     legend_labels = {['$\mathbf{y}_{g,' axis_name{i} '}$'], ['$\hat{\mathbf{y}}_{g,' axis_name{i} '}$'], ['$\mathbf{y}_{' axis_name{i} '}$'], ...
+%         'estimate $t_{s}$', 'pos $t_s$'};
+%     legend(ax, legend_labels,'interpreter','latex','fontsize',fontsize, 'Orientation','horizontal');
+%     if (i==1), ylabel('[$m$]','interpreter','latex','fontsize',fontsize, 'Parent',ax); end
+%     xlabel('time [$s$]','interpreter','latex','fontsize',fontsize, 'Parent',ax);
+%     title({['Estimate settles at $' num2str(p_t,2) '\%$ of the time before position']; ...
+%         ['Estimate closer to target than position for $' num2str(p_t2,2) '\%$']},'interpreter','latex','fontsize',fontsize, 'Parent',ax);
+%     hold(ax, 'off');
+% end
+
+%% ===============================================
+
+p_set = 0.05; % settling at p_set % of the final position
+
+fig = figure('pos',[100 100 1500 1000]);
+ax = axes('Parent',fig, 'Position',[0.10 0.10 0.8 0.8]);
+
+    
+d_y_yg = zeros(length(Time),1);
+d_yg_yg = zeros(length(Time),1);
+norm_Yg_data = zeros(length(Time),1);
+norm_Y_data = zeros(length(Time),1);
+norm_Yg = norm(Yg);
+
+for i=1:length(d_y_yg)
+    d_y_yg(i) = norm(Y_data(:,i)-Yg);
+    d_yg_yg(i) = norm(Yg_data(:,i)-Yg);
+    norm_Yg_data(i) = norm(Yg_data(:,i));
+    norm_Y_data(i) = norm(Y_data(:,i));
+end
+    
+j = find( d_y_yg>=p_set , 1, 'last');
+if (isempty(j)), j = 1; end
+t_y = Time(j);
+
+j = find( d_yg_yg>=p_set , 1, 'last');
+if (isempty(j)), j = 1; end
+t_yg = Time(j);
+
+    
+p_t = (t_y-t_yg)/Time(end)*100;
+
+ind = find(d_yg_yg<d_y_yg);
+p_t2 = length(ind)/length(Time)*100;
+
+i = 3;
+hold(ax, 'on');
+plot([Time(1) Time(end)], [0 0]+p_set, 'LineStyle','--', 'Color',[1 0 0], 'LineWidth',1.5, 'Parent',ax, 'HandleVisibility','off');
+plot([Time(1) Time(end)], [0 0], 'LineStyle','-', 'Color',[0 0 0], 'LineWidth',1.5, 'Parent',ax, 'HandleVisibility','off');
+plot([Time(1) Time(end)], [0 0]-p_set, 'LineStyle','--', 'Color',[1 0 0], 'LineWidth',1.5, 'Parent',ax, 'HandleVisibility','off');
+% plot([Time(1) Time(end)], [norm_Yg norm_Yg], 'LineStyle','-.', 'Color',goal_color{i}, 'LineWidth',1.5, 'Parent',ax);
+plot(Time, d_yg_yg, 'LineStyle','-', 'Color',goal_est_color{i}, 'LineWidth',1.5, 'Parent',ax);
+plot(Time, d_y_yg, 'LineStyle',':', 'Color',pos_color{i}, 'LineWidth',1.5, 'Parent',ax);
+axis(ax, 'tight');
+y_lim = ylim(ax);
+y_lim = y_lim + [-0.1 0.1];
+ylim(ax, y_lim);
+plot([t_yg t_yg], y_lim, 'LineStyle','--', 'Color',[0.85 0.33 0.1], 'LineWidth',1.5, 'Parent',ax);%, 'HandleVisibility','off');
+plot([t_y t_y], y_lim, 'LineStyle','--', 'Color',[0 0 0], 'LineWidth',1.5, 'Parent',ax);%, 'HandleVisibility','off');
+legend_labels = {['$||\hat{\mathbf{y}}_{g}-\mathbf{y}_{g}||$'], ['$||\mathbf{y}-\mathbf{y}_{g}||$'], ...
+    'estimate $t_{s}$', 'pos $t_s$'};
+legend(ax, legend_labels,'interpreter','latex','fontsize',fontsize, 'Orientation','horizontal');
+ylabel('[$m$]','interpreter','latex','fontsize',fontsize, 'Parent',ax);
+xlabel('time [$s$]','interpreter','latex','fontsize',fontsize, 'Parent',ax);
+title({['Settling time zone: $\pm' num2str(p_set) 'm$'];['Estimate settles at $' num2str(p_t,'%.2f') '\%$ of the time duration before position']; ...
+    ['Estimate closer to target than position for $' num2str(p_t2,'%.2f') '\%$ of the time duration']},'interpreter','latex','fontsize',fontsize, 'Parent',ax);
+hold(ax, 'off');
+    
+%% ================================================
+%% ================  Display results  =============
+    
+    mix_results = {'leader', 'follower', 'mix'; leader, follower, mix};
+    metrics_results = {'Work', 'Power_F', 'target error'; effort, sum_f2, goal_err};
+    
+    disp(mix_results);
+    disp(metrics_results);
     
     
 end

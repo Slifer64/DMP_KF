@@ -27,8 +27,8 @@ for i=1:length(norm_dY)
     norm_dY(i) = norm(dY_data(:,i));
 end
 
-v_start = 0.005;
-v_stop = 0.008;
+v_start = 0.02;
+v_stop = 0.01;
 i1 = find(norm_dY>=v_start, 1, 'first');
 i2 = find(norm_dY>=v_stop, 1, 'last');
 ind = i1:i2;
