@@ -70,9 +70,15 @@ bool ExecutionData::save(const std::string &file_name, std::string &err_msg)
   }
 
 	write_mat(Time, out, binary);
+
 	write_mat(Y_data, out, binary);
 	write_mat(dY_data, out, binary);
 	write_mat(ddY_data, out, binary);
+
+  write_mat(Y_ref_data, out, binary);
+	write_mat(dY_ref_data, out, binary);
+	write_mat(ddY_ref_data, out, binary);
+
 	write_mat(mf_data, out, binary);
 
 	write_mat(Fext_data, out, binary);
@@ -89,12 +95,17 @@ bool ExecutionData::save(const std::string &file_name, std::string &err_msg)
 }
 
 void ExecutionData::log(double t, const arma::vec &Y, const arma::vec &dY, const arma::vec &ddY,
+                        const arma::vec &Y_ref, const arma::vec &dY_ref, const arma::vec &ddY_ref,
                         const arma::vec &Fext, const arma::vec &Fext_filt, double mf,
 												const arma::vec &theta, const arma::mat &P_theta)
 {
 	Time = arma::join_horiz(Time, arma::mat({t}));
 
-	Y_data = arma::join_horiz(Y_data, Y);
+	Y_ref_data = arma::join_horiz(Y_ref_data, Y_ref);
+	dY_ref_data = arma::join_horiz(dY_ref_data, dY_ref);
+	ddY_ref_data = arma::join_horiz(ddY_ref_data, ddY_ref);
+
+  Y_data = arma::join_horiz(Y_data, Y);
 	dY_data = arma::join_horiz(dY_data, dY);
 	ddY_data = arma::join_horiz(ddY_data, ddY);
 

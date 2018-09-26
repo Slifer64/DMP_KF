@@ -62,6 +62,10 @@ public:
   arma::mat dY_data;
   arma::mat ddY_data;
 
+  arma::mat Y_ref_data;
+  arma::mat dY_ref_data;
+  arma::mat ddY_ref_data;
+
   arma::mat Fext_data;
   arma::mat Fext_filt_data;
   arma::rowvec mf_data;
@@ -79,6 +83,7 @@ public:
 
   // adds t,Y,dY,dYY to the corresponding data matrices
   void log(double t, const arma::vec &Y, const arma::vec &dY, const arma::vec &ddY,
+          const arma::vec &Y_ref, const arma::vec &dY_ref, const arma::vec &ddY_ref,
           const arma::vec &Fext, const arma::vec &Fext_filt, double mf,
 					const arma::vec &theta, const arma::mat &P_theta);
 

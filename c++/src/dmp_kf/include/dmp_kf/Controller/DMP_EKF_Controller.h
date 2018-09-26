@@ -67,7 +67,7 @@ private:
   double p_turos;
 
   double a_py;
-  double a_px;
+  double a_dpy;
 
   int dmp_mod;
 

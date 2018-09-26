@@ -53,8 +53,8 @@ void DMP_EKF_Controller::readControllerParams(const char *params_file)
   if (!parser.getParam("tau_e", tau_e)) tau_e = 0.01;
   if (!parser.getParam("p_turos", p_turos)) p_turos = 0.02;
 
-  if (!parser.getParam("a_py", a_py)) a_py = 0.1;
-  if (!parser.getParam("a_px", a_px)) a_px = 100;
+  if (!parser.getParam("a_py", a_py)) a_py = 0.0;
+  if (!parser.getParam("a_dpy", a_dpy)) a_dpy = 0.0;
 
   if (!parser.getParam("g_scale", g_scale)) g_scale = arma::vec({1.0, 1.0, 1.0});
   if (!parser.getParam("tau_scale", tau_scale)) tau_scale = 1.0;
@@ -141,7 +141,7 @@ void DMP_EKF_Controller::execute()
     return;
   }
 
-  if (gui->logControllerData()) exec_data.log(t, Y, dY, ddY, f_ext_raw, f_ext, mf, theta, P_theta);
+  if (gui->logControllerData()) exec_data.log(t, Y, dY, ddY, Y_ref, dY_ref, ddY_ref, f_ext_raw, f_ext, mf, theta, P_theta);
 
   // this->robot->update();
 
@@ -158,11 +158,6 @@ void DMP_EKF_Controller::execute()
   {
     dY_ref = dY;
     Y_ref = Y;
-  }
-
-  if (dmp_mod == 4)
-  {
-    Y_c = a_py*(Y-Y_ref);
   }
 
   // ========  KF estimation  ========
@@ -190,7 +185,11 @@ void DMP_EKF_Controller::execute()
   if (dmp_mod == 1) ddY = mf*ddY_ref + (1-mf)*(- D%dY + F)/M;
   else if (dmp_mod == 2) ddY = ( - D%dY + F) / M;
   else if (dmp_mod == 3) ddY = ddY_ref + 0.05*F/M;
-  else if (dmp_mod == 4) ddY = ddY_ref + ( -D%(dY-dY_ref) - K_d%(Y-Y_ref) + F )/M;
+  else if (dmp_mod == 4)
+  {
+    Y_c = a_dpy*(dY-dY_ref) + a_py*(Y-Y_ref);
+    ddY = (ddY_ref+Y_c) + ( -D%(dY-dY_ref) - K_d%(Y-Y_ref) + F )/M;
+  }
   else if (dmp_mod == 5) ddY = ( - D%dY -K_d%(Y-y_g) + F) / M;
   else ddY.zeros(3);
 
@@ -322,7 +321,7 @@ bool DMP_EKF_Controller::simulate()
     robot->command();
 
     // ========  Data logging  ========
-    if (gui->logSimulationData()) sim_data.log(t, Y, dY, ddY, f_ext_raw, f_ext, mf, theta, P_theta);
+    if (gui->logSimulationData()) sim_data.log(t, Y, dY, ddY, Y_ref, dY_ref, ddY_ref, f_ext_raw, f_ext, mf, theta, P_theta);
 
     // ========  Calculate actual and estimated output (acceleration)  ========
     int dim = dmp.size();
