@@ -81,6 +81,7 @@ private:
   // ========= Controller params ===========
   arma::mat M; ///< impedance controller inertia matrix
   arma::mat D; ///< impedance controller damping matrix
+  arma::mat M_d; ///< impedance controller desired damping matrix
   arma::mat D_d; ///< impedance controller desired damping matrix
   arma::mat K_d; ///< impedance controller desired stiffness matrix
   arma::vec U_dmp; ///< control produced from dmp ref_model

@@ -65,8 +65,12 @@ void DMP_EKF_Controller::readControllerParams(const char *params_file)
   // target impedance params
   if (!parser.getParam("M", M)) M = arma::vec({1.0, 1.0, 1.0});
   if (!parser.getParam("D", D)) D = arma::vec({40.0, 40.0, 40.0});
-  if (!parser.getParam("K_d", K_d)) K_d = arma::vec({200.0, 200.0, 200.0});
-  if (!parser.getParam("D_d", D_d)) D_d = 2*arma::sqrt(M%K_d);
+
+  if (!parser.getParam("M_d", M_d)) M_d = arma::vec({15.0, 15.0, 15.0});
+  if (!parser.getParam("D_d", D_d)) D_d = arma::vec({40.0, 40.0, 40.0});
+  if (!parser.getParam("K_d", K_d)) K_d = arma::vec({250.0, 250.0, 250.0});
+
+
   if (!parser.getParam("k_click", k_click)) k_click = 0.0;
   if (!parser.getParam("ff_gains", ff_gains)) ff_gains = arma::vec({1.0, 1.0, 1.0}); // feedforward gains for the target impedance model
   if (!parser.getParam("a_force", a_force)) a_force = 1.0;
@@ -141,6 +145,9 @@ void DMP_EKF_Controller::execute()
     return;
   }
 
+  dY_ref = dY;
+  Y_ref = Y;
+
   if (gui->logControllerData()) exec_data.log(t, Y, dY, ddY, Y_ref, dY_ref, ddY_ref, f_ext_raw, f_ext, mf, theta, P_theta);
 
   // this->robot->update();
@@ -153,12 +160,6 @@ void DMP_EKF_Controller::execute()
 
   arma::vec Y_c = arma::vec().zeros(3);
   arma::vec Z_c = arma::vec().zeros(3);
-
-  if (dmp_mod != 4)
-  {
-    dY_ref = dY;
-    Y_ref = Y;
-  }
 
   // ========  KF estimation  ========
   int dim = dmp.size();
@@ -184,11 +185,11 @@ void DMP_EKF_Controller::execute()
 
   if (dmp_mod == 1) ddY = mf*ddY_ref + (1-mf)*(- D%dY + F)/M;
   else if (dmp_mod == 2) ddY = ( - D%dY + F) / M;
-  else if (dmp_mod == 3) ddY = ddY_ref + 0.05*F/M;
-  else if (dmp_mod == 4)
+  else if (dmp_mod == 4) ddY = ddY_ref + F/M_d;
+  else if (dmp_mod == 3)
   {
-    Y_c = a_dpy*(dY-dY_ref) + a_py*(Y-Y_ref);
-    ddY = (ddY_ref+Y_c) + ( -D%(dY-dY_ref) - K_d%(Y-Y_ref) + F )/M;
+    // Y_c = a_dpy*(dY-dY_ref) + a_py*(Y-Y_ref);
+    ddY = ddY_ref + ( -D_d%(dY-dY_ref) - K_d%(Y-Y_ref) + F )/M_d;
   }
   else if (dmp_mod == 5) ddY = ( - D%dY -K_d%(Y-y_g) + F) / M;
   else ddY.zeros(3);

@@ -127,7 +127,7 @@ function plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, P_data, F_dat
     F_square = zeros(length(Time),1);
     for i=1:size(F_data,2)
         P(i) = F_data(:,i)'*dY_data(:,i);
-        effort = effort + P(i)*dt;
+        effort = effort + abs(P(i))*dt;
         F_square(i) = F_data(:,i)'*F_data(:,i);
         sum_f2 = sum_f2 + F_square(i)*dt;
     end
