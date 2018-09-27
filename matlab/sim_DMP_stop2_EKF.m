@@ -11,13 +11,13 @@ set_matlab_utils_path();
 est_g = true;
 est_tau = true;
 
-goal_scale = [2.6 -2.9 2.4]';
-time_scale = 0.8; 
+goal_scale = [1.7 -1.6 -1.8]';
+time_scale = 1.9; 
 
 process_noise = 0.001; % Q
 msr_noise = 0.01; % R
 init_params_variance = 10; % P
-a_p = 0.9; % instability term in modified EKF
+a_p = 0.6; % instability term in modified EKF
 
 p1 = 0.01 * 1e-280;
 p2 = 50.0 * 1e280;
@@ -25,11 +25,19 @@ p_r = 6.0;
 tau_e = 0.1;
 p_turos = 0.001;
 
-plot_1sigma = true;
+plot_1sigma = false;
 
-c_m = 1.0;
-a_m = 4.0;
-m1_fun = @(x) (1 + exp(a_m*(-c_m))) ./ (1 + exp(a_m*(x-c_m)));
+a_py = 150;
+a_dpy = 50;
+M_r = 5*eye(3,3);
+inv_M_r = inv(M_r);
+D_r = 80*eye(3,3);
+K_r = 500*eye(3,3);
+
+M_h = 2*eye(3,3);
+inv_M_h = inv(M_h);
+D_h = 40*eye(3,3);
+K_h = 250*eye(3,3);
 
 f1_ = 1.0;
 f2_ = 2.0;
@@ -73,7 +81,6 @@ for n=1:1
     
     D = size(yd_data,1);
 
-
     %% DMP simulation
     % set initial values
     t = 0.0;
@@ -83,21 +90,24 @@ for n=1:1
     g = g0;
     x = 0.0; dx = 0.0;
     y = y0; dy = zeros(D,1); ddy = zeros(D,1);
+    y_hat = y0; dy_hat = zeros(D,1); ddy_hat = zeros(D,1);
+    y_r = y0; dy_r = zeros(D,1); ddy_r = zeros(D,1);
+    y_h = y0; dy_h = zeros(D,1); ddy_h = zeros(D,1);
     z = zeros(D,1); dz = zeros(D,1);
-    F = zeros(D,1);
+    F_ext = zeros(D,1);
     mf = 1;
 
     Time = [];
     y_data = []; dy_data = []; ddy_data = [];
+    y_hat_data = []; dy_hat_data = []; ddy_hat_data = [];
+    y_r_data = []; dy_r_data = []; ddy_r_data = [];
+    y_h_data = []; dy_h_data = []; ddy_h_data = [];
     x_data = [];
     g_data = [];
     tau_data = [];
     F_data = [];
     mf_data = [];
     P_data = [];
-    
-    mr = 10;   
-    Mr = eye(3,3) * mr;
 
     N_data = size(yd_data,2);
 
@@ -138,12 +148,24 @@ for n=1:1
         dy_data = [dy_data dy];  
         ddy_data = [ddy_data ddy];
         
+        y_hat_data = [y_hat_data y_hat];
+        dy_hat_data = [dy_hat_data dy_hat];  
+        ddy_hat_data = [ddy_hat_data ddy_hat];
+        
+        y_r_data = [y_r_data y_r];
+        dy_r_data = [dy_r_data dy_r];  
+        ddy_r_data = [ddy_r_data ddy_r];
+        
+        y_h_data = [y_h_data y_h];
+        dy_h_data = [dy_h_data dy_h];  
+        ddy_h_data = [ddy_h_data ddy_h];
+        
         g_data = [g_data g_hat];
         tau_data = [tau_data tau_hat];
 
         x_data = [x_data x];
         
-        F_data = [F_data F];
+        F_data = [F_data F_ext];
         mf_data = [mf_data mf];
         
         P_temp = zeros(length(g)+1, 1);
@@ -160,31 +182,35 @@ for n=1:1
         P_data = [P_data sqrt(P_temp)];
         
         dC_dtheta = zeros(D, length(theta));
+        
+        y_hat = y_r;
+        dy_hat = dy_r;
+        Y_c = a_py*(y_r-y_hat) + a_dpy*(dy_r-dy_hat);
+        Z_c = zeros(D,1);
 
         %% DMP simulation
         for i=1:D  
-
-            y_c = 0.0;
-            z_c = 0.0;
-
-            [dy(i), dz(i)] = dmp{i}.getStatesDot(x, y(i), z(i), y0(i), g(i), y_c, z_c);
-            ddy(i) = dz(i)/dmp{i}.getTau();
             
-            y_out(i) = dmp{i}.getAccel(y(i), z(i), y0(i), y_c, z_c, x, g(i), dmp{i}.getTau());
-            y_out_hat(i) = dmp{i}.getAccel(y(i), z(i), y0(i), y_c, z_c, x_hat, g_hat(i), tau_hat);
+            ddy(i) = dmp{i}.getAccel(y(i), dy(i), y0(i), 0, 0, x, g(i), dmp{i}.getTau());
+            ddy_hat(i) = dmp{i}.getAccel(y_hat(i), dy_hat(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
 
-            dC_dtheta_i = dmp{i}.getAcellPartDev_g_tau(t, y(i), dy(i), y0(i), x_hat, g_hat(i), tau_hat);
+            dC_dtheta_i = dmp{i}.getAcellPartDev_g_tau(t, y_hat(i), dy_hat(i), y0(i), x_hat, g_hat(i), tau_hat);
             
             if (est_tau), dC_dtheta(i,end) = dC_dtheta_i(2); end
             if (est_g), dC_dtheta(i,i) = dC_dtheta_i(1); end        
 
         end
         
-        %% Interaction force calculation
-        F = Mr*(y_out-y_out_hat);
-        norm_f = norm(F);
-        mf = m_fun(norm_f);
-%         mf = 1 / (1 + exp(4*(norm(F)-1)));
+        y_out_hat = ddy_hat;
+        y_out = ddy_r;
+
+        % F_ext = M_r*(ddy-ddy_hat) + M_r*( (inv_M_r*D_r - inv_M_h*D_h)*(dy_r-dy) + (inv_M_r*K_r - inv_M_h*K_h)*(y_r-y) );
+        F_ext = M_r*(ddy-ddy_hat) + M_r*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
+        
+        ddy_r = ddy_hat + inv_M_r*(-D_r*(dy_r-dy_hat) - K_r*(y_r-y_hat) + F_ext);
+        ddy_h = ddy + inv_M_h*(-D_h*(dy_h-dy) - K_h*(y_h-y));
+
+        mf = m_fun(norm(F_ext));
 
         %% Update phase variable
         dx = can_clock_ptr.getPhaseDot(x);
@@ -200,73 +226,17 @@ for n=1:1
             warning('Time limit reached. Stopping simulation...\n');
             break;
         end
-
-        % Calculate the surface gradient
-        g_hat_norm = norm(g_hat);
-        dg_S = zeros(4,1);
-        
-        if (tau_hat <= tau_e)   
-            dg_S = [0; 0; 0; -1];
-        else
-            dg_S(1:3) = g_hat/g_hat_norm;
-            dg_S(4) = 0.0;
-        end
-
-%         if (tau_hat <= tau_e)   
-%             dg_S = [0; 0; 0; -1];
-%             tau_hat = tau_e; % enforce to avoid numerical deviation
-%         elseif (tau_hat >= p_turos+tau_e)
-%             dg_S(1:3) = g_hat/g_hat_norm;
-%             dg_S(4) = 0.0;
-%         else
-%             dg_S(1:3) = (g_hat_norm-p_r+p_turos)*g_hat/(p_turos*g_hat_norm);
-%             dg_S(4) = (tau_hat - p_turos - tau_e)/p_turos;
-%         end
-
-        P_norm = norm(P_theta);
         
         %% KF update
         K_kf = P_theta*dC_dtheta'*inv_R;
         theta_dot = K_kf * (y_out - y_out_hat);
         P_dot = Q - K_kf*dC_dtheta*P_theta + 2*a_p*P_theta;
-
-        % apply gradient projection
-        if ( (g_hat_norm >= p_r || tau_hat <= tau_e) && (theta_dot'*dg_S > 0) )
-            theta_dot_init = theta_dot;
-            theta_dot = (eye(4,4) - (P_theta*dg_S)*dg_S' / (dg_S'*P_theta*dg_S) )*theta_dot;
-            P_dot = zeros(4,4);
-            if (g_hat_norm >= p_r), g_hat = g_hat*g_hat_norm/p_r; end % enforce to avoid numerical deviation
-            if (tau_hat <= tau_e), tau_hat = tau_e; end % enforce to avoid numerical deviation
-            theta = params2theta(tau_hat, g_hat, est_tau, est_g);
-            disp('Gradient Projection!');
-            t
-            norm_f
-            g_hat_norm
-            tau_hat
-            dg_S
-            theta_dot
-            theta_dot_init
-            norm(g)
-            pause
-        end
-
-        % covariance saturation
-        if (P_norm >= p2)
-            P_dot = zeros(4,4); 
-            disp('Covariance Saturation!');
-        end
         
         theta = theta + theta_dot*dt;
         P_theta = P_theta + P_dot*dt;
         
         [tau_hat, g_hat] = theta2params(theta, tau, g, est_tau, est_g);
         x_hat = t/tau_hat; 
-
-        % covariance reset
-        if (P_norm < p1)
-            P_theta = eye(4,4)*p1;
-            disp('Covariance Reset!');
-        end
         
         %% Numerical integration
         t = t + dt;
@@ -274,7 +244,17 @@ for n=1:1
         x = x + dx*dt;
 
         y = y + dy*dt;
-        z = z + dz*dt;
+        dy = dy + ddy*dt;
+        
+        y_hat = y_hat + dy_hat*dt;
+        dy_hat = dy_hat + ddy_hat*dt;
+        
+        y_r = y_r + dy_r*dt;
+        dy_r = dy_r + ddy_r*dt;
+        
+        y_h = y_h + dy_h*dt;
+        dy_h = dy_h + ddy_h*dt;
+
         
     end
     toc
@@ -284,6 +264,40 @@ for n=1:1
     plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, y_data);
     
 %     plotData(Data_sim);
+    
+    fig = figure;
+    D = 3;
+    ax_cell = cell(D,D);
+    titles = {'position $[m]$', 'velocity $[m/s]$','acceleration $[m/s^2]$'};
+    ylabels = {'$X$', '$Y$', '$Z$'};
+    Data = { y_data, dy_data, ddy_data;
+             y_hat_data, dy_hat_data, ddy_hat_data;
+             y_r_data, dy_r_data, ddy_r_data;
+             y_h_data, dy_h_data, ddy_h_data};
+    for j=1:D
+        Y_data = Data{1,j};
+        Y_hat_data = Data{2,j};
+        Y_r_data = Data{3,j};
+        Y_h_data = Data{4,j};
+        for i=1:D
+            ax_cell{i,j} = subplot(D,D,(i-1)*D+j);
+            
+            ax = ax_cell{i,j};
+            hold(ax,'on');
+            plot(Time,Y_data(i,:), 'LineWidth',1.2, 'Color',[0 0 1], 'Parent',ax);
+            plot(Time,Y_hat_data(i,:), 'LineWidth',1.2, 'Color',[0 0.75 0.75], 'LineStyle','--', 'Parent',ax);
+            plot(Time,Y_r_data(i,:), 'LineWidth',1.2, 'Color',[0.85 0.33 0.1], 'LineStyle',':', 'Parent',ax);
+            plot(Time,Y_h_data(i,:), 'LineWidth',1.2, 'Color',[1 0 0], 'LineStyle','-.', 'Parent',ax);
+            xlabel('time [$s$]', 'interpreter','latex', 'fontsize',15);
+            if (i==1 && j==1)
+                legend(ax, {'$\mathbf{y}$','$\hat{\mathbf{y}}$','$\mathbf{y}_r$','$\mathbf{y}_h$'}, ...
+                    'interpreter','latex', 'fontsize',15, 'orientation','horizontal');
+            end
+            if (i==1), title(ax, titles{j}, 'interpreter','latex', 'fontsize',15); end
+            if (j==1), ylabel(ax, ylabels{i}, 'interpreter','latex', 'fontsize',15); end
+            hold(ax,'off');
+        end
+    end
 
 end
 
