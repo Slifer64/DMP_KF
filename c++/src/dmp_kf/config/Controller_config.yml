@@ -32,8 +32,8 @@ f_thres: -1.0 # norm(force)
 
 # target impedance params
 M: [4.0; 4.0; 4.0]
-# D: [15.0; 15.0; 15.0]
-D: [25.0; 25.0; 25.0]
+D: [15.0; 15.0; 15.0]
+# D: [25.0; 25.0; 25.0]
 
 M_d: [10.0; 10.0; 10.0]
 D_d: [140.0; 140.0; 140.0]
@@ -47,5 +47,5 @@ a_force: 0.05 # iir 1st order filter coeff for filtering force measurements
 a_m: 2.0
 c_m: 4.5
 
-f1_: 3.0
-f2_: 6.0
+f1_: 2.0
+f2_: 4.0

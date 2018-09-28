@@ -31,6 +31,8 @@ void LWR4p_Robot::init()
 
   setSafetyStatus(Robot::SafetyStatus::OK);
 
+  ftsensor.setBias();
+
   this->update();
 }
 

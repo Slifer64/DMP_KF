@@ -2,11 +2,6 @@
 
 <launch>
     <!-- Launch rqt plot to visualize estimates and forces-->
-    <node name="rqt_plot_goal_hat" pkg="rqt_plot" type="rqt_plot"
-      args="topics /g_hat" />
-
-    <node name="rqt_plot_tau_hat" pkg="rqt_plot" type="rqt_plot"
-      args="topics /tau_hat" />
 
     <node name="rqt_plot_f_ext" pkg="rqt_plot" type="rqt_plot"
       args="topics /f_ext" />

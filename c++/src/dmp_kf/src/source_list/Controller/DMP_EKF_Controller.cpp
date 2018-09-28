@@ -14,6 +14,8 @@ Controller(robot, gui)
 
   robot->update();
   q_start = robot->getJointPosition();
+
+  force_pub = ros_node.advertise<geometry_msgs::Vector3>("f_ext", 1);
 }
 
 void DMP_EKF_Controller::readTrainingParams(const char *params_file)
@@ -92,7 +94,8 @@ void DMP_EKF_Controller::initExecution()
 
   if (gui->logControllerData()) exec_data.clear();
 
-  this->robot->update();
+  this->robot->init();
+
   arma::vec p = this->robot->getTaskPosition();
 
   start_exec_flag = false;
@@ -157,6 +160,11 @@ void DMP_EKF_Controller::execute()
   f_ext = (1-a_force)*f_ext + a_force*f_ext_raw;
   // mf = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
   mf = mixingFun(arma::norm(f_ext));
+
+  // force_msg.x = f_ext(0);
+  // force_msg.y = f_ext(1);
+  // force_msg.z = f_ext(2);
+  // force_pub.publish(force_msg);
 
   arma::vec Y_c = arma::vec().zeros(3);
   arma::vec Z_c = arma::vec().zeros(3);

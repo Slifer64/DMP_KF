@@ -12,6 +12,9 @@
 #include <dmp_lib/dmp_lib.h>
 #include <dmp_kf/Controller/Controller.h>
 
+#include <ros/ros.h>
+#include <geometry_msgs/Vector3.h>
+
 
 class DMP_EKF_Controller: public Controller
 {
@@ -103,6 +106,10 @@ private:
   // leader-follower sigmoid function params  1 / ( 1 + exp(a_m*(norm(f_ext)-c_m)) )
   double a_m; // sigmoid steepness
   double c_m; // sigmoid center
+
+  geometry_msgs::Vector3 force_msg;
+  ros::Publisher force_pub;
+  ros::NodeHandle ros_node;
 };
 
 #endif // DMP_EKF_CONTROLLER_H

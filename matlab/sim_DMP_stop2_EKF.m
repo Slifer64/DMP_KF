@@ -11,8 +11,8 @@ set_matlab_utils_path();
 est_g = true;
 est_tau = true;
 
-goal_scale = [1.7 -1.6 -1.8]';
-time_scale = 1.9; 
+goal_scale = [1.3 -1.2 -1.4]';
+time_scale = 0.8; 
 
 process_noise = 0.001; % Q
 msr_noise = 0.01; % R
