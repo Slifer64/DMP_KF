@@ -72,20 +72,20 @@ plot_estimation_results(Time, g, g_hat_data, tau, tau_hat_data, Sigma_theta_data
 % Exec_Data{1} = struct('Time',Time, 'Y',Y_data, 'dY',dY_data, 'ddY',ddY_data);
 % plotData(Exec_Data);
 
-fig = figure;
-D = 3;
-ax_cell = cell(D,1);
-titles = {'position', 'velocity','acceleration'};
-for i=1:D, ax_cell{i} = subplot(3,1,i); end
-for i=1:D
-    ax = ax_cell{i};
-    hold(ax,'on');
-    plot(Time,Y_data(i,:), 'LineWidth',1.2, 'Color','blue', 'Parent',ax);
-    plot(Time,Y_ref_data(i,:), 'LineWidth',1.2, 'Color','green', 'Parent',ax);
-    xlabel('time [$s$]', 'interpreter','latex', 'fontsize',15);
-    legend(ax, {'robot','dmp'}, 'interpreter','latex', 'fontsize',15);
-    title(ax, titles{i}, 'interpreter','latex', 'fontsize',15);
-    hold(ax,'off');
-end
+% fig = figure;
+% D = 3;
+% ax_cell = cell(D,1);
+% titles = {'position', 'velocity','acceleration'};
+% for i=1:D, ax_cell{i} = subplot(3,1,i); end
+% for i=1:D
+%     ax = ax_cell{i};
+%     hold(ax,'on');
+%     plot(Time,Y_data(i,:), 'LineWidth',1.2, 'Color','blue', 'Parent',ax);
+%     plot(Time,Y_ref_data(i,:), 'LineWidth',1.2, 'Color','green', 'Parent',ax);
+%     xlabel('time [$s$]', 'interpreter','latex', 'fontsize',15);
+%     legend(ax, {'robot','dmp'}, 'interpreter','latex', 'fontsize',15);
+%     title(ax, titles{i}, 'interpreter','latex', 'fontsize',15);
+%     hold(ax,'off');
+% end
 
 end
