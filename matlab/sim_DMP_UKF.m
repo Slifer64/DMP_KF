@@ -166,7 +166,8 @@ for n=1:1
 %         P_theta0 = P_theta;
         [theta, P_theta] = ukf.predict(@(theta)fstate(theta), theta, P_theta, Q_w);
 %         a_p = 0.1;
-%         P_theta = P_theta +a_p^2*P_theta0;
+        a_p2 = exp(a_p*dt);
+%         P_theta = P_theta + a_p^2*P_theta0;
         
         [tau_hat, g_hat] = theta2params(theta, tau, g, est_tau, est_g);
         x_hat = t/tau_hat;  

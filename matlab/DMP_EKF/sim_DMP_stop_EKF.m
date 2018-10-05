@@ -11,19 +11,18 @@ set_matlab_utils_path();
 est_g = true;
 est_tau = true;
 
-goal_scale = [1.7 -1.6 -1.8]';
-time_scale = 1.9; 
+goal_scale = [1.3 -1.2 -1.4]';
+time_scale = 0.8;
 
 process_noise = 0.001; % Q
 msr_noise = 0.01; % R
 init_params_variance = 10; % P
-a_p = 0.6; % instability term in modified EKF
+a_p = 0.6; % forgetting factor in fading memory EKF
 
 p1 = 0.01 * 1e-280;
 p2 = 50.0 * 1e280;
 p_r = 6.0;
 tau_e = 0.1;
-p_turos = 0.001;
 
 plot_1sigma = false;
 
@@ -203,8 +202,9 @@ for n=1:1
         y_out = ddy_hat + Y_c;
         ddy_hat = ddy_hat + Y_c;
 
-        % F_ext = M_r*(ddy-ddy_hat) + M_r*( (inv_M_r*D_r - inv_M_h*D_h)*(dy_r-dy) + (inv_M_r*K_r - inv_M_h*K_h)*(y_r-y) );
         F_ext = M_r*(ddy-ddy_hat) + M_r*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
+        
+        kf_err = (y_out - y_out_hat);
         
         ddy_r = ddy_hat + inv_M_r*(-D_r*(dy_r-dy_hat) - K_r*(y_r-y_hat) + F_ext);
         ddy_h = ddy + inv_M_h*(-D_h*(dy_h-dy) - K_h*(y_h-y));
@@ -228,7 +228,7 @@ for n=1:1
         
         %% KF update
         K_kf = P_theta*dC_dtheta'*inv_R;
-        theta_dot = K_kf * (y_out - y_out_hat);
+        theta_dot = K_kf * kf_err;
         P_dot = Q - K_kf*dC_dtheta*P_theta + 2*a_p*P_theta;
         
         theta = theta + theta_dot*dt;

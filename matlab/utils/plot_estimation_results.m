@@ -16,13 +16,14 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     figure;
     subplot(2,1,1);
     hold on;
+    legend_labels = {};
     for i=1:D
         % subplot(D+1,1,i);
         % hold on;
         plot([Time(1) Time(end)],[g(i) g(i)], 'LineStyle','--', 'Color',goal_color{i} ,'LineWidth',2);
         plot(Time,g_data(i,:), 'LineStyle','-', 'Color',goal_est_color{i}, 'LineWidth',linewidth);
         plot(Time,y_data(i,:), 'LineStyle','-', 'Color',pos_color{i}, 'LineWidth',linewidth);
-        legend_labels = {['$\mathbf{y}_{g,' axis_name{i} '}$'], ['$\hat{\mathbf{y}}_{g,' axis_name{i} '}$'], ['$\mathbf{y}_{' axis_name{i} '}$']};
+        legend_labels = [legend_labels, ['$\mathbf{y}_{g,' axis_name{i} '}$'], ['$\hat{\mathbf{y}}_{g,' axis_name{i} '}$'], ['$\mathbf{y}_{' axis_name{i} '}$']];
         if (plot_1sigma)
             plot(Time,g_data(i,:)+P_data(i,:),'c-.', 'LineWidth',linewidth);
         	plot(Time,g_data(i,:)-P_data(i,:),'c-.', 'LineWidth',linewidth);
@@ -30,11 +31,11 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
         end
         % ylabel([axis_name{i} ' [$m$]'],'interpreter','latex','fontsize',fontsize);
         ylabel('[$m$]','interpreter','latex','fontsize',fontsize);
-        legend(legend_labels,'interpreter','latex','fontsize',fontsize);
         % if (i==1), title('EKF prediction','interpreter','latex','fontsize',fontsize); end
         axis tight;
         % hold off;
     end
+    legend(legend_labels,'interpreter','latex','fontsize',fontsize);
     hold off;
     % subplot(D+1,1,D+1);
     subplot(2,1,2);
