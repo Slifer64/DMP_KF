@@ -1,3 +1,7 @@
+%% ==============================================================
+%% DMP with state reset (y=y_r, y_dot=y_r_dot) and force feedback, i.e. 
+%% y_ddot = h(theta, y_r, y_r_dot, t) + f_ext/M
+
 clc;
 close all;
 clear;
@@ -12,7 +16,7 @@ est_g = true;
 est_tau = true;
 
 goal_scale = [1.3 -1.2 -1.4]';
-time_scale = 0.8;
+time_scale = 0.8; 
 
 process_noise = 0.001; % Q
 msr_noise = 0.01; % R
@@ -30,13 +34,15 @@ a_py = 150;
 a_dpy = 50;
 M_r = 2*eye(3,3);
 inv_M_r = inv(M_r);
-D_r = 30*eye(3,3);
-K_r = 150*eye(3,3);
+K_r = 200*eye(3,3);
+D_r = 2*sqrt(M_r*K_r);
 
-M_h = 4*eye(3,3);
+M_h = 3*eye(3,3);
 inv_M_h = inv(M_h);
 D_h = 80*eye(3,3);
 K_h = 400*eye(3,3);
+
+inv_M_rh = inv(inv_M_r+inv_M_h);
 
 f1_ = 1.0;
 f2_ = 2.0;
@@ -107,6 +113,8 @@ for n=1:1
     F_data = [];
     mf_data = [];
     P_data = [];
+    K_h_data = [];
+    kx_data = [];
 
     N_data = size(yd_data,2);
 
@@ -139,6 +147,30 @@ for n=1:1
     tic
     while (true)
         
+        % kx = t/t_end;
+        kx = abs(1-(norm(y_h-g)/norm(y0-g))^1);
+        Kx = [0.0 0.2 0.3  0.4  0.5  0.6  0.7  0.8  1.0];
+        Ky = [ 0   5   10   20  30    40   65   90  120];
+        % Ky = [ 0  20   30   40  50    60   75   95  120];
+        for i=1:length(Kx)
+            if (kx <= Kx(i))
+                if (i==length(Kx))
+                    k_i = Ky(i);
+                elseif (i==1)
+                    k_i = 0.0;
+                else
+                    k_i = Ky(i-1) + (kx-Kx(i-1))*(Ky(i)-Ky(i-1))/(Kx(i)-Kx(i-1));
+                end
+                K_h = eye(3,3)*k_i;
+                if (k_i > 20)
+                    D_h = 2*sqrt(M_h*K_h);
+                else
+                    D_h = eye(3,3)*40;
+                end
+                break;
+            end
+        end
+        
         %% data logging
 
         Time = [Time t];
@@ -167,6 +199,9 @@ for n=1:1
         F_data = [F_data F_ext];
         mf_data = [mf_data mf];
         
+        K_h_data = [K_h_data diag(K_h)];
+        kx_data = [kx_data kx];
+        
         P_temp = zeros(length(g)+1, 1);
         p_diag = diag(P_theta);
         if (est_tau), P_temp(end) = p_diag(end); end
@@ -182,15 +217,16 @@ for n=1:1
         
         dC_dtheta = zeros(D, length(theta));
         
-        Y_c = zeros(D,1); %a_py*(y_r-y_hat) + a_dpy*(dy_r-dy_hat);
+        y_hat = y_r;
+        dy_hat = dy_r;
+        Y_c = a_py*(y_r-y_hat) + a_dpy*(dy_r-dy_hat);
         Z_c = zeros(D,1);
 
         %% DMP simulation
         for i=1:D  
             
             ddy(i) = dmp{i}.getAccel(y(i), dy(i), y0(i), 0, 0, x, g(i), dmp{i}.getTau());
-            % ddy_hat(i) = dmp{i}.getAccel(y_hat(i), dy_hat(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
-            ddy_hat(i) = dmp{i}.getAccel(y(i), dy(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
+            ddy_hat(i) = dmp{i}.getAccel(y_hat(i), dy_hat(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
 
             dC_dtheta_i = dmp{i}.getAcellPartDev_g_tau(t, y_hat(i), dy_hat(i), y0(i), x_hat, g_hat(i), tau_hat);
             
@@ -199,31 +235,33 @@ for n=1:1
 
         end
         
-        ddy_hat = ddy_hat + Y_c;
-
-        F_ext = M_r*(ddy-ddy_hat) + M_r*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
-
-        ddy_r = ddy_hat + inv_M_r*(-D_r*(dy_r-dy_hat) - K_r*(y_r-y_hat) + F_ext);
-        ddy_h = ddy + inv_M_h*(-D_h*(dy_h-dy) - K_h*(y_h-y));
+        F_ext = K_h*(g-y_r);
         
+        y_out_hat = ddy_hat;
         y_out = ddy_r;
-        y_out_hat = ddy_hat; % - Y_c;
-        kf_err = (y_out - y_out_hat);
-        %  = Y_c + inv_M_r * ( -D_r*(dy_r-dy_hat) - K_r*(y_r-y_hat) + F_ext );
+        % kf_err = y_out - y_out_hat;
+        kf_err = inv(M_r)*F_ext;
         
+        ddy_r = ddy_hat - inv_M_r*(D_r*(dy_r-dy_hat) + K_r*(y_r-y_hat) - F_ext);
+        ddy_h = ddy_r;
+        
+        if (norm(ddy_h-ddy_r)>1e-12)
+            warning(['t=' num2str(t) ' sec: Rigid bond contraint might be violated!']);
+        end
+
         mf = m_fun(norm(F_ext));
 
         %% Update phase variable
         dx = can_clock_ptr.getPhaseDot(x);
 
         %% Stopping criteria
-        err_p = norm(g-y)/norm(g);
+        err_p = norm(g-y_r)/norm(g-y0);
         if (err_p <= 0.5e-2 && t>=t_end)
             break; 
         end
 
         iters = iters + 1;
-        if (t>=t_end)
+        if (t>=1.5*t_end)
             warning('Time limit reached. Stopping simulation...\n');
             break;
         end
@@ -262,7 +300,7 @@ for n=1:1
     
     Data_sim{n} = struct('Time',Time, 'Y',y_data, 'dY',dy_data, 'ddY',ddy_data);
     
-    plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, y_data);
+    plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, y_r_data);
     
 %     plotData(Data_sim);
     
@@ -285,10 +323,10 @@ for n=1:1
             
             ax = ax_cell{i,j};
             hold(ax,'on');
-            plot(Time,Y_data(i,:), 'LineWidth',1.2, 'Color',[0 0 1], 'Parent',ax);
-            plot(Time,Y_hat_data(i,:), 'LineWidth',1.2, 'Color',[0 0.75 0.75], 'LineStyle','--', 'Parent',ax);
-            plot(Time,Y_r_data(i,:), 'LineWidth',1.2, 'Color',[0.85 0.33 0.1], 'LineStyle',':', 'Parent',ax);
-            plot(Time,Y_h_data(i,:), 'LineWidth',1.2, 'Color',[1 0 0], 'LineStyle','-.', 'Parent',ax);
+            plot(Time,Y_data(i,:), 'LineWidth',1.0, 'Color',[0 0 1], 'Parent',ax);
+            plot(Time,Y_hat_data(i,:), 'LineWidth',2.0, 'Color',[0 0.75 0.75], 'LineStyle','--', 'Parent',ax);
+            plot(Time,Y_r_data(i,:), 'LineWidth',2.0, 'Color',[0.85 0.33 0.1], 'LineStyle',':', 'Parent',ax);
+            plot(Time,Y_h_data(i,:), 'LineWidth',2.0, 'Color',[1 0 0], 'LineStyle','-.', 'Parent',ax);
             xlabel('time [$s$]', 'interpreter','latex', 'fontsize',15);
             if (i==1 && j==1)
                 legend(ax, {'$\mathbf{y}$','$\hat{\mathbf{y}}$','$\mathbf{y}_r$','$\mathbf{y}_h$'}, ...
@@ -299,6 +337,17 @@ for n=1:1
             hold(ax,'off');
         end
     end
+    
+    figure;
+    plot(Time, K_h_data(1,:));
+    xlabel('time [$s$]', 'interpreter','latex', 'fontsize',15);
+    ylabel('Stiffness [$Nm$]', 'interpreter','latex', 'fontsize',15);
+    title('Human stiffness evolution', 'interpreter','latex', 'fontsize',15);
+    
+    figure;
+    plot(Time, kx_data);
+    xlabel('time [$s$]', 'interpreter','latex', 'fontsize',15);
+    ylabel('kx', 'interpreter','latex', 'fontsize',15);
 
 end
 

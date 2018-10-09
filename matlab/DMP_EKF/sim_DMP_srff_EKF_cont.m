@@ -1,3 +1,7 @@
+%% ==============================================================
+%% DMP with state reset (y=y_r, y_dot=y_r_dot) and force feedback, i.e. 
+%% y_ddot = h(theta, y_r, y_r_dot, t) + f_ext/M
+
 clc;
 close all;
 clear;
@@ -12,7 +16,7 @@ est_g = true;
 est_tau = true;
 
 goal_scale = [1.3 -1.2 -1.4]';
-time_scale = 0.8;
+time_scale = 0.8; 
 
 process_noise = 0.001; % Q
 msr_noise = 0.01; % R
@@ -26,6 +30,8 @@ tau_e = 0.1;
 
 plot_1sigma = false;
 
+stiff_human = false;
+
 a_py = 150;
 a_dpy = 50;
 M_r = 2*eye(3,3);
@@ -36,7 +42,9 @@ K_r = 150*eye(3,3);
 M_h = 4*eye(3,3);
 inv_M_h = inv(M_h);
 D_h = 80*eye(3,3);
-K_h = 400*eye(3,3);
+K_h = 350*eye(3,3);
+
+inv_M_rh = inv(inv_M_r + inv_M_h);
 
 f1_ = 1.0;
 f2_ = 2.0;
@@ -182,15 +190,16 @@ for n=1:1
         
         dC_dtheta = zeros(D, length(theta));
         
-        Y_c = zeros(D,1); %a_py*(y_r-y_hat) + a_dpy*(dy_r-dy_hat);
+        y_hat = y_r;
+        dy_hat = dy_r;
+        Y_c = a_py*(y_r-y_hat) + a_dpy*(dy_r-dy_hat);
         Z_c = zeros(D,1);
 
         %% DMP simulation
         for i=1:D  
             
             ddy(i) = dmp{i}.getAccel(y(i), dy(i), y0(i), 0, 0, x, g(i), dmp{i}.getTau());
-            % ddy_hat(i) = dmp{i}.getAccel(y_hat(i), dy_hat(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
-            ddy_hat(i) = dmp{i}.getAccel(y(i), dy(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
+            ddy_hat(i) = dmp{i}.getAccel(y_hat(i), dy_hat(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
 
             dC_dtheta_i = dmp{i}.getAcellPartDev_g_tau(t, y_hat(i), dy_hat(i), y0(i), x_hat, g_hat(i), tau_hat);
             
@@ -198,19 +207,29 @@ for n=1:1
             if (est_g), dC_dtheta(i,i) = dC_dtheta_i(1); end        
 
         end
-        
-        ddy_hat = ddy_hat + Y_c;
 
-        F_ext = M_r*(ddy-ddy_hat) + M_r*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
+        if (stiff_human)
+            F_ext = M_r*(ddy-ddy_hat) + M_r*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
+        else
+            F_ext = inv_M_rh*(ddy-ddy_hat) + inv_M_rh*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
+        end
 
-        ddy_r = ddy_hat + inv_M_r*(-D_r*(dy_r-dy_hat) - K_r*(y_r-y_hat) + F_ext);
-        ddy_h = ddy + inv_M_h*(-D_h*(dy_h-dy) - K_h*(y_h-y));
-        
+        y_out_hat = ddy_hat;
         y_out = ddy_r;
-        y_out_hat = ddy_hat; % - Y_c;
-        kf_err = (y_out - y_out_hat);
-        %  = Y_c + inv_M_r * ( -D_r*(dy_r-dy_hat) - K_r*(y_r-y_hat) + F_ext );
+        kf_err = y_out - y_out_hat;
+        % kf_err = inv(M_r)*F_ext;
         
+        ddy_r = ddy_hat + inv_M_r*(-D_r*(dy_r-dy_hat) - K_r*(y_r-y_hat) + F_ext);
+        if (stiff_human)
+            ddy_h = ddy + inv_M_h*(-D_h*(dy_h-dy) - K_h*(y_h-y));
+        else
+            ddy_h = ddy + inv_M_h*(-D_h*(dy_h-dy) - K_h*(y_h-y) - F_ext);
+        end
+        
+        if (norm(ddy_h-ddy_r)>1e-14)
+            warning(['t=' num2str(t) ' sec: Rigid bond contraint might be violated!']);
+        end
+
         mf = m_fun(norm(F_ext));
 
         %% Update phase variable

@@ -1,3 +1,7 @@
+%% ==============================================================
+%% DMP with state reset (y=y_r, y_dot=y_r_dot) and force feedback, i.e. 
+%% y_ddot = h(theta, y_r, y_r_dot, t) + f_ext/M
+
 clc;
 close all;
 clear;
@@ -8,15 +12,17 @@ set_matlab_utils_path();
 
 %% ###################################################################
 
+dt = 0.002;
+
 est_g = true;
 est_tau = true;
 
 goal_scale = [1.3 -1.2 -1.4]';
-time_scale = 0.8;
+time_scale = 0.8; 
 
-process_noise = 0.001; % Q
-msr_noise = 0.01; % R
-init_params_variance = 10; % P
+process_noise = 0.001*dt; % Q
+msr_noise = 0.01/dt; % R
+init_params_variance = 1.0; % P
 a_p = 0.6; % forgetting factor in fading memory EKF
 
 p1 = 0.01 * 1e-280;
@@ -25,6 +31,8 @@ p_r = 6.0;
 tau_e = 0.1;
 
 plot_1sigma = false;
+
+stiff_human = false;
 
 a_py = 150;
 a_dpy = 50;
@@ -36,7 +44,9 @@ K_r = 150*eye(3,3);
 M_h = 4*eye(3,3);
 inv_M_h = inv(M_h);
 D_h = 80*eye(3,3);
-K_h = 400*eye(3,3);
+K_h = 350*eye(3,3);
+
+inv_M_rh = inv(inv_M_r + inv_M_h);
 
 f1_ = 1.0;
 f2_ = 2.0;
@@ -45,7 +55,6 @@ m2_fun = @(x) (x<=f1_)*1 + ((x>f1_) & (x<f2_)).*(p_5th(1) + p_5th(2)*x + p_5th(3
 
 m_fun = m2_fun;
 
-dt = 0.002;
 
 % x = 0:0.002:5;
 % y = m_fun(x);
@@ -134,6 +143,8 @@ for n=1:1
     R = eye(N_out,N_out)*msr_noise;
     inv_R = inv(R);
     Q = eye(N_params,N_params) * process_noise;
+    
+    ekf = struct('F_k',eye(N_params,N_params), 'H_k',zeros(N_out,N_params) , 'Q',Q, 'R',R, 'a_p',exp(a_p*dt) ,'theta',theta, 'P',P_theta);
 
     disp('DMP-EKF (continuous) simulation...')
     tic
@@ -182,15 +193,16 @@ for n=1:1
         
         dC_dtheta = zeros(D, length(theta));
         
-        Y_c = zeros(D,1); %a_py*(y_r-y_hat) + a_dpy*(dy_r-dy_hat);
+        y_hat = y_r;
+        dy_hat = dy_r;
+        Y_c = a_py*(y_r-y_hat) + a_dpy*(dy_r-dy_hat);
         Z_c = zeros(D,1);
 
         %% DMP simulation
         for i=1:D  
             
             ddy(i) = dmp{i}.getAccel(y(i), dy(i), y0(i), 0, 0, x, g(i), dmp{i}.getTau());
-            % ddy_hat(i) = dmp{i}.getAccel(y_hat(i), dy_hat(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
-            ddy_hat(i) = dmp{i}.getAccel(y(i), dy(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
+            ddy_hat(i) = dmp{i}.getAccel(y_hat(i), dy_hat(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
 
             dC_dtheta_i = dmp{i}.getAcellPartDev_g_tau(t, y_hat(i), dy_hat(i), y0(i), x_hat, g_hat(i), tau_hat);
             
@@ -198,19 +210,29 @@ for n=1:1
             if (est_g), dC_dtheta(i,i) = dC_dtheta_i(1); end        
 
         end
-        
-        ddy_hat = ddy_hat + Y_c;
 
-        F_ext = M_r*(ddy-ddy_hat) + M_r*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
+        if (stiff_human)
+            F_ext = M_r*(ddy-ddy_hat) + M_r*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
+        else
+            F_ext = inv_M_rh*(ddy-ddy_hat) + inv_M_rh*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
+        end
 
-        ddy_r = ddy_hat + inv_M_r*(-D_r*(dy_r-dy_hat) - K_r*(y_r-y_hat) + F_ext);
-        ddy_h = ddy + inv_M_h*(-D_h*(dy_h-dy) - K_h*(y_h-y));
-        
+        y_out_hat = ddy_hat;
         y_out = ddy_r;
-        y_out_hat = ddy_hat; % - Y_c;
-        kf_err = (y_out - y_out_hat);
-        %  = Y_c + inv_M_r * ( -D_r*(dy_r-dy_hat) - K_r*(y_r-y_hat) + F_ext );
+        kf_err = y_out - y_out_hat;
+        % kf_err = inv(M_r)*F_ext;
         
+        ddy_r = ddy_hat + inv_M_r*(-D_r*(dy_r-dy_hat) - K_r*(y_r-y_hat) + F_ext);
+        if (stiff_human)
+            ddy_h = ddy + inv_M_h*(-D_h*(dy_h-dy) - K_h*(y_h-y));
+        else
+            ddy_h = ddy + inv_M_h*(-D_h*(dy_h-dy) - K_h*(y_h-y) - F_ext);
+        end
+        
+        if (norm(ddy_h-ddy_r)>1e-14)
+            warning(['t=' num2str(t) ' sec: Rigid bond contraint might be violated!']);
+        end
+
         mf = m_fun(norm(F_ext));
 
         %% Update phase variable
@@ -229,12 +251,18 @@ for n=1:1
         end
         
         %% KF update
-        K_kf = P_theta*dC_dtheta'*inv_R;
-        theta_dot = K_kf * kf_err;
-        P_dot = Q - K_kf*dC_dtheta*P_theta + 2*a_p*P_theta;
+        ekf.H_k = dC_dtheta;
+        % calc Kalman gain
+        K_kf = ekf.P*ekf.H_k'/(ekf.H_k*ekf.P*ekf.H_k' + ekf.R);
+        % measurement update
+        ekf.theta = ekf.theta + K_kf * kf_err;
+        ekf.P = ekf.P - K_kf*ekf.H_k*ekf.P;
+        % time update
+        ekf.theta = ekf.F_k*ekf.theta;
+        ekf.P = ekf.a_p^2*ekf.F_k*ekf.P*ekf.F_k' + ekf.Q;
         
-        theta = theta + theta_dot*dt;
-        P_theta = P_theta + P_dot*dt;
+        theta = ekf.theta;
+        P_theta = ekf.P;
         
         [tau_hat, g_hat] = theta2params(theta, tau, g, est_tau, est_g);
         x_hat = t/tau_hat; 
