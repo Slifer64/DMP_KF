@@ -12,15 +12,19 @@ set_matlab_utils_path();
 
 %% ###################################################################
 
+dt = 0.002;
+
+provide_part_deriv = true;
+
 est_g = true;
 est_tau = true;
 
-goal_scale = [1.3 -1.2 -1.4]';
-time_scale = 0.8; 
+goal_scale = [1.6 -1.7 -1.8]';
+time_scale = 1.8; 
 
-process_noise = 0.001; % Q
-msr_noise = 0.01; % R
-init_params_variance = 10; % P
+process_noise = 0.001*dt; % Q
+msr_noise = 0.01/dt; % R
+init_params_variance = 1.0; % P
 a_p = 0.6; % forgetting factor in fading memory EKF
 
 p1 = 0.01 * 1e-280;
@@ -53,7 +57,6 @@ m2_fun = @(x) (x<=f1_)*1 + ((x>f1_) & (x<f2_)).*(p_5th(1) + p_5th(2)*x + p_5th(3
 
 m_fun = m2_fun;
 
-dt = 0.002;
 
 % x = 0:0.002:5;
 % y = m_fun(x);
@@ -142,8 +145,21 @@ for n=1:1
     R = eye(N_out,N_out)*msr_noise;
     inv_R = inv(R);
     Q = eye(N_params,N_params) * process_noise;
-
-    disp('DMP-EKF (continuous) simulation...')
+    a_p = exp(a_p*dt);
+    
+    %% ====== ekf =====
+    ekf = extendedKalmanFilter(@(theta)stateTransFun(theta), @(theta, msr_cookie)msrFun(theta, msr_cookie), theta, 'HasAdditiveMeasurementNoise',true);
+    ekf.State = theta;
+    ekf.StateCovariance = P_theta;
+    ekf.ProcessNoise = Q;
+    ekf.MeasurementNoise = R;
+    
+    
+    ekf.StateTransitionJacobianFcn = @stateTransJacobFun;
+    if (provide_part_deriv), ekf.MeasurementJacobianFcn = @msrJacobFun; end
+    %% ==================
+    
+    disp('DMP-EKF (discrete) simulation...')
     tic
     while (true)
         
@@ -247,16 +263,20 @@ for n=1:1
             break;
         end
         
-        %% KF update
-        K_kf = P_theta*dC_dtheta'*inv_R;
-        theta_dot = K_kf * kf_err;
-        P_dot = Q - K_kf*dC_dtheta*P_theta + 2*a_p*P_theta;
+        msr_cookie = struct('dmp',{dmp}, 't',t, 'y',y_hat, 'dy',dy_hat, 'y0',y0, 'y_c',0.0, 'z_c',0.0, 'x_hat',x_hat, 'g', g, 'tau', tau, 'est_g',est_g, 'est_tau',est_tau);
         
-        theta = theta + theta_dot*dt;
-        P_theta = P_theta + P_dot*dt;
+        %% ###################################################################
+        %% === ukf update ===
+        ekf.correct(y_out, msr_cookie);
+        P_theta = ekf.StateCovariance;
+        ekf.predict();
+        theta = ekf.State;
+        P_theta = a_p^2*P_theta + Q;
+        ekf.StateCovariance = P_theta;
         
         [tau_hat, g_hat] = theta2params(theta, tau, g, est_tau, est_g);
-        x_hat = t/tau_hat; 
+        x_hat = t/tau_hat;
+        %% ###################################################################
         
         %% Numerical integration
         t = t + dt;
@@ -321,6 +341,56 @@ for n=1:1
 
 end
 
+%% ###################################################################
+%% ###################################################################
 
+function y = stateTransFun(x)
+
+    y = x;
+    
+end
+
+function J = stateTransJacobFun(x)
+
+    N = length(x);
+    J = eye(N,N);
+    
+end
+
+
+%% ###################################################################
+%% ###################################################################
+
+function y_out = msrFun(theta, msr_cookie)
+    
+    [tau_hat, g_hat] = theta2params(theta, msr_cookie.tau, msr_cookie.g, msr_cookie.est_tau, msr_cookie.est_g);
+    
+    D = length(msr_cookie.dmp);
+    y_out = zeros(D,1);
+    
+    for i=1:D
+        y_out(i) = msr_cookie.dmp{i}.getAccel(msr_cookie.y(i), msr_cookie.dy(i), msr_cookie.y0(i), msr_cookie.y_c, msr_cookie.z_c, msr_cookie.x_hat, g_hat(i), tau_hat);
+    end
+    
+end
+
+function J = msrJacobFun(theta, msr_cookie)
+    
+    [tau_hat, g_hat] = theta2params(theta, msr_cookie.tau, msr_cookie.g, msr_cookie.est_tau, msr_cookie.est_g);
+    
+    D = length(msr_cookie.dmp);
+    
+    dC_dtheta = zeros(D, length(theta));
+    
+    for i=1:D
+        dC_dtheta_i = msr_cookie.dmp{i}.getAcellPartDev_g_tau(msr_cookie.t, msr_cookie.y(i), msr_cookie.dy(i), msr_cookie.y0(i), msr_cookie.x_hat, g_hat(i), tau_hat);
+
+        if (msr_cookie.est_tau), dC_dtheta(i,end) = dC_dtheta_i(2); end
+        if (msr_cookie.est_g), dC_dtheta(i,i) = dC_dtheta_i(1); end
+    end
+    
+    J = dC_dtheta;
+
+end
 
 

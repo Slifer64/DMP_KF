@@ -9,7 +9,7 @@ load('data/training_data.mat','Data');
 
 N = length(Data);
 
-N_kernels = 30;
+N_kernels = 2;
 a_z = 16;
 b_z = a_z/4;
 train_method = 'LWR';
@@ -38,7 +38,7 @@ for n=1:N
         shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.97);
 %         shapeAttrGatingPtr = LinGatingFunction(1.0, 0.0);
 %         shapeAttrGatingPtr = ExpGatingFunction(1.0, 0.05);
-        dmp{i} = DMP(N_kernels, a_z, b_z, can_clock_ptr, shapeAttrGatingPtr);
+        dmp{i} = DMP_nss(N_kernels, a_z, b_z, can_clock_ptr, shapeAttrGatingPtr);
     end
     
     %% Train the DMP
@@ -187,5 +187,5 @@ for i=1:D
 end
 title(ax{1},'DMP weights');
 
-save('data/dmp_data.mat', 'DMP_data');
+save('data/dmp_nss_data.mat', 'DMP_data');
 

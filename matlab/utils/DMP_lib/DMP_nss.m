@@ -16,7 +16,7 @@
 %     tau*dy = z + y_c;
 %
 %  Assuming y_c=z_c=0, we can write equivalently:
-%     ddy = g1(x)*( a_z*(b_z*(g-y)-dy*tau) + g2(x)*fs*f(x) ) / tau^2;
+%     ddy = g1(x)*( a_z*(b_z*(g-y)-dy*tau) + g2(x)*f(x) ) / tau^2;
 %
 %  where
 %     tau: is scaling factor defining the duration of the motion
@@ -33,7 +33,7 @@
 %     g2(x): the gating factor of non-linear forcing term
 %
 
-classdef DMP < handle % : public DMP_
+classdef DMP_nss < handle % : public DMP_
     properties
         N_kernels % number of kernels (basis functions)
 
@@ -57,7 +57,7 @@ classdef DMP < handle % : public DMP_
         %  @param[in] a_z: Parameter 'a_z' relating to the spring-damper system.
         %  @param[in] b_z: Parameter 'b_z' relating to the spring-damper system.
         %  @param[in] can_clock_ptr: Pointer to a DMP canonical system object.
-        function this = DMP(N_kernels, a_z, b_z, can_clock_ptr, s_gat_ptr)
+        function this = DMP_nss(N_kernels, a_z, b_z, can_clock_ptr, s_gat_ptr)
 
             if (nargin < 5)
                 this.shape_attr_gating_ptr = SigmoidGatingFunction(1.0, 0.99);
@@ -93,7 +93,7 @@ classdef DMP < handle % : public DMP_
             this.setStds(kernel_std_scaling);
 
         end
-
+        
         function n_ker = getNumOfKernels(this)
             
             n_ker = length(this.w);
@@ -294,7 +294,7 @@ classdef DMP < handle % : public DMP_
         function f = forcingTerm(this,x)
 
             Psi = this.kernelFunction(x);
-    
+
             f = dot(Psi,this.w) / (sum(Psi)+this.zero_tol); % add 'zero_tol' to avoid numerical issues
 
         end
@@ -306,7 +306,7 @@ classdef DMP < handle % : public DMP_
         %  @param[out] f_scale: The scaling factor of the forcing term.
         function f_scale = forcingTermScaling(this, y0, g)
 
-            f_scale = (g-y0);
+            f_scale = 1.0;
 
         end
         

@@ -1,7 +1,4 @@
 %% ==============================================================
-%% DMP with state reset (y=y_r, y_dot=y_r_dot) and force feedback, i.e. 
-%% y_ddot = h(theta, y_r, y_r_dot, t) + f_ext/M
-
 clc;
 close all;
 clear;
@@ -14,13 +11,8 @@ set_matlab_utils_path();
 
 dt = 0.002;
 
-provide_part_deriv = true;
-
-est_g = true;
-est_tau = true;
-
-goal_scale = [1.6 -1.7 -1.8]';
-time_scale = 1.8; 
+goal_scale = [1.5 -1.4 -1.6]';
+time_scale = 0.8; 
 
 process_noise = 0.001*dt; % Q
 msr_noise = 0.01/dt; % R
@@ -32,7 +24,7 @@ p2 = 50.0 * 1e280;
 p_r = 6.0;
 tau_e = 0.1;
 
-plot_1sigma = false;
+plot_1sigma = true;
 
 stiff_human = false;
 
@@ -69,7 +61,7 @@ m_fun = m2_fun;
 
 set_matlab_utils_path();
 
-load('data/dmp_data.mat', 'DMP_data');
+load('data/dmp_nss_data.mat', 'DMP_data');
 
 dmp = DMP_data{1};
 can_clock_ptr = dmp{1}.can_clock_ptr;
@@ -118,6 +110,8 @@ for n=1:1
     F_data = [];
     mf_data = [];
     P_data = [];
+    theta_data = [];
+    Ptheta_data = [];
 
     N_data = size(yd_data,2);
 
@@ -128,38 +122,30 @@ for n=1:1
     can_clock_ptr.setTau(tau);
     
     tau_hat = Timed(end);
-    if (est_tau == false), tau_hat=tau; end
-    
     g_hat = yd_data(:,end);
-    if (est_g == false), g_hat=g; end
     
     x_hat = t/tau_hat;
     N_out = length(g_hat);
     y_out_hat = zeros(N_out,1);
     y_out = zeros(N_out,1);
-    
-    theta = params2theta(tau_hat, g_hat, est_tau, est_g);
-    
-    N_params = length(theta);
+
+    N_kernels = length(dmp{1}.w);
+    N_params1 = N_kernels + 1;
+    N_params = N_out*N_params1;
+    theta = [dmp{1}.w; g_hat(1); dmp{2}.w; g_hat(2); dmp{3}.w; g_hat(3)];
+    ig1 = N_params1;
+    ig2 = 2*N_params1;
+    ig3 = 3*N_params1;
+    ig = [ig1 ig2 ig3];
     P_theta = eye(N_params, N_params) * init_params_variance;
+    for i=1:length(ig), P_theta(ig(i),ig(i)) = init_params_variance*0.1; end
     R = eye(N_out,N_out)*msr_noise;
     inv_R = inv(R);
     Q = eye(N_params,N_params) * process_noise;
-    a_p = exp(a_p*dt);
     
-    %% ====== ekf =====
-    ekf = extendedKalmanFilter(@(theta)stateTransFun(theta), @(theta, msr_cookie)msrFun(theta, msr_cookie), theta, 'HasAdditiveMeasurementNoise',true);
-    ekf.State = theta;
-    ekf.StateCovariance = P_theta;
-    ekf.ProcessNoise = Q;
-    ekf.MeasurementNoise = R;
-    
-    
-    ekf.StateTransitionJacobianFcn = @stateTransJacobFun;
-    if (provide_part_deriv), ekf.MeasurementJacobianFcn = @msrJacobFun; end
-    %% ==================
-    
-    disp('DMP-EKF (discrete) simulation...')
+    ekf = struct('F_k',eye(N_params,N_params), 'H_k',zeros(N_out,N_params) , 'Q',Q, 'R',R, 'a_p',exp(a_p*dt) ,'theta',theta, 'P',P_theta);
+
+    disp('DMP-IP simulation...')
     tic
     while (true)
         
@@ -190,21 +176,11 @@ for n=1:1
         
         F_data = [F_data F_ext];
         mf_data = [mf_data mf];
+
+        P_data = [P_data sqrt([P_theta(ig1,ig1), P_theta(ig2,ig2), P_theta(ig3,ig3), 0.01]')];
         
-        P_temp = zeros(length(g)+1, 1);
-        p_diag = diag(P_theta);
-        if (est_tau), P_temp(end) = p_diag(end); end
-        if (est_g)
-            if (est_tau)
-                P_temp(1:end-1) = p_diag(1:end-1);
-            else
-                P_temp(1:end-1) = p_diag(1:end);
-            end
-        end
-            
-        P_data = [P_data sqrt(P_temp)];
-        
-        dC_dtheta = zeros(D, length(theta));
+        theta_data = [theta_data theta];
+        Ptheta_data = [Ptheta_data sqrt(diag(P_theta))];
         
         y_hat = y_r;
         dy_hat = dy_r;
@@ -213,15 +189,8 @@ for n=1:1
 
         %% DMP simulation
         for i=1:D  
-            
             ddy(i) = dmp{i}.getAccel(y(i), dy(i), y0(i), 0, 0, x, g(i), dmp{i}.getTau());
             ddy_hat(i) = dmp{i}.getAccel(y_hat(i), dy_hat(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
-
-            dC_dtheta_i = dmp{i}.getAcellPartDev_g_tau(t, y_hat(i), dy_hat(i), y0(i), x_hat, g_hat(i), tau_hat);
-            
-            if (est_tau), dC_dtheta(i,end) = dC_dtheta_i(2); end
-            if (est_g), dC_dtheta(i,i) = dC_dtheta_i(1); end        
-
         end
 
         if (stiff_human)
@@ -230,8 +199,10 @@ for n=1:1
             F_ext = inv_M_rh*(ddy-ddy_hat) + inv_M_rh*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
         end
 
-        y_out_hat = ddy_hat;
-        y_out = ddy_r;
+        a_z = dmp{1}.a_z;
+        b_z = dmp{1}.b_z;
+        y_out_hat = (ddy_hat + a_z*dy_hat + a_z*b_z*y_hat)/tau_hat^2;
+        y_out = (ddy_r + a_z*dy_r + a_z*b_z*y_r)/tau^2;
         kf_err = y_out - y_out_hat;
         % kf_err = inv(M_r)*F_ext;
         
@@ -263,20 +234,40 @@ for n=1:1
             break;
         end
         
-        msr_cookie = struct('dmp',{dmp}, 't',t, 'y',y_hat, 'dy',dy_hat, 'y0',y0, 'y_c',0.0, 'z_c',0.0, 'x_hat',x_hat, 'g', g, 'tau', tau, 'est_g',est_g, 'est_tau',est_tau);
+        %% KF update
+        for i=1:length(dmp)
+            a_z = dmp{i}.a_z;
+            b_z = dmp{i}.b_z;
+            psi = dmp{i}.kernelFunction(x_hat);
+            psi = psi/(sum(psi)+dmp{i}.zero_tol);
+            ekf.H_k(i,(i-1)*N_params1+1:i*N_params1) = [psi' a_z*b_z];
+        end
+        % calc Kalman gain
+        K_kf = ekf.P*ekf.H_k'/(ekf.H_k*ekf.P*ekf.H_k' + ekf.R);
+        % measurement update
+        ekf.theta = ekf.theta + K_kf * kf_err;
+        ekf.P = ekf.P - K_kf*ekf.H_k*ekf.P;
+        % time update
+%         ekf.theta = ekf.F_k*ekf.theta;
+%         ekf.P = ekf.a_p^2*ekf.F_k*ekf.P*ekf.F_k' + ekf.Q;
         
-        %% ###################################################################
-        %% === ukf update ===
-        ekf.correct(y_out, msr_cookie);
-        P_theta = ekf.StateCovariance;
-        ekf.predict();
-        theta = ekf.State;
-        P_theta = a_p^2*P_theta + Q;
-        ekf.StateCovariance = P_theta;
+%         P_theta
         
-        [tau_hat, g_hat] = theta2params(theta, tau, g, est_tau, est_g);
-        x_hat = t/tau_hat;
-        %% ###################################################################
+        P_theta = ekf.P;
+        
+%         P_theta
+        
+%         pause
+        
+        i1 = 0;
+        for i=1:length(dmp)
+           dmp{i}.w = theta(i1+1:i1+N_kernels);
+           i1 = i1 + N_kernels + 1;
+           g_hat(i) = theta(i1);
+        end
+        
+        
+        x_hat = t/tau_hat; 
         
         %% Numerical integration
         t = t + dt;
@@ -301,7 +292,21 @@ for n=1:1
     
     Data_sim{n} = struct('Time',Time, 'Y',y_data, 'dY',dy_data, 'ddY',ddy_data);
     
-    plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, y_data);
+    plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, y_r_data);
+    
+    for i=1:length(dmp)
+        i1 = (i-1)*N_params1+1;
+        i2 = i*N_params1;
+        linewidth = 1.3;
+        figure;
+        hold on;
+        for j=i1:i2
+            plot(Time,theta_data(j,:), 'LineStyle','-', 'LineWidth',linewidth);
+            plot(Time,theta_data(j,:)+Ptheta_data(j,:),'c-.', 'LineWidth',linewidth);
+            plot(Time,theta_data(j,:)-Ptheta_data(j,:),'c-.', 'LineWidth',linewidth);
+        end
+        axis tight;
+    end
     
 %     plotData(Data_sim);
     
@@ -341,56 +346,6 @@ for n=1:1
 
 end
 
-%% ###################################################################
-%% ###################################################################
 
-function y = stateTransFun(x)
-
-    y = x;
-    
-end
-
-function J = stateTransJacobFun(x)
-
-    N = length(x);
-    J = eye(N,N);
-    
-end
-
-
-%% ###################################################################
-%% ###################################################################
-
-function y_out = msrFun(theta, msr_cookie)
-    
-    [tau_hat, g_hat] = theta2params(theta, msr_cookie.tau, msr_cookie.g, msr_cookie.est_tau, msr_cookie.est_g);
-    
-    D = length(msr_cookie.dmp);
-    y_out = zeros(D,1);
-    
-    for i=1:D
-        y_out(i) = msr_cookie.dmp{i}.getAccel(msr_cookie.y(i), msr_cookie.dy(i), msr_cookie.y0(i), msr_cookie.y_c, msr_cookie.z_c, msr_cookie.x_hat, g_hat(i), tau_hat);
-    end
-    
-end
-
-function J = msrJacobFun(theta, msr_cookie)
-    
-    [tau_hat, g_hat] = theta2params(theta, msr_cookie.tau, msr_cookie.g, msr_cookie.est_tau, msr_cookie.est_g);
-    
-    D = length(msr_cookie.dmp);
-    
-    dC_dtheta = zeros(D, length(theta));
-    
-    for i=1:D
-        dC_dtheta_i = msr_cookie.dmp{i}.getAcellPartDev_g_tau(msr_cookie.t, msr_cookie.y(i), msr_cookie.dy(i), msr_cookie.y0(i), msr_cookie.x_hat, g_hat(i), tau_hat);
-
-        if (msr_cookie.est_tau), dC_dtheta(i,end) = dC_dtheta_i(2); end
-        if (msr_cookie.est_g), dC_dtheta(i,i) = dC_dtheta_i(1); end
-    end
-    
-    J = dC_dtheta;
-
-end
 
 
