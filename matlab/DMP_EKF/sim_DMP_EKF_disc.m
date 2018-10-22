@@ -15,9 +15,10 @@ dt = 0.002;
 goal_scale = [1.0 1.0 1.0]';
 time_scale = 1.0; 
 
-goal_offset = [0.42 -0.45 0.49]';
+% goal_offset = [-0.4 0.4 -0.25]';
+goal_offset = [0.3 0.4 -0.25]';
 y0_offset = [0.0 0.0 0.0]';
-time_offset = 3.0;
+time_offset = 10.0;
 
 process_noise = 0.01*dt; % Q
 msr_noise = 0.001/dt; % R
@@ -43,15 +44,15 @@ stiff_human = true;
 
 a_py = 150;
 a_dpy = 50;
-M_r = 2*eye(3,3);
+M_r = 5*eye(3,3);
 inv_M_r = inv(M_r);
-D_r = 30*eye(3,3);
-K_r = 150*eye(3,3);
+K_r = 300*eye(3,3);
+D_r = 2*sqrt(M_r*K_r);
 
 M_h = 4*eye(3,3);
 inv_M_h = inv(M_h);
-D_h = 80*eye(3,3);
-K_h = 350*eye(3,3);
+K_h = 500*eye(3,3);
+D_h = 2*sqrt(M_h*K_h);
 
 inv_M_rh = inv(inv_M_r + inv_M_h);
 

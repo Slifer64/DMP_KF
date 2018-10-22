@@ -10,10 +10,10 @@ set_matlab_utils_path();
 
 %% ###################################################################
 
-dg_x = [-0.4 0.3 0.5];% 0.0 0.25 0.5];
+dg_x = [-0.4 0.3 0.5];
 dg_y = [-0.5 -0.3 0.4];
 dg_z = [-0.45 -0.25 0.25 0.5];
-dtau = [-2.0 2.0 4.0 8.0 10.0];% 0.5 3.0 5.0];
+dtau = [-2.0 2.0 4.0 8.0 10.0];
 
 Data = cell(length(dg_x)*length(dg_y)*length(dg_z)*length(dtau), 1);
 
@@ -57,19 +57,19 @@ for ix=1:length(dg_x)
 
             plot_1sigma = false;
 
-            stiff_human = true;
+            stiff_human = false;
 
             a_py = 150;
             a_dpy = 50;
-            M_r = 2*eye(3,3);
+            M_r = 5*eye(3,3);
             inv_M_r = inv(M_r);
-            D_r = 30*eye(3,3);
-            K_r = 150*eye(3,3);
+            K_r = 300*eye(3,3);
+            D_r = 2*sqrt(M_r*K_r);
 
             M_h = 4*eye(3,3);
             inv_M_h = inv(M_h);
-            D_h = 80*eye(3,3);
-            K_h = 350*eye(3,3);
+            K_h = 500*eye(3,3);
+            D_h = 2*sqrt(M_h*K_h);
 
             inv_M_rh = inv(inv_M_r + inv_M_h);
 
@@ -88,8 +88,6 @@ for ix=1:length(dg_x)
             % return
 
             %% ###################################################################
-
-            set_matlab_utils_path();
 
             load('data/dmp_data.mat', 'dmp_data');
 
@@ -294,17 +292,20 @@ for ix=1:length(dg_x)
             end
             toc
 
-            Data{id} = struct('Time',Time, 'Y_data',y_r_data, 'Yg_data',g_data, 'Yg',g, 'tau_data', tau_data, 'tau',tau);
-            id = id + 1;
+            Data{id} = struct('Time',Time, 'Y_data',y_r_data, 'Yg_data',g_data, 'Yg',g, ...
+                              'tau_data', tau_data, 'tau',tau, ...
+                              'Yg_offset',goal_offset, 'tau_offset',time_offset);
             
             fprintf('Progress: %.1f %%\n', id*100.0/n_total);
+            
+            id = id + 1;
 
             end
         end
     end
 end
 
-save('multisim_data.mat', 'Data');
+save('data/multisim_data.mat', 'Data');
 
 plotMultiEstSettlings(Data);
 

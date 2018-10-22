@@ -1,7 +1,11 @@
 function plotMultiEstSettlings(Data)
 
+    if (nargin < 1)
+        load('data/multisim_data.mat', 'Data');
+    end
+    
     % p_set = 0.5*5/100; % assuming max dist 0.5 m define the settling at 5% of that dist
-    p_set = [ones(3,1)*0.005; 0.05]; % settling at 0.5 cm for pos and 50 ms for tau
+    p_set = [ones(3,1)*0.005; 0.1]; % settling at 0.5 cm for pos and 100 ms for tau
 
     Dim = 4;
 
@@ -110,6 +114,23 @@ function plotMultiEstSettlings(Data)
         legend(ax, [legend_labels(i) ['$\bar{t}_s$'] ['$\bar{t}_s \pm std$']],'interpreter','latex','fontsize',fontsize, 'Orientation','vertical');
         title(['Average settling at $' num2str(s_times_mean(i)*100,2) '\pm' num2str(s_times_sigma(i)*100,2) '\%$ of the movement'], ...
             'interpreter','latex','fontsize',fontsize, 'Parent',ax);
+    end
+    
+    ind = [];
+    s_t = s_times_mean+s_times_sigma; % 0.65*ones(4,1);
+    for i=1:size(s_times,1)
+        ind = [ind find(s_times(i,:) > s_t(i))];
+    end
+    ind = unique(ind, 'sorted');
+    
+    if (~isempty(ind)), fprintf('Simulations that settled after the mean+sigma bound: (%d)\n',length(ind)); end
+    for k=1:length(ind)
+        i = ind(k);
+        goal_offset = Data{i}.Yg_offset;
+        tau_offset = Data{i}.tau_offset;
+        fprintf('=== Sim %d ===\n', i);
+        fprintf('Target offset: (%.2f, %.2f, %.2f) m\n', goal_offset(1), goal_offset(2), goal_offset(3));
+        fprintf('Tau offset: %.2f sec\n', tau_offset);
     end
 
 end
