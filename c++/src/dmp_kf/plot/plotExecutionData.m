@@ -25,10 +25,6 @@ theta_data = read_mat(fid, binary);
 Sigma_theta_data = read_mat(fid, binary);
 g = read_mat(fid, binary);
 
-g
-
-return
-
 norm_dY = zeros(length(Time),1);
 for i=1:length(norm_dY)
     norm_dY(i) = norm(dY_data(:,i));
