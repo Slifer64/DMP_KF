@@ -42,17 +42,17 @@ for ix=1:length(dg_x)
             init_params_variance = 1.0; % P
             a_p = 2.0; % forgetting factor in fading memory EKF
 
-            goal_up_lim = [0.51 0.51 0.51];
-            goal_low_lim = -[0.51 0.51 0.51];
+            goal_up_lim = [0.6 0.6 0.6];
+            goal_low_lim = -[0.6 0.6 0.6];
             tau_low_lim = 1.0;
             tau_up_lim = 20.0; %Inf;
             theta_low_lim = [goal_low_lim tau_low_lim];
             theta_up_lim = [goal_up_lim tau_up_lim];
-            apply_params_proj = true;
+            enable_constraints = true*1;
 
             theta_sigma_min = 0.001;
             theta_sigma_max = 100000;
-            apply_cov_sat = true;
+            apply_cov_sat = true*1;
 
 
             plot_1sigma = false;
@@ -148,7 +148,18 @@ for ix=1:length(dg_x)
             inv_R = inv(R);
             Q = eye(N_params,N_params) * process_noise;
 
-            ekf = struct('F_k',eye(N_params,N_params), 'H_k',zeros(N_out,N_params) , 'Q',Q, 'R',R, 'a_p',exp(a_p*dt) ,'theta',theta, 'P',P_theta);
+            %% Set up EKF object
+            ekf = EKF(N_params, N_out);
+            ekf.setProcessNoiseCov(Q);
+            ekf.setMeasureNoiseCov(R);
+            ekf.setFadingMemoryCoeff(exp(a_p*dt));
+            ekf.theta = theta;
+            ekf.P = P_theta;
+
+            ekf.enableParamsContraints(enable_constraints);
+            ekf.setParamsConstraints(eye(N_params, N_params),theta_up_lim, eye(N_params, N_params),theta_low_lim);
+
+            F_k = eye(N_params,N_params);
 
             disp('DMP-EKF (discrete) simulation...');
             tic
@@ -244,21 +255,10 @@ for ix=1:length(dg_x)
                 end
 
                 %% KF update
-
                 % time update
-                ekf.theta = ekf.F_k*ekf.theta;
-                ekf.P = ekf.a_p^2*ekf.F_k*ekf.P*ekf.F_k' + ekf.Q;
-
+                ekf.predict(F_k);
                 % measurement update
-                ekf.H_k = dC_dtheta;
-                % calc Kalman gain
-                K_kf = ekf.P*ekf.H_k'/(ekf.H_k*ekf.P*ekf.H_k' + ekf.R);
-                ekf.theta = ekf.theta + K_kf * kf_err;
-                ekf.P = ekf.P - K_kf*ekf.H_k*ekf.P;
-
-                if (apply_params_proj)
-                    ekf.theta = paramsProj(ekf.theta, ekf.P, theta_low_lim, theta_up_lim);
-                end
+                ekf.correct(y_out, y_out_hat, dC_dtheta);
 
                 if (apply_cov_sat)
                     ekf.P = svSat(ekf.P, theta_sigma_min, theta_sigma_max);

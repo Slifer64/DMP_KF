@@ -15,10 +15,10 @@ ddYd_data = data.ddY;
 Dim = size(Yd_data,1);
 
 %% initialize DMP
-N_kernels = 10;
+N_kernels = 8;
 a_z = 16;
 b_z = a_z/4;
-train_method = 'LWR';
+train_method = 'LS';
 can_clock_ptr = CanonicalClock();
 dmp = cell(Dim,1);
 shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.5);
@@ -58,24 +58,39 @@ save('data/dmp_data.mat', 'dmp_data');
 
 %% plot data
 fontsize = 14;
+linewidth = 1.5;
 figure('NumberTitle', 'off', 'Name', ['Demo ' num2str(1)]);
 k = 1;
-for i=1:Dim
-    subplot(Dim,3,k);
-    plot(Time,Y_data(i,:), Timed,Yd_data(i,:));
-    if (i==1), title('pos [$m$]','interpreter','latex','fontsize',fontsize); end
-    if (i==Dim), xlabel('time [$s$]','interpreter','latex','fontsize',fontsize); end
-    legend('dmp','demo');
-    subplot(Dim,3,k+1);
-    plot(Time,dY_data(i,:), Timed,dYd_data(i,:));
-    if (i==1), title('vel [$m/s$]','interpreter','latex','fontsize',fontsize); end
-    if (i==Dim), xlabel('time [$s$]','interpreter','latex','fontsize',fontsize); end
-    subplot(Dim,3,k+2);
-    plot(Time,ddY_data(i,:), Timed,ddYd_data(i,:));
-    if (i==1), title('accel [$m/s^2$]','interpreter','latex','fontsize',fontsize); end
-    if (i==Dim), xlabel('time [$s$]','interpreter','latex','fontsize',fontsize); end
-    k = k+3;
+ax_cell = cell(3,3);
+for i=1:3
+    for j=1:3
+        ax_cell{i,j} = subplot(3,3,k);
+        hold(ax_cell{i,j}, 'on');
+        k = k + 1;
+    end
 end
+for i=1:3
+    plot(Timed,Yd_data(i,:), 'LineWidth',linewidth, 'Color',[0.85 0.33 0.1], 'Parent',ax_cell{1,i});
+    plot(Time,Y_data(i,:), 'LineWidth',linewidth, 'Color','blue', 'Parent',ax_cell{1,i}); 
+end
+for i=1:3
+    plot(Timed,dYd_data(i,:), 'LineWidth',linewidth, 'Color',[0.85 0.33 0.1], 'Parent',ax_cell{2,i});
+    plot(Time,dY_data(i,:), 'LineWidth',linewidth, 'Color','blue', 'Parent',ax_cell{2,i}); 
+end
+for i=1:3
+    plot(Timed,ddYd_data(i,:), 'LineWidth',linewidth, 'Color',[0.85 0.33 0.1], 'Parent',ax_cell{3,i});
+    plot(Time,ddY_data(i,:), 'LineWidth',linewidth, 'Color','blue', 'Parent',ax_cell{3,i}); 
+end
+legend(ax_cell{1,3}, {'dmp','demo'},'interpreter','latex','fontsize',fontsize);
+title(ax_cell{1,1}, '$X$','interpreter','latex','fontsize',fontsize);
+title(ax_cell{1,2}, '$Y$','interpreter','latex','fontsize',fontsize);
+title(ax_cell{1,3}, '$Z$','interpreter','latex','fontsize',fontsize);
+ylabel(ax_cell{1,1}, 'position [$m$]','interpreter','latex','fontsize',fontsize);
+ylabel(ax_cell{2,1}, 'velocity [$m/s$]','interpreter','latex','fontsize',fontsize);
+ylabel(ax_cell{3,1}, 'acceleration [$m/s^2$]','interpreter','latex','fontsize',fontsize);
+title(ax_cell{3,1}, 'time [$s$]','interpreter','latex','fontsize',fontsize);
+title(ax_cell{3,2}, 'time [$s$]','interpreter','latex','fontsize',fontsize);
+title(ax_cell{3,3}, 'time [$s$]','interpreter','latex','fontsize',fontsize);
 
 end
 

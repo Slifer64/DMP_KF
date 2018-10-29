@@ -4,6 +4,15 @@ function plotMultiEstSettlings(Data)
         load('data/multisim_data.mat', 'Data');
     end
     
+    Colors = [ 51, 255,   0;
+              204, 204,   0;
+              255,   0,   0;
+              153,   0, 153;
+                0,   0, 153;
+                0,  51, 102;
+                0,  51,  51
+             ]/255.0;
+         
     % p_set = 0.5*5/100; % assuming max dist 0.5 m define the settling at 5% of that dist
     p_set = [ones(3,1)*0.005; 0.1]; % settling at 0.5 cm for pos and 100 ms for tau
 
@@ -47,7 +56,24 @@ function plotMultiEstSettlings(Data)
         Yg_data = Data{k}.Yg_data;
         Yg = Data{k}.Yg;
         tau_data = Data{k}.tau_data;
-        tau = Data{k}.tau;      
+        tau = Data{k}.tau; 
+        
+        time_offset = abs(Data{k}.tau_offset);
+        if (time_offset < 2)
+            color = Colors(1,:);
+        elseif (time_offset < 4)
+            color = Colors(2,:);
+        elseif (time_offset < 6)
+            color = Colors(3,:);
+        elseif (time_offset < 8)
+            color = Colors(4,:);
+        elseif (time_offset < 10)
+            color = Colors(5,:);
+        elseif (time_offset < 12)
+            color = Colors(6,:);
+        else
+            color = Colors(7,:);
+        end
 
         Yg = [Yg; tau];
         Yg_data = [Yg_data; tau_data];
@@ -82,7 +108,7 @@ function plotMultiEstSettlings(Data)
             t_y = t_y/Time(end);
 
             ax = ax_cell{i};
-            plot_h = plot(Time_n, yg-yg_data, 'LineStyle','-', 'LineWidth',1.0, 'Parent',ax);
+            plot_h = plot(Time_n, yg-yg_data, 'LineStyle','-', 'LineWidth',1.0, 'Color',color, 'Parent',ax);
             if (k>1)
                 set(plot_h, 'HandleVisibility','off');
             end
@@ -111,13 +137,13 @@ function plotMultiEstSettlings(Data)
         plot([mu mu], y_lim, 'LineStyle','--', 'Color',[0.85 0.33 0.1], 'LineWidth',linewidth, 'Parent',ax);
         plot([mps mps], y_lim, 'LineStyle',':', 'Color',0.5*[0.85 0.33 0.1], 'LineWidth',linewidth, 'Parent',ax);
         plot([mms mms], y_lim, 'LineStyle',':', 'Color',0.5*[0.85 0.33 0.1], 'LineWidth',linewidth, 'Parent',ax, 'HandleVisibility','off');
-        legend(ax, [legend_labels(i) ['$\bar{t}_s$'] ['$\bar{t}_s \pm std$']],'interpreter','latex','fontsize',fontsize, 'Orientation','vertical');
+        legend(ax, [legend_labels(i) ['$\bar{t}_s$'] ['$\bar{t}_s \pm \sigma$']],'interpreter','latex','fontsize',fontsize, 'Orientation','vertical');
         title(['Average settling at $' num2str(s_times_mean(i)*100,2) '\pm' num2str(s_times_sigma(i)*100,2) '\%$ of the movement'], ...
             'interpreter','latex','fontsize',fontsize, 'Parent',ax);
     end
     
     ind = [];
-    s_t = s_times_mean+s_times_sigma; % 0.65*ones(4,1);
+    s_t = 0.8*ones(4,1); %s_times_mean+s_times_sigma; % 0.65*ones(4,1);
     for i=1:size(s_times,1)
         ind = [ind find(s_times(i,:) > s_t(i))];
     end

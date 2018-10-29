@@ -15,32 +15,32 @@ dt = 0.002;
 goal_scale = [1.0 1.0 1.0]';
 time_scale = 1.0; 
 
-% goal_offset = [-0.4 0.4 -0.25]';
-goal_offset = [0.3 0.4 -0.25]';
+goal_offset = 2*[-0.95 0.5 0.9]';
 y0_offset = [0.0 0.0 0.0]';
-time_offset = 10.0;
+time_offset = 18.0;
+
+goal_up_lim = 2*[1.0 1.0 1.0];
+goal_low_lim = -2*[1.0 1.0 1.0];
+tau_low_lim = 1.0;
+tau_up_lim = 30.0; %Inf;
 
 process_noise = 0.01*dt; % Q
 msr_noise = 0.001/dt; % R
 init_params_variance = 1.0; % P
 a_p = 2.0; % forgetting factor in fading memory EKF
 
-goal_up_lim = [0.51 0.51 0.51];
-goal_low_lim = -[0.51 0.51 0.51];
-tau_low_lim = 1.0;
-tau_up_lim = 20.0; %Inf;
 theta_low_lim = [goal_low_lim tau_low_lim];
 theta_up_lim = [goal_up_lim tau_up_lim];
-apply_params_proj = true;
+enable_constraints = true*1;
 
 theta_sigma_min = 0.001;
 theta_sigma_max = 100000;
-apply_cov_sat = true;
+apply_cov_sat = false;
 
 
 plot_1sigma = false;
 
-stiff_human = true;
+stiff_human = false;
 
 a_py = 150;
 a_dpy = 50;
@@ -133,7 +133,18 @@ R = eye(N_out,N_out)*msr_noise;
 inv_R = inv(R);
 Q = eye(N_params,N_params) * process_noise;
 
-ekf = struct('F_k',eye(N_params,N_params), 'H_k',zeros(N_out,N_params) , 'Q',Q, 'R',R, 'a_p',exp(a_p*dt) ,'theta',theta, 'P',P_theta);
+%% Set up EKF object
+ekf = EKF(N_params, N_out);
+ekf.setProcessNoiseCov(Q);
+ekf.setMeasureNoiseCov(R);
+ekf.setFadingMemoryCoeff(exp(a_p*dt));
+ekf.theta = theta;
+ekf.P = P_theta;
+
+ekf.enableParamsContraints(enable_constraints);
+ekf.setParamsConstraints(eye(N_params, N_params),theta_up_lim, eye(N_params, N_params),theta_low_lim);
+
+F_k = eye(N_params,N_params);
 
 disp('DMP-EKF (discrete) simulation...')
 tic
@@ -229,25 +240,10 @@ while (true)
     end
 
     %% KF update
-    
     % time update
-    ekf.theta = ekf.F_k*ekf.theta;
-    ekf.P = ekf.a_p^2*ekf.F_k*ekf.P*ekf.F_k' + ekf.Q;
-    
+    ekf.predict(F_k);
     % measurement update
-    ekf.H_k = dC_dtheta;
-    % calc Kalman gain
-    K_kf = ekf.P*ekf.H_k'/(ekf.H_k*ekf.P*ekf.H_k' + ekf.R);
-    ekf.theta = ekf.theta + K_kf * kf_err;
-    ekf.P = ekf.P - K_kf*ekf.H_k*ekf.P;
-    
-    if (apply_params_proj)
-        ekf.theta = paramsProj(ekf.theta, ekf.P, theta_low_lim, theta_up_lim);
-    end
-    
-    if (apply_cov_sat)
-        ekf.P = svSat(ekf.P, theta_sigma_min, theta_sigma_max);
-    end
+    ekf.correct(y_out, y_out_hat, dC_dtheta);
     
     theta = ekf.theta;
     P_theta = ekf.P;
@@ -279,7 +275,7 @@ toc
 
 plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, y_r_data);
 
-plotEstSettlings(Time, y_r_data, g_data, g, tau_data, tau);
+% plotEstSettlings(Time, y_r_data, g_data, g, tau_data, tau);
 
 fig = figure;
 Dim = 3;
