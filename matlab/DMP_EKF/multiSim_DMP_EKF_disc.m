@@ -15,10 +15,10 @@ rng(0);
 % dg_x = [-0.4 0.3 0.5];
 % dg_y = [-0.5 -0.3 0.4];
 % dg_z = [-0.45 0.25 0.5];
-dg_x = [-0.4 0.3];
-dg_y = [-0.5 0.4];
-dg_z = [-0.45 0.5];
-dtau = [10.0]; %[-2.0 2.0 4.0 6.0 8.0];
+dg_x = [-0.4 0.2 0.5];
+dg_y = [-0.5 -0.25 0.4];
+dg_z = [-0.45 0.25 0.5];
+dtau = [-2.0 -1.0 2.0 4.0 6.0 8.0 10.0];
 
 Data = cell(length(dg_x)*length(dg_y)*length(dg_z)*length(dtau), 1);
 
@@ -42,23 +42,27 @@ for ix=1:length(dg_x)
             y0_offset = [0.0 0.0 0.0]';
             time_offset = dtau(it) + 1*rand(1);
 
-            process_noise = 0.01; % Q
-            msr_noise = 0.5; % R
+            process_noise = 0.0001; % Q
+            msr_noise = 0.005; % R
             init_params_variance = 1.0; % P
-            a_p = 1.003; % forgetting factor in fading memory EKF
+            a_p = 1.002; % forgetting factor in fading memory EKF
 
-            goal_up_lim = 0.8*[1.0 1.0 1.0];
+            goal_up_lim = 0.85*[1.0 1.0 1.0]';
             goal_low_lim = -goal_up_lim;
             tau_low_lim = 1.0;
-            tau_up_lim = 15.0; %Inf;
-            theta_low_lim = [goal_low_lim tau_low_lim];
-            theta_up_lim = [goal_up_lim tau_up_lim];
+            tau_up_lim = 20.0; %Inf;
+            theta_low_lim = [goal_low_lim; tau_low_lim];
+            theta_up_lim = [goal_up_lim; tau_up_lim];
+            N_params = length(theta_low_lim);
+            A_c = [-eye(N_params, N_params); eye(N_params, N_params)];
+            b_c = [-theta_low_lim; theta_up_lim];
             enable_constraints = true*1;
 
             theta_sigma_min = 0.001;
             theta_sigma_max = 100000;
             apply_cov_sat = true*0;
-
+            
+            ekf_num_diff = false;
 
             plot_1sigma = false;
 
@@ -78,22 +82,15 @@ for ix=1:length(dg_x)
 
             inv_M_rh = inv(inv_M_r + inv_M_h);
 
-            f1_ = 1.0;
-            f2_ = 2.0;
-            p_5th = get5thOrderParams(f1_, f2_, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-            m2_fun = @(x) (x<=f1_)*1 + ((x>f1_) & (x<f2_)).*(p_5th(1) + p_5th(2)*x + p_5th(3)*x.^2 + p_5th(4)*x.^3 + p_5th(5)*x.^4 + p_5th(6)*x.^5) + (x>=f2_)*0;
-
-            m_fun = m2_fun;
-
             %% ###################################################################
 
             load('data/dmp_data.mat', 'dmp_data');
 
             dmp = dmp_data.dmp;
-            g0 = dmp_data.g;
-            y0 = dmp_data.y0;
+            Yg0 = dmp_data.g;
+            Y0 = dmp_data.y0;
             tau0 = 5; %dmp_data.tau;
-            Dim = length(y0);
+            Dim = length(Y0);
             can_clock_ptr = dmp{1}.can_clock_ptr;
             can_clock_ptr.setTau(tau0);
 
@@ -101,44 +98,39 @@ for ix=1:length(dg_x)
             % set initial values
             t = 0.0;
             iters = 0;
-            g = g0;
+            Yg = Yg0;
             x = 0.0; dx = 0.0;
-            y0 = y0 + y0_offset;
-            y = y0; dy = zeros(Dim,1); ddy = zeros(Dim,1);
-            y_hat = y0; dy_hat = zeros(Dim,1); ddy_hat = zeros(Dim,1);
-            y_r = y0; dy_r = zeros(Dim,1); ddy_r = zeros(Dim,1);
-            y_h = y0; dy_h = zeros(Dim,1); ddy_h = zeros(Dim,1);
-            z = zeros(Dim,1); dz = zeros(Dim,1);
+            Y0 = Y0 + y0_offset;
+            Y = Y0; dY = zeros(Dim,1); ddY = zeros(Dim,1);
+            Y_hat = Y0; dY_hat = zeros(Dim,1); ddY_hat = zeros(Dim,1);
+            Y_r = Y0; dY_r = zeros(Dim,1); ddY_r = zeros(Dim,1);
+            Y_h = Y0; dY_h = zeros(Dim,1); ddY_h = zeros(Dim,1);
             F_ext = zeros(Dim,1);
-            mf = 1;
 
             Time = [];
-            y_data = []; dy_data = []; ddy_data = [];
-            y_hat_data = []; dy_hat_data = []; ddy_hat_data = [];
-            y_r_data = []; dy_r_data = []; ddy_r_data = [];
-            y_h_data = []; dy_h_data = []; ddy_h_data = [];
+            Y_data = []; dY_data = []; ddY_data = [];
+            Y_hat_data = []; dY_hat_data = []; ddY_hat_data = [];
+            Y_r_data = []; dY_r_data = []; ddY_r_data = [];
+            Y_h_data = []; dY_h_data = []; ddY_h_data = [];
             x_data = [];
-            g_data = [];
+            Yg_data = [];
             tau_data = [];
             F_data = [];
-            mf_data = [];
-            P_data = [];
+            Sigma_theta_data = [];
 
-            g = goal_scale.*g + goal_offset;
+            Yg = goal_scale.*Yg + goal_offset;
 
             t_end = time_scale*tau0 + time_offset;
             tau = t_end;
             can_clock_ptr.setTau(tau);
 
             tau_hat = tau0;
-            g_hat = g0;
+            Yg_hat = Yg0;
 
             x_hat = t/tau_hat;
-            N_out = length(g_hat);
-            y_out_hat = zeros(N_out,1);
-            y_out = zeros(N_out,1);
+            N_out = length(Yg_hat);
 
-            theta = [g_hat; tau_hat];
+            theta = [Yg_hat; tau_hat];
 
             N_params = length(theta);
             P_theta = eye(N_params, N_params) * init_params_variance;
@@ -147,17 +139,21 @@ for ix=1:length(dg_x)
             Q = eye(N_params,N_params) * process_noise;
 
             %% Set up EKF object
-            ekf = EKF(N_params, N_out);
+            ekf = EKF(N_params, N_out, @stateTransFun, @msrFun);
             ekf.setProcessNoiseCov(Q);
             ekf.setMeasureNoiseCov(R);
-            ekf.setFadingMemoryCoeff(a_p);
+            ekf.setFadingMemoryCoeff(a_p); %exp(a_pc*dt));
             ekf.theta = theta;
             ekf.P = P_theta;
 
             ekf.enableParamsContraints(enable_constraints);
-            ekf.setParamsConstraints(eye(N_params, N_params),theta_up_lim, eye(N_params, N_params),theta_low_lim);
+            ekf.setParamsConstraints(A_c, b_c);
+            ekf.setPartDerivStep(0.001);
 
-            F_k = eye(N_params,N_params);
+            if (~ekf_num_diff)
+                ekf.setStateTransFunJacob(@stateTransJacobFun);
+                ekf.setMsrFunJacob(@msrFunJacob);
+            end
 
             disp('DMP-EKF (discrete) simulation...');
             tic
@@ -167,81 +163,71 @@ for ix=1:length(dg_x)
 
                 Time = [Time t];
 
-                y_data = [y_data y];
-                dy_data = [dy_data dy];  
-                ddy_data = [ddy_data ddy];
+                Y_data = [Y_data Y];
+                dY_data = [dY_data dY];  
+                ddY_data = [ddY_data ddY];
 
-                y_hat_data = [y_hat_data y_hat];
-                dy_hat_data = [dy_hat_data dy_hat];  
-                ddy_hat_data = [ddy_hat_data ddy_hat];
+                Y_hat_data = [Y_hat_data Y_hat];
+                dY_hat_data = [dY_hat_data dY_hat];  
+                ddY_hat_data = [ddY_hat_data ddY_hat];
 
-                y_r_data = [y_r_data y_r];
-                dy_r_data = [dy_r_data dy_r];  
-                ddy_r_data = [ddy_r_data ddy_r];
+                Y_r_data = [Y_r_data Y_r];
+                dY_r_data = [dY_r_data dY_r];  
+                ddY_r_data = [ddY_r_data ddY_r];
 
-                y_h_data = [y_h_data y_h];
-                dy_h_data = [dy_h_data dy_h];  
-                ddy_h_data = [ddy_h_data ddy_h];
+                Y_h_data = [Y_h_data Y_h];
+                dY_h_data = [dY_h_data dY_h];  
+                ddY_h_data = [ddY_h_data ddY_h];
 
-                g_data = [g_data g_hat];
+                Yg_data = [Yg_data Yg_hat];
                 tau_data = [tau_data tau_hat];
 
                 x_data = [x_data x];
 
                 F_data = [F_data F_ext];
-                mf_data = [mf_data mf];
 
-                P_data = [P_data sqrt(diag(P_theta))];
+                Sigma_theta_data = [Sigma_theta_data sqrt(diag(P_theta))];
 
                 dC_dtheta = zeros(Dim, length(theta));
 
-                y_hat = y_r;
-                dy_hat = dy_r;
-                Y_c = a_py*(y_r-y_hat) + a_dpy*(dy_r-dy_hat);
+                Y_hat = Y_r;
+                dY_hat = dY_r;
+                Y_c = a_py*(Y_r-Y_hat) + a_dpy*(dY_r-dY_hat);
                 Z_c = zeros(Dim,1);
 
                 %% DMP simulation
                 for i=1:Dim  
-
-                    ddy(i) = dmp{i}.getAccel(y(i), dy(i), y0(i), 0, 0, x, g(i), dmp{i}.getTau());
-                    ddy_hat(i) = dmp{i}.getAccel(y_hat(i), dy_hat(i), y0(i), 0, 0, x_hat, g_hat(i), tau_hat);
-
-                    dC_dtheta_i = dmp{i}.getAcellPartDev_g_tau(t, y_hat(i), dy_hat(i), y0(i), x_hat, g_hat(i), tau_hat);
-
-                    dC_dtheta(i,end) = dC_dtheta_i(2);
-                    dC_dtheta(i,i) = dC_dtheta_i(1);     
-
+                    ddY(i) = dmp{i}.getAccel(Y(i), dY(i), Y0(i), 0, 0, x, Yg(i), dmp{i}.getTau());
+                    ddY_hat(i) = dmp{i}.getAccel(Y_hat(i), dY_hat(i), Y0(i), 0, 0, x_hat, Yg_hat(i), tau_hat); 
                 end
 
                 if (stiff_human)
-                    F_ext = M_r*(ddy-ddy_hat) + M_r*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
+                    F_ext = M_r*(ddY-ddY_hat) + M_r*( inv_M_r*(D_r*(dY_r-dY_hat)+K_r*(Y_r-Y_hat)) - inv_M_h*(D_h*(dY_h-dY)+K_h*(Y_h-Y)) );
                 else
-                    F_ext = inv_M_rh*(ddy-ddy_hat) + inv_M_rh*( inv_M_r*(D_r*(dy_r-dy_hat)+K_r*(y_r-y_hat)) - inv_M_h*(D_h*(dy_h-dy)+K_h*(y_h-y)) );
+                    F_ext = inv_M_rh*(ddY-ddY_hat) + inv_M_rh*( inv_M_r*(D_r*(dY_r-dY_hat)+K_r*(Y_r-Y_hat)) - inv_M_h*(D_h*(dY_h-dY)+K_h*(Y_h-Y)) );
                 end
-
-                y_out_hat = ddy_hat;
-                y_out = ddy_r;
-                kf_err = y_out - y_out_hat;
+                
+                Y_out_hat = ddY_hat;
+                Y_out = ddY_r;
+                kf_err = Y_out - Y_out_hat;
                 % kf_err = inv(M_r)*F_ext;
 
-                ddy_r = ddy_hat + inv_M_r*(-D_r*(dy_r-dy_hat) - K_r*(y_r-y_hat) + F_ext);
+                ddY_r = ddY_hat + inv_M_r*(-D_r*(dY_r-dY_hat) - K_r*(Y_r-Y_hat) + F_ext);
                 if (stiff_human)
-                    ddy_h = ddy + inv_M_h*(-D_h*(dy_h-dy) - K_h*(y_h-y));
+                    ddY_h = ddY + inv_M_h*(-D_h*(dY_h-dY) - K_h*(Y_h-Y));
                 else
-                    ddy_h = ddy + inv_M_h*(-D_h*(dy_h-dy) - K_h*(y_h-y) - F_ext);
+                    ddY_h = ddY + inv_M_h*(-D_h*(dY_h-dY) - K_h*(Y_h-Y) - F_ext);
                 end
 
-                if (norm(ddy_h-ddy_r)>1e-12)
+                if (norm(ddY_h-ddY_r)>1e-12)
                     warning(['t=' num2str(t) ' sec: Rigid bond contraint might be violated!']);
                 end
-
-                mf = m_fun(norm(F_ext));
 
                 %% Update phase variable
                 dx = can_clock_ptr.getPhaseDot(x);
 
                 %% Stopping criteria
-                err_p = norm(g-y)/norm(g);
+                err_p = norm(Yg-Y)/norm(Yg);
                 if (err_p <= 0.5e-2 && t>=t_end)
                     break; 
                 end
@@ -254,9 +240,10 @@ for ix=1:length(dg_x)
 
                 %% KF update
                 % time update
-                ekf.predict(F_k);
+                ekf.predict([]);
                 % measurement update
-                ekf.correct(y_out, y_out_hat, dC_dtheta);
+                msr_cookie = struct('dmp',{dmp}, 't',t, 'y',Y, 'dy',dY, 'y0',Y0, 'y_c',0.0, 'z_c',0.0, 'x_hat',x_hat);
+                ekf.correct(Y_out, msr_cookie);
 
                 if (apply_cov_sat)
                     ekf.P = svSat(ekf.P, theta_sigma_min, theta_sigma_max);
@@ -265,7 +252,7 @@ for ix=1:length(dg_x)
                 theta = ekf.theta;
                 P_theta = ekf.P;
 
-                g_hat = theta(1:end-1);
+                Yg_hat = theta(1:end-1);
                 tau_hat = theta(end);
                 x_hat = t/tau_hat; 
 
@@ -274,23 +261,23 @@ for ix=1:length(dg_x)
 
                 x = x + dx*dt;
 
-                y = y + dy*dt;
-                dy = dy + ddy*dt;
+                Y = Y + dY*dt;
+                dY = dY + ddY*dt;
 
-                y_hat = y_hat + dy_hat*dt;
-                dy_hat = dy_hat + ddy_hat*dt;
+                Y_hat = Y_hat + dY_hat*dt;
+                dY_hat = dY_hat + ddY_hat*dt;
 
-                y_r = y_r + dy_r*dt;
-                dy_r = dy_r + ddy_r*dt;
+                Y_r = Y_r + dY_r*dt;
+                dY_r = dY_r + ddY_r*dt;
 
-                y_h = y_h + dy_h*dt;
-                dy_h = dy_h + ddy_h*dt;
+                Y_h = Y_h + dY_h*dt;
+                dY_h = dY_h + ddY_h*dt;
 
 
             end
             toc
 
-            Data{id} = struct('Time',Time, 'Y_data',y_r_data, 'Yg_data',g_data, 'Yg',g, ...
+            Data{id} = struct('Time',Time, 'Y_data',Y_r_data, 'Yg_data',Yg_data, 'Yg',Yg, ...
                               'tau_data', tau_data, 'tau',tau, ...
                               'Yg_offset',goal_offset, 'tau_offset',time_offset);
             

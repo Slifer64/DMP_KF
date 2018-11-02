@@ -6,7 +6,6 @@
 #include <ros/package.h>
 
 #include <math_lib/math_lib.h>
-#include <param_lib/param_lib.h>
 #include <io_lib/io_lib.h>
 
 #include <ur_kinematics/ur_kin.h>
@@ -118,7 +117,7 @@ namespace ur10_
   void Robot::parseConfigFile()
   {
     std::string params_path = ros::package::getPath("ur10_robot") + "/config/config.yml";
-    as64_::param_::Parser parser(params_path);
+    as64_::io_::Parser parser(params_path);
 
     if (!parser.getParam("command_ur10_topic", command_ur10_topic))
       throw std::ios_base::failure("ur10_::Robot::getParam(command_ur10_topic) could not be retrieved.\n");

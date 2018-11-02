@@ -42,10 +42,3 @@ K_d: [500.0; 500.0; 500.0]
 k_click: 0.5
 ff_gains: [1.0; 1.0; 1.0] # feedforward gains for the target impedance model
 a_force: 0.05 # iir 1st order filter coeff for filtering force measurements
-
-# leader-follower sigmoid function params  1 / ( 1 + exp(a_m*(norm(F)-c_m)) )
-a_m: 2.0
-c_m: 4.5
-
-f1_: 2.0
-f2_: 4.0

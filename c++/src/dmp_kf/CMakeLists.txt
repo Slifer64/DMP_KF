@@ -25,6 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
   lwr4p
   robot_sim
   math_lib
+  kalmanfilter_lib
   ati_sensor
 )
 
@@ -124,6 +125,7 @@ target_link_libraries(dmp_kf
   ur10
   lwr4p
   robot_sim
+  kalmanfilter-lib
   ati_sensor
   ${Qt_LIBRARIES}
 )

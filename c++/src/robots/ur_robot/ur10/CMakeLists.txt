@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   tf2_ros
   math_lib
-  param_lib
   io_lib
   ur_kinematics
 )
@@ -57,7 +56,6 @@ target_link_libraries(ur10
   ${catkin_LIBRARIES}
   armadillo
   math-lib
-  param-lib
   io-lib
   ur10_kin
 )

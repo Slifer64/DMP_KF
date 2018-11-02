@@ -15,6 +15,8 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Vector3.h>
 
+#include <kalmanfilter_lib/EKF.h>
+
 
 class DMP_EKF_Controller: public Controller
 {
@@ -37,6 +39,8 @@ public:
   bool runModel();
 
 private:
+
+  std::shared_ptr<as64_::kf_::EKF> ekf;
 
   void readControllerParams(const char *params_file = NULL);
   bool startExecution();

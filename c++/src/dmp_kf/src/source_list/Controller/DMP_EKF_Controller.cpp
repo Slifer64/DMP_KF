@@ -16,6 +16,8 @@ Controller(robot, gui)
   q_start = robot->getJointPosition();
 
   force_pub = ros_node.advertise<geometry_msgs::Vector3>("f_ext", 1);
+
+  ekf.reset(new as64_::kf_::EKF(4,3));
 }
 
 void DMP_EKF_Controller::readTrainingParams(const char *params_file)
@@ -183,11 +185,6 @@ void DMP_EKF_Controller::execute()
   }
 
   // ========  Controller  ========
-  // U_dmp = -K_d%(Y - Y_ref) - D_d%(dY-dY_ref) + D%dY + M%ddY_ref;
-
-  // U_total = mf*U_dmp + (1-mf)*(ff_gains%f_ext);
-  // U_total = ff_gains%f_ext;
-  // ddY = ( - D%dY + U_total) / M;
 
   arma::vec F = ff_gains%f_ext;
 
@@ -206,6 +203,7 @@ void DMP_EKF_Controller::execute()
   arma::vec V_cmd = arma::vec().zeros(6);
   V_cmd.subvec(0,2) = dY + k_click*(Y-Y_robot);
   robot->setTaskVelocity(V_cmd);
+
   // ========  KF update  ========
   arma::mat K_kf = P_theta*dC_dtheta.t()*inv_R_v;
   arma::vec theta_dot = K_kf * (ddY - ddY_ref);
@@ -220,53 +218,11 @@ void DMP_EKF_Controller::execute()
   Y_ref = Y_ref + dY_ref*Ts;
   dY_ref = dY_ref + ddY_ref*Ts;
 
-  // Calculate the surface gradient
-  // double g_hat_norm = arma::norm(g_hat);
-  // arma::vec dg_S(4);
-  // if (tau_hat <= tau_e)
-  // {
-  //   dg_S = arma::vec({0,0,0,-1});
-  //   tau_hat = tau_e; // enforce to avoid numerical deviation
-  // }
-  // else if (tau_hat >= p_turos+tau_e)
-  // {
-  //   dg_S.subvec(0,2) = g_hat/g_hat_norm;
-  //   dg_S(3) = 0.0;
-  // }
-  // else
-  // {
-  //   dg_S.subvec(0,2) = (g_hat_norm-p_r+p_turos)*g_hat/(p_turos*g_hat_norm);
-  //   dg_S(3) = (tau_hat - p_turos - tau_e)/p_turos;
-  // }
-
-  // apply gradient projection
-  // if (g_hat_norm >= p_r && arma::dot(theta_dot,dg_S)>0)
-  // {
-  //   // std::cerr << "=============> Gradient Projection!!!!\n";
-  //   theta_dot = (arma::mat().eye(4,4) - P_theta*dg_S*dg_S.t() / arma::dot(dg_S, P_theta*dg_S) )*theta_dot;
-  //   g_hat = g_hat*g_hat_norm/p_r; // enforce to avoid numerical deviation
-  // }
-
-  // double P_norm = arma::norm(P_theta);
-  // covariance saturate
-  // if (P_norm >= p2)
-  // {
-  //   std::cerr << "=============> Covariance SATURATION!!!!\n";
-  //   P_dot = arma::mat().zeros(4,4);
-  // }
-
   theta = theta + theta_dot*Ts;
   g_hat = theta.subvec(0,2);
   tau_hat = theta(3);
   P_theta = P_theta + P_dot*Ts;
   x_hat = t/tau_hat;
-
-  // covariance reset
-  // if (P_norm < p1)
-  // {
-  //   std::cerr << "=============> Covariance RESET!!!!\n";
-  //   P_theta = arma::mat().eye(4,4)*p1;
-  // }
 
 }
 

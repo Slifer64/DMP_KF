@@ -1,9 +1,9 @@
-function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, y_data)
+function plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, Sigma_theta_data, plot_1sigma, F_data, Y_data, dY_data)
 
     fontsize = 16;
     linewidth = 1.5;
     
-    D = length(g);
+    D = length(Yg);
     
     axis_name = {'x', 'y', 'z'};
     
@@ -13,81 +13,89 @@ function plot_estimation_results(Time, g, g_data, tau, tau_data, P_data, F_data,
     tau_color = [0 0 1];
     tau_hat_color = [0.85 0.33 0.1];
     
-    figure;
-    subplot(2,1,1);
-    hold on;
+    fig1 = figure('Position', [150 150 800 1000]);
+    axes1 = axes('Parent',fig1, 'Position',[0.13 0.595 0.775 0.33]);
+    hold(axes1,'on');
     legend_labels = {};
     for i=1:D
-        % subplot(D+1,1,i);
-        % hold on;
-        plot([Time(1) Time(end)],[g(i) g(i)], 'LineStyle','--', 'Color',goal_color{i} ,'LineWidth',2);
-        plot(Time,g_data(i,:), 'LineStyle','-', 'Color',goal_est_color{i}, 'LineWidth',linewidth);
-        plot(Time,y_data(i,:), 'LineStyle','-', 'Color',pos_color{i}, 'LineWidth',linewidth);
+        plot([Time(1) Time(end)],[Yg(i) Yg(i)], 'LineStyle','--', 'Color',goal_color{i} ,'LineWidth',2, 'Parent',axes1);
+        plot(Time,Yg_data(i,:), 'LineStyle','-', 'Color',goal_est_color{i}, 'LineWidth',linewidth, 'Parent',axes1);
+        plot(Time,Y_data(i,:), 'LineStyle','-', 'Color',pos_color{i}, 'LineWidth',linewidth, 'Parent',axes1);
         legend_labels = [legend_labels, ['$\mathbf{y}_{g,' axis_name{i} '}$'], ['$\hat{\mathbf{y}}_{g,' axis_name{i} '}$'], ['$\mathbf{y}_{' axis_name{i} '}$']];
         if (plot_1sigma)
-            plot(Time,g_data(i,:)+P_data(i,:),'c-.', 'LineWidth',linewidth);
-        	plot(Time,g_data(i,:)-P_data(i,:),'c-.', 'LineWidth',linewidth);
+            plot(Time,Yg_data(i,:)+Sigma_theta_data(i,:),'c-.', 'LineWidth',linewidth, 'Parent',axes1);
+        	plot(Time,Yg_data(i,:)-Sigma_theta_data(i,:),'c-.', 'LineWidth',linewidth, 'Parent',axes1);
             legend_labels = [legend_labels, ['$\pm1\sigma$']];
         end
-        % ylabel([axis_name{i} ' [$m$]'],'interpreter','latex','fontsize',fontsize);
-        ylabel('[$m$]','interpreter','latex','fontsize',fontsize);
-        % if (i==1), title('EKF prediction','interpreter','latex','fontsize',fontsize); end
+        ylabel('[$m$]','interpreter','latex','fontsize',fontsize, 'Parent',axes1);
         axis tight;
-        % hold off;
     end
-    legend(legend_labels,'interpreter','latex','fontsize',fontsize);
-    hold off;
-    % subplot(D+1,1,D+1);
-    subplot(2,1,2);
-    hold on;
-    plot([Time(1) Time(end)],[tau tau], 'LineStyle','--', 'Color',tau_color, 'LineWidth',2);
-    plot(Time,tau_data, 'LineStyle','-', 'Color',tau_hat_color, 'LineWidth',linewidth);
+    legend(axes1, legend_labels,'interpreter','latex','fontsize',fontsize, 'Position',[0.005 0.95 0.99 0.036], 'Orientation','horizontal');
+    hold(axes1,'off');
+
+    axes2 = axes('Parent',fig1, 'Position',[0.13 0.347 0.775 0.189]);
+    hold(axes2,'on');
+    plot([Time(1) Time(end)],[tau tau], 'LineStyle','--', 'Color',tau_color, 'LineWidth',2, 'Parent',axes2);
+    plot(Time,tau_data, 'LineStyle','-', 'Color',tau_hat_color, 'LineWidth',linewidth, 'Parent',axes2);
     legend_labels = {['$\tau$'], ['$\hat{\tau}$']};
     if (plot_1sigma)
-        plot(Time,tau_data+P_data(end,:),'c-.', 'LineWidth',linewidth);
-    	plot(Time,tau_data-P_data(end,:),'c-.', 'LineWidth',linewidth);
+        plot(Time,tau_data+Sigma_theta_data(end,:),'c-.', 'LineWidth',linewidth, 'Parent',axes2);
+    	plot(Time,tau_data-Sigma_theta_data(end,:),'c-.', 'LineWidth',linewidth, 'Parent',axes2);
         legend_labels = [legend_labels, ['$\pm1\sigma$']];
     end
-    legend(legend_labels,'interpreter','latex','fontsize',fontsize);
-    ylabel('$\tau$ [$s$]','interpreter','latex','fontsize',fontsize);
-    xlabel('time [$s$]','interpreter','latex','fontsize',fontsize);
+    legend(axes2, legend_labels,'interpreter','latex','fontsize',fontsize);
+    ylabel('$\tau$ [$s$]','interpreter','latex','fontsize',fontsize, 'Parent',axes2);
     axis tight;
-    hold off;
-    
-%     f_label = {'f_x', 'f_y', 'f_z'};
-%     figure;
-%     for i=1:D
-%         subplot(D,1,i);
-%         plot(Time, F_data(i,:),'b-', 'LineWidth',linewidth);
-%         if (i==1), title('Interaction force','interpreter','latex','fontsize',fontsize); end
-%         ylabel(['$' f_label{i} '$[$N$]'],'interpreter','latex','fontsize',fontsize);
-%         if (i==D), xlabel('time [$s$]','interpreter','latex','fontsize',fontsize); end
-%     end
+    hold(axes2,'off');
     
     f_norm = zeros(size(F_data,2),1);
     for i=1:length(f_norm)
         f_norm(i) = norm(F_data(:,i));
     end
 
-    figure;
+    axes3 = axes('Parent',fig1, 'Position',[0.13 0.0845 0.775 0.216]);
+    hold(axes3,'on');
+    plot(Time, f_norm,'b-', 'LineWidth',linewidth, 'Parent',axes3);
+    ylabel(['$||\mathbf{f}_{ext}||$ [$N$]'],'interpreter','latex','fontsize',fontsize, 'Parent',axes3);
+    xlabel('time [$s$]','interpreter','latex','fontsize',fontsize, 'Parent',axes3);
+    axis tight;
+    hold(axes3,'off');
+    
+%% ==================================================
+%% ===============   Calc effort  ===================
+    
+    dt = Time(2)-Time(1);
 
+    effort = 0.0;
+    sum_f2 = 0.0;
+    P = zeros(length(Time),1);
+    F_square = zeros(length(Time),1);
+    for i=1:size(F_data,2)
+        P(i) = abs(F_data(:,i)'*dY_data(:,i));
+        effort = effort + abs(P(i))*dt;
+        F_square(i) = F_data(:,i)'*F_data(:,i);
+        sum_f2 = sum_f2 + F_square(i)*dt;
+    end
+    goal_err = norm(Yg-Yg_data(:,end));
+    
+%% ================================================
+%% ================  Plot effort  =================
+
+    linewidth = 2.0;
+    figure;
     subplot(2,1,1);
-    plot(Time, f_norm,'b-', 'LineWidth',linewidth);
-    title('Interaction force','interpreter','latex','fontsize',fontsize);
-    ylabel(['$||\mathbf{f}_{ext}||$ [$N$]'],'interpreter','latex','fontsize',fontsize);
-    xlabel('time [$s$]','interpreter','latex','fontsize',fontsize);
+    plot(Time, P, 'LineWidth',linewidth)
+    xlabel('time [$s$]', 'interpreter','latex', 'fontsize',fontsize);
+    ylabel('Power [$Watt$]', 'interpreter','latex', 'fontsize',fontsize);
     axis tight;
 
     subplot(2,1,2);
-    hold on;
-    plot(Time, mf_data,'b-', 'LineWidth',linewidth);
-    plot(Time, 1-mf_data,'g-', 'LineWidth',linewidth);
-    title('Leader-follower role','interpreter','latex','fontsize',fontsize);
-    legend({'leader','$follower$'},'interpreter','latex','fontsize',fontsize);
-    ylabel('activation','interpreter','latex','fontsize',fontsize);
-    xlabel('time [$s$]','interpreter','latex','fontsize',fontsize);
+    plot(Time, F_square, 'LineWidth',linewidth)
+    xlabel('time [$s$]', 'interpreter','latex', 'fontsize',fontsize);
+    ylabel('$||\mathbf{f}_{ext}||^2$ [$N$]', 'interpreter','latex', 'fontsize',fontsize);
     axis tight;
-    hold off;
-    
+
+    metrics_results = {'Work', 'Power_F', 'target error'; effort, sum_f2, goal_err};
+    disp(metrics_results);
 
 end
