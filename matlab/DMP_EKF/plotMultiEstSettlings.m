@@ -6,13 +6,16 @@ function plotMultiEstSettlings(Data)
     
     Colors = [ 51, 255,   0;
               204, 204,   0;
+              255, 102,   0;
               255,   0,   0;
               153,   0, 153;
                 0,   0, 153;
-                0,  51, 102;
-                0,  51,  51
+              102, 102, 102;
+                10,  5,  10
              ]/255.0;
-         
+    
+    n_colors = size(Colors,1);
+    
     % p_set = 0.5*5/100; % assuming max dist 0.5 m define the settling at 5% of that dist
     p_set = [ones(3,1)*0.005; 0.1]; % settling at 0.5 cm for pos and 100 ms for tau
 
@@ -48,7 +51,10 @@ function plotMultiEstSettlings(Data)
     
     s_times = zeros(Dim,length(Data));
     s2_times = zeros(Dim,length(Data));
-
+    
+    time_offset_max = 14.0;
+    time_color_bounds = (1:n_colors)*time_offset_max/n_colors;
+    
     for k=1:length(Data)
         
         Time = Data{k}.Time;
@@ -59,21 +65,10 @@ function plotMultiEstSettlings(Data)
         tau = Data{k}.tau; 
         
         time_offset = abs(Data{k}.tau_offset);
-        if (time_offset < 2)
-            color = Colors(1,:);
-        elseif (time_offset < 4)
-            color = Colors(2,:);
-        elseif (time_offset < 6)
-            color = Colors(3,:);
-        elseif (time_offset < 8)
-            color = Colors(4,:);
-        elseif (time_offset < 10)
-            color = Colors(5,:);
-        elseif (time_offset < 12)
-            color = Colors(6,:);
-        else
-            color = Colors(7,:);
+        for i=1:n_colors
+            if (time_offset <= time_color_bounds(i)), break; end
         end
+        color = Colors(i,:);
 
         Yg = [Yg; tau];
         Yg_data = [Yg_data; tau_data];
@@ -112,12 +107,9 @@ function plotMultiEstSettlings(Data)
             if (k>1)
                 set(plot_h, 'HandleVisibility','off');
             end
-            % plot([t_yg t_yg], y_lim, 'LineStyle','--', 'Color',[0.85 0.33 0.1], 'LineWidth',linewidth, 'Parent',ax);%, 'HandleVisibility','off');
-            % plot([t_y t_y], y_lim, 'LineStyle','--', 'Color',[0 0 0], 'LineWidth',linewidth, 'Parent',ax);%, 'HandleVisibility','off');
         end
 
     end
-    
     
     s_times_mean = mean(s_times,2);
     s_times_sigma = std(s_times,0,2);
@@ -143,7 +135,7 @@ function plotMultiEstSettlings(Data)
     end
     
     ind = [];
-    s_t = 0.8*ones(4,1); %s_times_mean+s_times_sigma; % 0.65*ones(4,1);
+    s_t = 0.95*ones(4,1); %s_times_mean+s_times_sigma; % 0.65*ones(4,1);
     for i=1:size(s_times,1)
         ind = [ind find(s_times(i,:) > s_t(i))];
     end
@@ -158,5 +150,18 @@ function plotMultiEstSettlings(Data)
         fprintf('Target offset: (%.2f, %.2f, %.2f) m\n', goal_offset(1), goal_offset(2), goal_offset(3));
         fprintf('Tau offset: %.2f sec\n', tau_offset);
     end
+    
+    colormap(ax_cell{4}, Colors);
+    c_bar = colorbar(ax_cell{4});
+    c_bar.Label.FontSize = 14;
+    c_bar.Label.String = '$||\tau - \hat{\tau}||$';
+    c_bar.Label.Interpreter = 'latex';
+    tick_labels = cellstr(split(sprintf('%.1f ',time_color_bounds),' '));
+    c_bar.TickLabels = tick_labels(1:end-1);
+    c_bar.FontSize = 14;
+    c_bar.TickLabelInterpreter = 'latex';
+    c_bar.Ticks = time_color_bounds/time_offset_max;
+    %c_bar.Direction = 'reverse';
+    
 
 end

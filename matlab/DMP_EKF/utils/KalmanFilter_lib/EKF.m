@@ -149,6 +149,8 @@ classdef EKF < handle
         
         %% Performs the EKF correction (measurement update).
         %  @param[in] z: Groundtruth measurements.
+        %  @param[in] z_hat: Estimated measurements.
+        %  @param[in] H_k: Jacobian of the measurement function w.r.t to the estimation parameters.
         function correct(this, z, z_hat, H_k)
             
             this.H_k = H_k;
@@ -184,8 +186,10 @@ classdef EKF < handle
             I = eye(N_params, N_params);
 
             if (proj_flag)
-                K_kf = ( I - this.P*D'/(D*this.P*D')*D ) * K_kf;
-                this.theta = this.theta - this.P*D'/(D*this.P*D')*(D*this.theta-d); 
+                % K_kf = ( I - this.P*D'/(D*this.P*D')*D ) * K_kf;
+                % this.theta = this.theta - this.P*D'/(D*this.P*D')*(D*this.theta-d); 
+                K_kf = ( I - D'/(D*D')*D ) * K_kf;
+                this.theta = this.theta - D'/(D*D')*(D*this.theta-d); 
             end
 
             this.P = (I - K_kf*this.H_k) * this.P * (I - K_kf*this.H_k)' + K_kf*this.R*K_kf';

@@ -15,10 +15,10 @@ ddYd_data = data.ddY;
 Dim = size(Yd_data,1);
 
 %% initialize DMP
-N_kernels = 8;
-a_z = 16;
+N_kernels = 20;
+a_z = 20;
 b_z = a_z/4;
-train_method = 'LS';
+train_method = 'LWR';
 can_clock_ptr = CanonicalClock();
 dmp = cell(Dim,1);
 shapeAttrGatingPtr = SigmoidGatingFunction(1.0, 0.5);

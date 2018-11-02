@@ -10,10 +10,15 @@ set_matlab_utils_path();
 
 %% ###################################################################
 
-dg_x = [-0.4 0.3 0.5];
-dg_y = [-0.5 -0.3 0.4];
-dg_z = [-0.45 -0.25 0.25 0.5];
-dtau = [-2.0 2.0 4.0 8.0 10.0];
+rng(0);
+
+% dg_x = [-0.4 0.3 0.5];
+% dg_y = [-0.5 -0.3 0.4];
+% dg_z = [-0.45 0.25 0.5];
+dg_x = [-0.4 0.3];
+dg_y = [-0.5 0.4];
+dg_z = [-0.45 0.5];
+dtau = [10.0]; %[-2.0 2.0 4.0 6.0 8.0];
 
 Data = cell(length(dg_x)*length(dg_y)*length(dg_z)*length(dtau), 1);
 
@@ -33,26 +38,26 @@ for ix=1:length(dg_x)
             goal_scale = [1.0 1.0 1.0]';
             time_scale = 1.0; 
 
-            goal_offset = [dg_x(ix) dg_y(iy) dg_z(iz)]';
+            goal_offset = [dg_x(ix) dg_y(iy) dg_z(iz)]' + 0.1*rand(3,1);
             y0_offset = [0.0 0.0 0.0]';
-            time_offset = dtau(it);
+            time_offset = dtau(it) + 1*rand(1);
 
-            process_noise = 0.01*dt; % Q
-            msr_noise = 0.001/dt; % R
+            process_noise = 0.01; % Q
+            msr_noise = 0.5; % R
             init_params_variance = 1.0; % P
-            a_p = 2.0; % forgetting factor in fading memory EKF
+            a_p = 1.003; % forgetting factor in fading memory EKF
 
-            goal_up_lim = [0.6 0.6 0.6];
-            goal_low_lim = -[0.6 0.6 0.6];
+            goal_up_lim = 0.8*[1.0 1.0 1.0];
+            goal_low_lim = -goal_up_lim;
             tau_low_lim = 1.0;
-            tau_up_lim = 20.0; %Inf;
+            tau_up_lim = 15.0; %Inf;
             theta_low_lim = [goal_low_lim tau_low_lim];
             theta_up_lim = [goal_up_lim tau_up_lim];
             enable_constraints = true*1;
 
             theta_sigma_min = 0.001;
             theta_sigma_max = 100000;
-            apply_cov_sat = true*1;
+            apply_cov_sat = true*0;
 
 
             plot_1sigma = false;
@@ -79,13 +84,6 @@ for ix=1:length(dg_x)
             m2_fun = @(x) (x<=f1_)*1 + ((x>f1_) & (x<f2_)).*(p_5th(1) + p_5th(2)*x + p_5th(3)*x.^2 + p_5th(4)*x.^3 + p_5th(5)*x.^4 + p_5th(6)*x.^5) + (x>=f2_)*0;
 
             m_fun = m2_fun;
-
-            % x = 0:0.002:5;
-            % y = m_fun(x);
-            % figure;
-            % plot(x,y);
-            % 
-            % return
 
             %% ###################################################################
 
@@ -152,7 +150,7 @@ for ix=1:length(dg_x)
             ekf = EKF(N_params, N_out);
             ekf.setProcessNoiseCov(Q);
             ekf.setMeasureNoiseCov(R);
-            ekf.setFadingMemoryCoeff(exp(a_p*dt));
+            ekf.setFadingMemoryCoeff(a_p);
             ekf.theta = theta;
             ekf.P = P_theta;
 

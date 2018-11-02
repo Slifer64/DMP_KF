@@ -15,32 +15,34 @@ dt = 0.002;
 goal_scale = [1.0 1.0 1.0]';
 time_scale = 1.0; 
 
-goal_offset = 2*[-0.95 0.5 0.9]';
+goal_offset = [-0.32, -0.41, -0.44]';
 y0_offset = [0.0 0.0 0.0]';
-time_offset = 18.0;
+time_offset = 10.91;
 
-goal_up_lim = 2*[1.0 1.0 1.0];
-goal_low_lim = -2*[1.0 1.0 1.0];
+goal_up_lim = 0.5*[1.0 1.0 1.0];
+goal_low_lim = -goal_up_lim;
 tau_low_lim = 1.0;
-tau_up_lim = 30.0; %Inf;
+tau_up_lim = 20.0; %Inf;
 
-process_noise = 0.01*dt; % Q
-msr_noise = 0.001/dt; % R
+process_noise = 0.0001; % Q
+msr_noise = 0.005; % R
 init_params_variance = 1.0; % P
-a_p = 2.0; % forgetting factor in fading memory EKF
+% a_pc = 2.0; % forgetting factor in fading memory continuous EKF
+% a_p = exp(a_pc*dt);
+a_p = 1.000; % forgetting factor in fading memory EKF
 
 theta_low_lim = [goal_low_lim tau_low_lim];
 theta_up_lim = [goal_up_lim tau_up_lim];
-enable_constraints = true*1;
+enable_constraints = true*0;
 
 theta_sigma_min = 0.001;
 theta_sigma_max = 100000;
 apply_cov_sat = false;
 
 
-plot_1sigma = false;
+plot_1sigma = true*0;
 
-stiff_human = false;
+stiff_human = true;
 
 a_py = 150;
 a_dpy = 50;
@@ -137,7 +139,7 @@ Q = eye(N_params,N_params) * process_noise;
 ekf = EKF(N_params, N_out);
 ekf.setProcessNoiseCov(Q);
 ekf.setMeasureNoiseCov(R);
-ekf.setFadingMemoryCoeff(exp(a_p*dt));
+ekf.setFadingMemoryCoeff(a_p); %exp(a_pc*dt));
 ekf.theta = theta;
 ekf.P = P_theta;
 

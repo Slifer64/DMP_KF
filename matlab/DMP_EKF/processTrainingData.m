@@ -7,7 +7,7 @@ function processTrainingData(ind, v_start, v_stop)
 % @param[in] v_stop: Stop velocity threshold. (default = 0.01)
 %
 
-if (nargin < 1), ind = 1; end
+if (nargin < 1), ind = 2; end
 if (nargin < 2), v_start = 0.01; end
 if (nargin < 3), v_stop = 0.01; end
 
