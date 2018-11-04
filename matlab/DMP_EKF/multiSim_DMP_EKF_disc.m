@@ -12,13 +12,10 @@ set_matlab_utils_path();
 
 rng(0);
 
-% dg_x = [-0.4 0.3 0.5];
-% dg_y = [-0.5 -0.3 0.4];
-% dg_z = [-0.45 0.25 0.5];
-dg_x = [-0.4 0.2 0.5];
-dg_y = [-0.5 -0.25 0.4];
-dg_z = [-0.45 0.25 0.5];
-dtau = [-2.0 -1.0 2.0 4.0 6.0 8.0 10.0];
+dg_x = [-0.4 -0.2 0.2 0.5];
+dg_y = [-0.5 -0.25 0.25 0.45];
+dg_z = [-0.45 -0.2 0.2 0.5];
+dtau = [-2.0 -1.0 2.0 4.0 6.0 8.0 10.0 12.0];
 
 Data = cell(length(dg_x)*length(dg_y)*length(dg_z)*length(dtau), 1);
 
@@ -47,7 +44,7 @@ for ix=1:length(dg_x)
             init_params_variance = 1.0; % P
             a_p = 1.002; % forgetting factor in fading memory EKF
 
-            goal_up_lim = 0.85*[1.0 1.0 1.0]';
+            goal_up_lim = 0.6*[1.0 1.0 1.0]';
             goal_low_lim = -goal_up_lim;
             tau_low_lim = 1.0;
             tau_up_lim = 20.0; %Inf;
@@ -62,7 +59,7 @@ for ix=1:length(dg_x)
             theta_sigma_max = 100000;
             apply_cov_sat = true*0;
             
-            ekf_num_diff = false;
+            ekf_provide_Jacob = true;
 
             plot_1sigma = false;
 
@@ -150,10 +147,12 @@ for ix=1:length(dg_x)
             ekf.setParamsConstraints(A_c, b_c);
             ekf.setPartDerivStep(0.001);
 
-            if (~ekf_num_diff)
-                ekf.setStateTransFunJacob(@stateTransJacobFun);
+            if (ekf_provide_Jacob)
+                ekf.setStateTransFunJacob(@stateTransFunJacob);
                 ekf.setMsrFunJacob(@msrFunJacob);
             end
+            
+            msr_cookie = MsrCookie();
 
             disp('DMP-EKF (discrete) simulation...');
             tic
@@ -242,7 +241,7 @@ for ix=1:length(dg_x)
                 % time update
                 ekf.predict([]);
                 % measurement update
-                msr_cookie = struct('dmp',{dmp}, 't',t, 'y',Y, 'dy',dY, 'y0',Y0, 'y_c',0.0, 'z_c',0.0, 'x_hat',x_hat);
+                msr_cookie.set(dmp, t, Y, dY, Y0, 0.0, 0.0, x_hat);
                 ekf.correct(Y_out, msr_cookie);
 
                 if (apply_cov_sat)

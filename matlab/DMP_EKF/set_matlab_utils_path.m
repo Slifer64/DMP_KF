@@ -1,10 +1,10 @@
 function set_matlab_utils_path()
 
 addpath('utils/');
-addpath('utils/DMP_lib/');
-addpath('utils/math_lib/');
-addpath('utils/io_lib/');
-addpath('utils/filter_lib/');
-addpath('utils/KalmanFilter_lib/');
+addpath('utils/lib/DMP_lib/');
+addpath('utils/lib/math_lib/');
+addpath('utils/lib/io_lib/');
+addpath('utils/lib/filter_lib/');
+addpath('utils/lib/KalmanFilter_lib/');
 
 end

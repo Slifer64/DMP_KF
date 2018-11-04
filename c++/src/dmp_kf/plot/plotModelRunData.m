@@ -16,9 +16,6 @@ y_data = read_mat(fid, binary);
 dy_data = read_mat(fid, binary);
 ddy_data = read_mat(fid, binary);
 
-y_data(:,1)
-return
-
 fclose(fid);
 
 if (isempty(Time))

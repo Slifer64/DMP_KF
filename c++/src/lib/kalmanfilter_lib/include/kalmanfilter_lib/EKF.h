@@ -10,8 +10,8 @@
 #define EXTENDED_KALMAN_FILTER_AS64_H
 
 #include <cmath>
+#include <functional>
 #include <armadillo>
-#include <Eigen/Dense>
 
 namespace as64_
 {
@@ -23,10 +23,89 @@ class EKF
 {
 public:
   /** \brief Extended Kalman Filter constructor.
-   * @param[in] N_params Number of states to estimate.
-   * @param[in] N_out Number of outputs.
+   * @param[in] theta0 Initial parameters estimate.
+   * @param[in] P0 Initial parameters estimate error covariance.
+   * @param[in] N_msr Dimensionality of measurement vector.
+   * @param[in] stateTransFun_ptr Pointer to state transition function. It should accept a
+   *                              vector (the parameters) and  a void pointer (cookie) to pass
+   *                              optinally extra arguments to the state transition function.
+   * @param[in] msrFun_ptr Pointer to measurement function. It should accept a vector
+   *                       (the parameters) and a void pointer (cookie) to pass optinally
+   *                       extra arguments to the measurement function.
    */
-  EKF(unsigned N_params, unsigned N_out);
+   EKF(const arma::vec &theta0, const arma::mat &P0, int N_msr,
+     arma::vec (*stateTransFun_ptr)(const arma::vec &theta, void *cookie),
+     arma::vec (*msrFun_ptr)(const arma::vec &theta, void *cookie));
+
+   /** \brief Extended Kalman Filter constructor.
+    * @param[in] theta0 Initial parameters estimate.
+    * @param[in] P0 Initial parameters estimate error covariance.
+    * @param[in] N_msr Dimensionality of measurement vector.
+    * @param[in] stateTransFun_ptr Class member function pointer to state transition function.
+    *                              It should accept a vector (the parameters) and a void pointer (cookie)
+    *                              to pass optinally extra arguments to the state transition function.
+    * @param[in] obj_ptr Pointer to class object for calling stateTransFun_ptr.
+    * @param[in] msrFun_ptr Pointer to measurement function. It should accept a vector
+    *                       (the parameters) and a void pointer (cookie) to pass optinally
+    *                       extra arguments to the measurement function.
+    */
+   template<class T>
+   EKF(const arma::vec &theta0, const arma::mat &P0, int N_msr,
+     arma::vec (T::*stateTransFun_ptr)(const arma::vec &theta, void *cookie), T *obj_ptr,
+     arma::vec (*msrFun_ptr)(const arma::vec &theta, void *cookie))
+   {
+     this->init(theta0, P0, N_msr);
+
+     this->stateTransFun_ptr = std::bind(stateTransFun_ptr, obj_ptr, std::placeholders::_1, std::placeholders::_2);
+     this->msrFun_ptr = std::bind(msrFun_ptr, std::placeholders::_1, std::placeholders::_2);
+   }
+
+   /** \brief Extended Kalman Filter constructor.
+    * @param[in] theta0 Initial parameters estimate.
+    * @param[in] P0 Initial parameters estimate error covariance.
+    * @param[in] N_msr Dimensionality of measurement vector.
+    * @param[in] stateTransFun_ptr Pointer to state transition function. It should accept a
+    *                              vector (the parameters) and  a void pointer (cookie) to pass
+    *                              optinally extra arguments to the state transition function.
+    * @param[in] msrFun_ptr Class member function pointer to  measurement function. It should
+    *                       accept a vector (the parameters) and a void pointer (cookie) to
+    *                       pass optinally extra arguments to the measurement function.
+    * @param[in] obj_ptr Pointer to class object for calling msrFun_ptr.
+    */
+   template<class T>
+   EKF(const arma::vec &theta0, const arma::mat &P0, int N_msr,
+     arma::vec (*stateTransFun_ptr)(const arma::vec &theta, void *cookie),
+     arma::vec (T::*msrFun_ptr)(const arma::vec &theta, void *cookie), T *obj_ptr)
+   {
+     this->init(theta0, P0, N_msr);
+
+     this->stateTransFun_ptr = std::bind(stateTransFun_ptr, std::placeholders::_1, std::placeholders::_2);
+     this->msrFun_ptr = std::bind(msrFun_ptr, obj_ptr, std::placeholders::_1, std::placeholders::_2);
+   }
+
+   /** \brief Extended Kalman Filter constructor.
+    * @param[in] theta0 Initial parameters estimate.
+    * @param[in] P0 Initial parameters estimate error covariance.
+    * @param[in] N_msr Dimensionality of measurement vector.
+    * @param[in] stateTransFun_ptr Class member function pointer to state transition function.
+    *                              It should accept a vector (the parameters) and a void pointer (cookie)
+    *                              to pass optinally extra arguments to the state transition function.
+    * @param[in] obj_ptr1 Pointer to class object for calling stateTransFun_ptr.
+    * @param[in] msrFun_ptr Class member function pointer to  measurement function. It should
+    *                       accept a vector (the parameters) and a void pointer (cookie) to
+    *                       pass optinally extra arguments to the measurement function.
+    * @param[in] obj_ptr2 Pointer to class object for calling msrFun_ptr.
+    */
+   template<class T1, class T2>
+   EKF(const arma::vec &theta0, const arma::mat &P0, int N_msr,
+     arma::vec (T1::*stateTransFun_ptr)(const arma::vec &theta, void *cookie), T1 *obj1_ptr,
+     arma::vec (T2::*msrFun_ptr)(const arma::vec &theta, void *cookie), T2 *obj2_ptr)
+   {
+     this->init(theta0, P0, N_msr);
+
+     this->stateTransFun_ptr = std::bind(stateTransFun_ptr, obj1_ptr, std::placeholders::_1, std::placeholders::_2);
+     this->msrFun_ptr = std::bind(msrFun_ptr, obj2_ptr, std::placeholders::_1, std::placeholders::_2);
+   }
 
   /** \brief Sets the fading memory coefficient.
    *  \note If the continuous time fading memory coefficient is 'a' then
@@ -42,13 +121,11 @@ public:
   void enableParamsContraints(bool enable_contraints);
 
   /** \brief Sets linear constraints in the estimation parameters.
-   * The constraints are such that D_up*theta <= d_up and D_low*theta >= d_low
-   * @param[in] D_up Constraint matrix for upper bound constraints.
-   *  @param[in] d_up Limits for upper bound constraints.
-   *  @param[in] D_low Constraint matrix for lower bound constraints.
-   *  @param[in] d_low Limits for lower bound constraints.
+   * The constraints are such that A_c*theta <= b_c.
+   * @param[in] A_c Constraint matrix.
+   * @param[in] b_c Constraints bounds.
    */
-  void setParamsConstraints(const arma::mat &D_up, const arma::vec &d_up, const arma::mat &D_low, const arma::vec &d_low);
+  void setParamsConstraints(const arma::mat &A_c, const arma::vec &b_c);
 
   /** \brief Sets the covariance matrix of the process noise.
    * \note If the continuous time process noise is R_c the discrete
@@ -66,70 +143,128 @@ public:
 
   /** \brief Sets the step for computing the partial derivatives of the state
    * transition and/or measurement function w.r.t. the estimation parameters.
+   * @param[in] dtheta Step size for the parameters.
+   */
+  void setPartDerivStep(double dtheta);
+
+  /** \brief Sets the step for computing the partial derivatives of the state
+   * transition and/or measurement function w.r.t. the estimation parameters.
    * @param[in] dtheta Vector of step size for each parameter.
    */
   void setPartDerivStep(const arma::vec &dtheta);
 
+  /** \brief Sets the state transition function Jacobian.
+   *  @param[in] stateTransFunJacob_ptr: Pointer to the state transition function Jacobian.
+   *                                     It should accept a vector (the parameters) and a void
+   *                                     pointer (cookie) to pass extra arguments to the function.
+   */
+  void setStateTransFunJacob(arma::mat (*stateTransFunJacob_ptr)(const arma::vec &theta, void *cookie))
+  {
+    this->stateTransFunJacob_ptr = std::bind(stateTransFunJacob_ptr, std::placeholders::_1, std::placeholders::_2);
+  }
+
+  /** \brief Sets the state transition function Jacobian.
+   *  @param[in] stateTransFunJacob_ptr: Class member function pointer to the state transition function Jacobian.
+   *                                     It should accept a vector (the parameters) and a void
+   *                                     pointer (cookie) to pass extra arguments to the function.
+   * @param[in] obj_ptr Pointer to class object for calling stateTransFunJacob_ptr.
+   */
+  template<class T>
+  void setStateTransFunJacob(arma::mat (T::*stateTransFunJacob_ptr)(const arma::vec &theta, void *cookie), T *obj_ptr)
+  {
+    this->stateTransFunJacob_ptr = std::bind(stateTransFunJacob_ptr, obj_ptr, std::placeholders::_1, std::placeholders::_2);
+  }
+
+
+  /** \brief Sets the measurement function Jacobian.
+   * @param[in] msrFunJacob_ptr: Pointer to the measurement function Jacobian.
+   *                               It should accept a vector (the parameters) and a void
+   *                               pointer (cookie) to pass extra arguments to the function.
+   */
+   void setMsrFunJacob(arma::mat (*msrFunJacob_ptr)(const arma::vec &theta, void *cookie))
+   {
+     this->msrFunJacob_ptr = std::bind(msrFunJacob_ptr, std::placeholders::_1, std::placeholders::_2);
+   }
+
+   /** \brief Sets the measurement function Jacobian.
+    *  @param[in] msrFunJacob_ptr: Class member function pointer to the measurement function Jacobian.
+    *                                     It should accept a vector (the parameters) and a void
+    *                                     pointer (cookie) to pass extra arguments to the function.
+    * @param[in] obj_ptr Pointer to class object for calling msrFunJacob_ptr.
+    */
+   template<class T>
+   void setMsrFunJacob(arma::mat (T::*msrFunJacob_ptr)(const arma::vec &theta, void *cookie), T *obj_ptr)
+   {
+     this->msrFunJacob_ptr = std::bind(msrFunJacob_ptr, obj_ptr, std::placeholders::_1, std::placeholders::_2);
+   }
+
   /** \brief Performs the EKF prediction (time update).
-   * @params[in] F_k Jacobian matrix of the state transition function w.r.t to the estimation parameters.
+   *  @params[in] cookie: Void pointer to additional arguments needed by the state transition function
+   *                      and its Jacobian (default = NULL).
    */
-  void predict(const arma::mat &F_k);
+  void predict(void *cookie=NULL);
 
-  /** \brief Performs the EKF prediction (time update) using numerical differentiation
-   * for approximating the Jacobian of the state transition matrix w.r.t. the estimation parameters.
-   * The step size for numerical differentiation can be set from 'setPartDerivStep'.
-   * @param[in] state_trans_fun_ptr Pointer to state transition function. It should accept a
-   *                                  vector (the parameters) and void pointer (cookie).
-   * @param[in] cookie Pointer that is passed to 'state_trans_fun_ptr' and can contain extra
-   *                     arguments needed. If not needed it can be set to NULL.
+  /** Performs the EKF correction (measurement update).
+   *  @param[in] z: Groundtruth measurement.
+   *  @params[in] cookie: Void pointer to additional arguments needed by the measurement function
+   *                      and its Jacobian (default = NULL).
    */
-  void predictApprox(void (*state_trans_fun_ptr)(const arma::vec &, void *), void *cookie);
+  void correct(const arma::vec &z, void *cookie=NULL);
 
-  /** \brief Performs the EKF correction (measurement update).
-   * @param[in] z Groundtruth measurements.
-   * @param[in] z_hat Estimated measurements.
-   * @param[in] H_k Jacobian of the measurement function w.r.t to the estimation parameters.
-   */
-  void correct(const arma::vec &z, const arma::vec &z_hat, const arma::mat &H_k);
-
-  /** \brief Performs the EKF prediction (time update) using numerical differentiation
-   * for approximating the Jacobian of the state transition matrix w.r.t. the estimation parameters.
-   *  The step size for numerical differentiation can be set from 'setPartDerivStep'.
-   * @param[in] state_trans_fun_ptr Pointer to state transition function. It should accept a
-   *                                  vector (the parameters) and void pointer (cookie).
-   * @param[in] cookie: Pointer that is passed to 'state_trans_fun_ptr' and can contain extra
-   *                     arguments needed. If not needed it can be set to NULL.
-   */
-  void correctApprox(void (*measure_trans_fun_ptr)(const arma::vec &, void *), void *cookie);
-
-  arma::vec theta; ///< params estimation
-  arma::mat P; ///< params estimation covariance
+  arma::vec theta; ///< parameters estimate
+  arma::mat P; ///< parameters estimation error covariance
 
 private:
 
-  arma::mat F_k; ///< forward model
-  arma::mat H_k; ///< measurement model
+  /** \brief Initializes the object with initial parameters estimate and error covariance.
+   *  It also sets all other parameters of the EKF to default values.
+   * @param[in] theta0 Initial parameters estimate.
+   * @param[in] P0 Initial parameters estimate error covariance.
+   * @param[in] N_msr Dimensionality of measurement vector.
+   */
+  void init(const arma::vec &theta0, const arma::mat &P0, int N_msr);
+
+  arma::mat F_k; ///< state transition function Jacobian
+  arma::mat H_k; ///< measurement function Jacobian
   arma::mat K; ///< Kalman gain
-  arma::mat Q; ///< process covariance
-  arma::mat R; ///< measurement covariance
+  arma::mat Q; ///< process noise covariance
+  arma::mat R; ///< measurement noise covariance
 
   double a_p; ///< fading memory coefficient
 
   // Apply projection so that:
-  // D_up * theta <= d_up
-  // D_low * theta >= d_low
+  // A_c * theta <= b_c
   bool enable_constraints;
-  arma::mat D_up; ///< upper bound constraint matrix
-  arma::vec d_up; ///< upper bound constraints
-  arma::mat D_low; ///< lower bound constraint matrix
-  arma::vec d_low; ///< lower bound constraints
+  arma::mat A_c; ///< constraint matrix
+  arma::vec b_c; ///< constraints bounds
 
   bool apply_cov_sat;
   arma::vec theta_sigma_min;
   arma::vec theta_sigma_max;
 
-  double dtheta; ///< Parameters step size for numerical approximation of transition and measurement function Jacobian
+  arma::vec dtheta; ///< Parameters step size for numerical approximation of transition and measurement function Jacobian
 
+  std::function<arma::vec(const arma::vec &theta, void *cookie)> stateTransFun_ptr; ///< state transition function pointer
+  std::function<arma::vec(const arma::vec &theta, void *cookie)> msrFun_ptr; ///< measurement function pointer
+
+  std::function<arma::mat(const arma::vec &theta, void *cookie)> stateTransFunJacob_ptr; ///< state transition function Jacobian pointer
+  std::function<arma::mat(const arma::vec &theta, void *cookie)> msrFunJacob_ptr; ///< measurement function Jacobian pointer
+
+  /** \brief Computes numerically the state transition function's Jacobian.
+   *  @param[in] theta Parameters around which the Jacobian is computed.
+   *  @params[in] cookie Void pointer to additional arguments needed by the state transition
+   *                     function's Jacobian. If not needed set to empty [] (null).
+   *  @return F_k The state transition function's Jacobian.
+   */
+  arma::mat calcStateTransFunJacob(const arma::vec &theta, void *cookie=NULL);
+
+  /** \brief Computes numerically the measurement function's Jacobian.
+   *  @param[in] theta Parameters around which the Jacobian is computed.
+   *  @params[in] cookie Void pointer to additional arguments needed by the measurement
+   *                      function's Jacobian. If not needed set to empty [] (null).
+   *  @return H_k The measurement function's Jacobian.
+   */
+  arma::mat calcMsrFunJacob(const arma::vec &theta, void *cookie=NULL);
 };
 
 } // namespace kf_

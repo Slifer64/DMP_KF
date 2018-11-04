@@ -92,7 +92,6 @@ void dmp_kf::execute()
           gui->printMsg("Initialized! Controller is running...",Ui::MSG_TYPE::INFO);
         }
         controller->execute();
-        //if (gui->logOnEnable()) log_data->log();
         break;
 
       case Ui::ProgramState::FREEDRIVE_MODE:

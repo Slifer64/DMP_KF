@@ -43,6 +43,15 @@ arma::mat inv(const arma::mat &M);
 Eigen::Vector4d getClosestQuat(const Eigen::Vector4d &quat1, const Eigen::Vector4d &quat2);
 arma::vec getClosestQuat(const arma::vec &quat1, const arma::vec &quat2);
 
+/** \brief Returns the zero, first and second order derivatives of a fifth order polynomial.
+ * @param[in] t Timestamp.
+ * @param[in] p0 Initial state.
+ * @param[in] pT Final state.
+ * @param[in] totalTime Total time duration.
+ * @return Matrix with the zero, first and second order derivatives in each row for timestamp 't'.
+ */
+arma::mat get5thOrder(double t, arma::vec p0, arma::vec pT, double totalTime);
+
 } // namespace math_
 
 } // namespace as64_

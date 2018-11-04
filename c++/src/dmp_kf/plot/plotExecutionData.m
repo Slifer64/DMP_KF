@@ -18,7 +18,6 @@ ddY_data = read_mat(fid, binary);
 Y_ref_data = read_mat(fid, binary);
 dY_ref_data = read_mat(fid, binary);
 ddY_ref_data = read_mat(fid, binary);
-mf_data = read_mat(fid, binary);
 Fext_data = read_mat(fid, binary);
 Fext_filt_data = read_mat(fid, binary);
 theta_data = read_mat(fid, binary);
@@ -44,7 +43,6 @@ ddY_data = ddY_data(:,ind);
 Y_ref_data = Y_ref_data(:,ind);
 dY_ref_data = dY_ref_data(:,ind);
 ddY_ref_data = ddY_ref_data(:,ind);
-mf_data = mf_data(:,ind);
 Fext_data = Fext_data(:,ind);
 Fext_filt_data = Fext_filt_data(:,ind);
 theta_data = theta_data(:,ind);
@@ -66,7 +64,7 @@ tau_hat_data = theta_data(4,:);
 
 if (isempty(g)), g = Y_data(:,end); end
     
-plot_estimation_results(Time, g, g_hat_data, tau, tau_hat_data, Sigma_theta_data, Fext_filt_data, mf_data, plot_1sigma, Y_data, dY_data);
+plot_estimation_results(Time, g, g_hat_data, tau, tau_hat_data, Sigma_theta_data, Fext_filt_data, plot_1sigma, Y_data, dY_data);
 
 
 % Exec_Data{1} = struct('Time',Time, 'Y',Y_data, 'dY',dY_data, 'ddY',ddY_data);

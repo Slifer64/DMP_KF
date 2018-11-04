@@ -19,8 +19,10 @@ goal_offset = [0.34, 0.41, -0.43]';
 y0_offset = [0.0 0.0 0.0]';
 time_offset = 5.88;
 
-goal_up_lim = 0.8*[1.0 1.0 1.0]';
+goal_up_lim = 0.5*[1.0 1.0 1.0]';
 goal_low_lim = -goal_up_lim;
+% goal_up_lim = [0.35 1.0 1.0]';
+% goal_low_lim = -[-0.2 1.0 1.0]';
 tau_low_lim = 1.0;
 tau_up_lim = 20.0; %Inf;
 
@@ -40,8 +42,7 @@ theta_sigma_min = 0.001;
 theta_sigma_max = 100000;
 apply_cov_sat = false;
 
-ekf_num_diff = true;
-
+ekf_provide_Jacob = true;
 
 plot_1sigma = true*0;
 
@@ -133,10 +134,12 @@ ekf.enableParamsContraints(enable_constraints);
 ekf.setParamsConstraints(A_c, b_c);
 ekf.setPartDerivStep(0.001);
 
-if (~ekf_num_diff)
-    ekf.setStateTransFunJacob(@stateTransJacobFun);
+if (ekf_provide_Jacob)
+    ekf.setStateTransFunJacob(@stateTransFunJacob);
     ekf.setMsrFunJacob(@msrFunJacob);
 end
+
+msr_cookie = MsrCookie();
 
 disp('DMP-EKF (discrete) simulation...')
 tic
@@ -223,7 +226,7 @@ while (true)
     % time update
     ekf.predict([]);
     % measurement update
-    msr_cookie = struct('dmp',{dmp}, 't',t, 'y',Y, 'dy',dY, 'y0',Y0, 'y_c',0.0, 'z_c',0.0, 'x_hat',x_hat);
+    msr_cookie.set(dmp, t, Y, dY, Y0, 0.0, 0.0, x_hat);
     ekf.correct(Y_out, msr_cookie);
 
     theta = ekf.theta;

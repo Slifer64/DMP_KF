@@ -45,6 +45,35 @@ void KinematicData::clear()
   ddY_data.clear();
 }
 
+void KinematicData::trim(double v_start_thres, double v_end_thres)
+{
+  int i_start=0;
+  int i_end=dY_data.n_cols-1;
+  for (int i=0; i<dY_data.n_cols; i++)
+  {
+    if (arma::norm(dY_data.col(i)) >= v_start_thres)
+    {
+      i_start = i;
+      break;
+    }
+  }
+
+  for (int i=dY_data.n_cols-1; i>-1; i--)
+  {
+    if (arma::norm(dY_data.col(i)) >= v_end_thres)
+    {
+      i_end = i;
+      break;
+    }
+  }
+
+  Time = Time.cols(i_start, i_end);
+  Time -= Time(0);
+  Y_data = Y_data.cols(i_start, i_end);
+  dY_data = dY_data.cols(i_start, i_end);
+  ddY_data = ddY_data.cols(i_start, i_end);
+}
+
 // ===========================================================
 // ===========================================================
 
@@ -79,8 +108,6 @@ bool ExecutionData::save(const std::string &file_name, std::string &err_msg)
 	write_mat(dY_ref_data, out, binary);
 	write_mat(ddY_ref_data, out, binary);
 
-	write_mat(mf_data, out, binary);
-
 	write_mat(Fext_data, out, binary);
 	write_mat(Fext_filt_data, out, binary);
 
@@ -96,7 +123,7 @@ bool ExecutionData::save(const std::string &file_name, std::string &err_msg)
 
 void ExecutionData::log(double t, const arma::vec &Y, const arma::vec &dY, const arma::vec &ddY,
                         const arma::vec &Y_ref, const arma::vec &dY_ref, const arma::vec &ddY_ref,
-                        const arma::vec &Fext, const arma::vec &Fext_filt, double mf,
+                        const arma::vec &Fext, const arma::vec &Fext_filt,
 												const arma::vec &theta, const arma::mat &P_theta)
 {
 	Time = arma::join_horiz(Time, arma::mat({t}));
@@ -111,7 +138,6 @@ void ExecutionData::log(double t, const arma::vec &Y, const arma::vec &dY, const
 
 	Fext_data = arma::join_horiz(Fext_data, Fext);
 	Fext_filt_data = arma::join_horiz(Fext_filt_data, Fext_filt);
-	mf_data = arma::join_horiz(mf_data, arma::mat({mf}));
 
 	theta_data = arma::join_horiz(theta_data, theta);
 	Sigma_theta_data = arma::join_horiz(Sigma_theta_data, arma::sqrt(arma::diagvec(P_theta)));
@@ -127,7 +153,6 @@ void ExecutionData::clear()
 
   Fext_data.clear();
   Fext_filt_data.clear();
-	mf_data.clear();
 
   theta_data.clear();
   Sigma_theta_data.clear();

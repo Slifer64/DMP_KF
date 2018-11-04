@@ -43,11 +43,6 @@ public:
   std::string getErrMsg() const { return err_msg; }
   void setErrMsg(const std::string &msg) { err_msg = msg; }
 
-  double mixingFun(double f);
-  void initMixingFun(double x1, double x2);
-  double p_5th[6];
-  double f1_, f2_;
-
   bool is_trained;
 
   arma::vec q_start; ///< starting pose
@@ -57,11 +52,6 @@ public:
   arma::vec Y, dY, ddY; // produced by the target impedance model
   arma::vec f_ext; // external Cartesian force
   arma::vec f_ext_raw;
-
-  arma::vec g_hat; // goal estimate
-  double tau_hat; // time scale estimate
-  arma::mat P_theta; // covariance of g_hat and tau_hat
-  double mf; // leader-follower weight
 
   KinematicData modelRun_data;
 

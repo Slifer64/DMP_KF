@@ -51,6 +51,56 @@ Visualization Manager:
       Class: rviz/RobotModel
       Collision Enabled: false
       Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        lwr_arm_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lwr_arm_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lwr_arm_3_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lwr_arm_4_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lwr_arm_5_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lwr_arm_6_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lwr_arm_7_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lwr_arm_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -60,11 +110,42 @@ Visualization Manager:
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        lwr_arm_1_link:
+          Value: true
+        lwr_arm_2_link:
+          Value: true
+        lwr_arm_3_link:
+          Value: true
+        lwr_arm_4_link:
+          Value: true
+        lwr_arm_5_link:
+          Value: true
+        lwr_arm_6_link:
+          Value: true
+        lwr_arm_7_link:
+          Value: true
+        lwr_arm_base_link:
+          Value: true
+        world:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
+      Tree:
+        world:
+          lwr_arm_base_link:
+            lwr_arm_1_link:
+              lwr_arm_2_link:
+                lwr_arm_3_link:
+                  lwr_arm_4_link:
+                    lwr_arm_5_link:
+                      lwr_arm_6_link:
+                        lwr_arm_7_link:
+                          {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -98,15 +179,15 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.226238
-        Y: -0.475981
-        Z: 0.470565
+        X: 0.167828
+        Y: 0.0749786
+        Z: 0.264556
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.309796
+      Pitch: 0.294796
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.17907
+      Yaw: 3.13407
     Saved: ~
 Window Geometry:
   Displays:
@@ -124,5 +205,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 904
-  X: 84
+  X: 71
   Y: 17

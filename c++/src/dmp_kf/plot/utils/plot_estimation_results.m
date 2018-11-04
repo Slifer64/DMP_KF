@@ -1,4 +1,4 @@
-function plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, P_data, F_data, mf_data, plot_1sigma, Y_data, dY_data)
+function plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, P_data, F_data, plot_1sigma, Y_data, dY_data)
 
 
 %% ==============================================================
@@ -92,28 +92,6 @@ function plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, P_data, F_dat
 %     legend({'$X$','$Y$','$Z$'}, 'interpreter','latex', 'fontsize',fontsize);
 %     title('Robot end-effector Cartesian position','interpreter','latex','fontsize',fontsize);
 %     hold off;
-
-
-%% ===========================================================
-%% =================  Calc mixing results  ===================
-
-    n = length(mf_data);
-    leader = sum(mf_data >= 0.99)/n;
-    follower = sum(mf_data <= 0.01)/n;
-    mix = sum(mf_data>0.01 & mf_data<0.99)/n;
-    
-%% =============================================
-%% =============  Mixing results ===============
-
-    figure;
-    hold on;
-    plot(Time, mf_data,'b-', 'LineWidth',1.5);
-    plot(Time, 1-mf_data,'g-', 'LineWidth',1.5);
-    %title('Leader-follower role','interpreter','latex','fontsize',fontsize);
-    legend({'DMP','admittance'},'interpreter','latex','fontsize',fontsize, 'orientation','horizontal');
-    ylabel('m($\mathbf{f}_{ext}$)','interpreter','latex','fontsize',fontsize);
-    xlabel('time [$s$]','interpreter','latex','fontsize',fontsize);
-    hold off;
     
 %% ==================================================
 %% ===============   Calc effort  ===================
@@ -264,10 +242,8 @@ hold(ax, 'off');
 %% ================================================
 %% ================  Display results  =============
     
-    mix_results = {'leader', 'follower', 'mix'; leader, follower, mix};
     metrics_results = {'Work', 'Power_F', 'target error'; effort, sum_f2, goal_err};
-    
-%     disp(mix_results);
+
     disp(metrics_results);
     
     

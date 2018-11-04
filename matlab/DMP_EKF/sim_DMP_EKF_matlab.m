@@ -40,7 +40,7 @@ theta_sigma_min = 0.001;
 theta_sigma_max = 100000;
 apply_cov_sat = false;
 
-ekf_num_diff = true;
+ekf_provide_Jacob = true;
 
 
 plot_1sigma = true*0;
@@ -128,11 +128,13 @@ ekf.StateCovariance = P_theta;
 ekf.ProcessNoise = Q;
 ekf.MeasurementNoise = R;
 
-if (~ekf_num_diff)
-    ekf.StateTransitionJacobianFcn = @stateTransJacobFun;
+if (ekf_provide_Jacob)
+    ekf.StateTransitionJacobianFcn = @stateTransFunJacob;
     ekf.MeasurementJacobianFcn = @msrFunJacob; 
 end
 %% ==================
+
+msr_cookie = MsrCookie();
 
 disp('DMP-EKF (discrete) simulation...')
 tic
@@ -225,11 +227,10 @@ while (true)
     end
 
     %% KF update
-
     % ekf.predict();
     P_theta = a_p^2*P_theta + Q;
     ekf.StateCovariance = P_theta;
-    msr_cookie = struct('dmp',{dmp}, 't',t, 'y',Y, 'dy',dY, 'y0',Y0, 'y_c',0.0, 'z_c',0.0, 'x_hat',x_hat);
+    msr_cookie.set(dmp, t, Y, dY, Y0, 0.0, 0.0, x_hat);
     ekf.correct(Y_out, msr_cookie);    
     
     theta = ekf.State;

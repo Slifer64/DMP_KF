@@ -119,6 +119,7 @@ target_link_libraries(dmp_kf
   ${OpenCV_LIBS}
   ${PCL_LIBRARIES}
   ${Boost_LIBRARIES}
+  armadillo
   dmp-lib
   io-lib
   math-lib
@@ -129,3 +130,19 @@ target_link_libraries(dmp_kf
   ati_sensor
   ${Qt_LIBRARIES}
 )
+
+
+# *************************************************
+# *************************************************
+
+add_executable(main_test
+  src/test.cpp
+)
+
+add_dependencies(main_test
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS})
+
+  target_link_libraries(main_test
+    armadillo
+  )

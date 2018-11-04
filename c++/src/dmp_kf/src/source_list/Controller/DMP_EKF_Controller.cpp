@@ -17,7 +17,6 @@ Controller(robot, gui)
 
   force_pub = ros_node.advertise<geometry_msgs::Vector3>("f_ext", 1);
 
-  ekf.reset(new as64_::kf_::EKF(4,3));
 }
 
 void DMP_EKF_Controller::readTrainingParams(const char *params_file)
@@ -49,16 +48,19 @@ void DMP_EKF_Controller::readControllerParams(const char *params_file)
   inv_R_v = arma::inv(R_v);
   if (!parser.getParam("Q_W", Q_w)) Q_w = arma::vec({0.0, 0.0, 0.0});
   Q_w = arma::diagmat(Q_w);
-  if (!parser.getParam("a_p", a_p)) a_p = 0.0;
-
-  if (!parser.getParam("p1", p1)) p1 = 0.001;
-  if (!parser.getParam("p2", p2)) p2 = 1000;
-  if (!parser.getParam("p_r", p_r)) p_r = 0.5;
-  if (!parser.getParam("tau_e", tau_e)) tau_e = 0.01;
-  if (!parser.getParam("p_turos", p_turos)) p_turos = 0.02;
-
-  if (!parser.getParam("a_py", a_py)) a_py = 0.0;
-  if (!parser.getParam("a_dpy", a_dpy)) a_dpy = 0.0;
+  if (!parser.getParam("a_p", a_p)) a_p = 1.0;
+  if (!parser.getParam("enable_constraints", enable_constraints)) enable_constraints = false;
+  arma::vec g_up_bound, g_low_bound;
+  double tau_up_bound, tau_low_bound;
+  if (!parser.getParam("g_up_bound", g_up_bound)) g_up_bound = arma::vec({1.0, 1.0, 1.0});
+  if (!parser.getParam("g_low_bound", g_low_bound)) g_low_bound = -arma::vec({1.0, 1.0, 1.0});
+  if (!parser.getParam("tau_up_bound", tau_up_bound)) tau_up_bound = 1000;
+  if (!parser.getParam("tau_low_bound", tau_low_bound)) tau_low_bound = 0.1;
+  arma::vec theta_up_bound = arma::join_vert(g_up_bound, arma::vec({tau_up_bound}));
+  arma::vec theta_low_bound = arma::join_vert(g_low_bound, arma::vec({tau_low_bound}));
+  int N_params = theta_up_bound.size();
+  A_c = arma::join_vert(-arma::mat().eye(N_params, N_params), arma::mat().eye(N_params, N_params));
+  b_c = arma::join_vert(-theta_low_bound, theta_up_bound);
 
   if (!parser.getParam("g_scale", g_scale)) g_scale = arma::vec({1.0, 1.0, 1.0});
   if (!parser.getParam("tau_scale", tau_scale)) tau_scale = 1.0;
@@ -71,31 +73,15 @@ void DMP_EKF_Controller::readControllerParams(const char *params_file)
   if (!parser.getParam("D", D)) D = arma::vec({40.0, 40.0, 40.0});
 
   if (!parser.getParam("M_d", M_d)) M_d = arma::vec({15.0, 15.0, 15.0});
-  if (!parser.getParam("D_d", D_d)) D_d = arma::vec({40.0, 40.0, 40.0});
-  if (!parser.getParam("K_d", K_d)) K_d = arma::vec({250.0, 250.0, 250.0});
-
 
   if (!parser.getParam("k_click", k_click)) k_click = 0.0;
-  if (!parser.getParam("ff_gains", ff_gains)) ff_gains = arma::vec({1.0, 1.0, 1.0}); // feedforward gains for the target impedance model
   if (!parser.getParam("a_force", a_force)) a_force = 1.0;
-
-  // leader-follower sigmoid function params  1 / ( 1 + exp(a_m*(norm(F)-c_m)) )
-  if (!parser.getParam("a_m", a_m)) a_m = 3.5;
-  if (!parser.getParam("c_m", c_m)) c_m = 1.3;
-
-  if (!parser.getParam("f1_", f1_)) f1_ = 0.5;
-  if (!parser.getParam("f2_", f2_)) f2_ = 1.5;
-  initMixingFun(f1_, f2_);
 
   if (!parser.getParam("dmp_mod", dmp_mod)) dmp_mod = 1.0;
 }
 
-void DMP_EKF_Controller::initExecution()
+void DMP_EKF_Controller::initVariables()
 {
-  readControllerParams();
-
-  if (gui->logControllerData()) exec_data.clear();
-
   this->robot->init();
 
   arma::vec p = this->robot->getTaskPosition();
@@ -106,8 +92,6 @@ void DMP_EKF_Controller::initExecution()
   Y = p;
   dY.zeros(3);
   ddY.zeros(3);
-  U_dmp.zeros(3);
-  U_total.zeros(3);
   f_ext.zeros(3);
   f_ext_raw.zeros(3);
 
@@ -115,19 +99,47 @@ void DMP_EKF_Controller::initExecution()
   dY_ref.zeros(3);
   ddY_ref.zeros(3);
 
+  Y_c.zeros(3);
+  Z_c.zeros(3);
+
   // model variables
   g_d = g_d;
   tau_d = tau_d;
 
   Y0 = p;
-  g_hat = g_d;
-  tau_hat = tau_d;
-  theta = arma::join_vert(g_hat, arma::mat({tau_hat}));
-  P_theta = arma::diagmat( arma::join_vert( P0_g_hat, arma::mat({P0_tau_hat}) ) );
+
   t = 0.0;
-  x_hat = t/tau_hat;
-  mf = 1.0;
-  can_clock_ptr->setTau(tau_hat);
+  can_clock_ptr->setTau(tau_d);
+}
+
+void DMP_EKF_Controller::initEKF()
+{
+  arma::vec g_hat = g_d;
+  double tau_hat = tau_d;
+  arma::vec theta = arma::join_vert(g_hat, arma::mat({tau_hat}));
+  arma::mat P_theta = arma::diagmat( arma::join_vert( P0_g_hat, arma::mat({P0_tau_hat}) ) );
+
+  int N_msr = dmp.size();
+
+  ekf.reset(new as64_::kf_::EKF(theta, P_theta, N_msr, &DMP_EKF_Controller::stateTransFun, this, &DMP_EKF_Controller::msrFun, this));
+  ekf->setFadingMemoryCoeff(a_p);
+  ekf->enableParamsContraints(enable_constraints);
+  ekf->setParamsConstraints(A_c, b_c);
+  ekf->setProcessNoiseCov(Q_w);
+  ekf->setMeasureNoiseCov(R_v);
+  ekf->setStateTransFunJacob(&DMP_EKF_Controller::stateTransFunJacob, this);
+  ekf->setMsrFunJacob(&DMP_EKF_Controller::msrFunJacob, this);
+}
+
+void DMP_EKF_Controller::initExecution()
+{
+  readControllerParams();
+
+  if (gui->logControllerData()) exec_data.clear();
+
+  initVariables();
+
+  initEKF();
 }
 
 bool DMP_EKF_Controller::startExecution()
@@ -153,51 +165,20 @@ void DMP_EKF_Controller::execute()
   dY_ref = dY;
   Y_ref = Y;
 
-  if (gui->logControllerData()) exec_data.log(t, Y, dY, ddY, Y_ref, dY_ref, ddY_ref, f_ext_raw, f_ext, mf, theta, P_theta);
+  if (gui->logControllerData()) exec_data.log(t, Y, dY, ddY, Y_ref, dY_ref, ddY_ref, f_ext_raw, f_ext, ekf->theta, ekf->P);
 
   // this->robot->update();
 
   // ========  leader-follower role  ========
   f_ext_raw = (robot->getTaskWrench()).subvec(0,2);
   f_ext = (1-a_force)*f_ext + a_force*f_ext_raw;
-  // mf = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
-  mf = mixingFun(arma::norm(f_ext));
 
-  // force_msg.x = f_ext(0);
-  // force_msg.y = f_ext(1);
-  // force_msg.z = f_ext(2);
-  // force_pub.publish(force_msg);
-
-  arma::vec Y_c = arma::vec().zeros(3);
-  arma::vec Z_c = arma::vec().zeros(3);
-
-  // ========  KF estimation  ========
-  int dim = dmp.size();
-  int n_theta = theta.size();
-  arma::mat dC_dtheta = arma::mat().zeros(dim, n_theta);
-  for (int i=0; i<dim; i++)
-  {
-    // double y_c=0, z_c=0;
-    ddY_ref(i) = dmp[i]->getAccel(Y_ref(i), dY_ref(i), Y0(i), Y_c(i), Z_c(i), x_hat, g_hat(i), tau_hat);
-    arma::vec dC_dtheta_i = dmp[i]->getAcellPartDev_g_tau(t, Y_ref(i), dY_ref(i), Y0(i), x_hat, g_hat(i), tau_hat);
-    dC_dtheta(i,i) = dC_dtheta_i(0);
-    dC_dtheta(i,n_theta-1) = dC_dtheta_i(1);
-  }
+  ddY_ref = msrFun(ekf->theta);
 
   // ========  Controller  ========
-
-  arma::vec F = ff_gains%f_ext;
-
-  if (dmp_mod == 1) ddY = mf*ddY_ref + (1-mf)*(- D%dY + F)/M;
-  else if (dmp_mod == 2) ddY = ( - D%dY + F) / M;
-  else if (dmp_mod == 4) ddY = ddY_ref + F/M_d;
-  else if (dmp_mod == 3)
-  {
-    // Y_c = a_dpy*(dY-dY_ref) + a_py*(Y-Y_ref);
-    ddY = ddY_ref + ( -D_d%(dY-dY_ref) - K_d%(Y-Y_ref) + F )/M_d;
-  }
-  else if (dmp_mod == 5) ddY = ( - D%dY -K_d%(Y-y_g) + F) / M;
-  else ddY.zeros(3);
+  if (dmp_mod == 1) ddY = ( - D%dY + f_ext) / M;
+  else if (dmp_mod == 2) ddY = ddY_ref + f_ext/M_d;
+  else ddY.zeros();
 
   arma::vec Y_robot = this->robot->getTaskPosition();
   arma::vec V_cmd = arma::vec().zeros(6);
@@ -205,59 +186,42 @@ void DMP_EKF_Controller::execute()
   robot->setTaskVelocity(V_cmd);
 
   // ========  KF update  ========
-  arma::mat K_kf = P_theta*dC_dtheta.t()*inv_R_v;
-  arma::vec theta_dot = K_kf * (ddY - ddY_ref);
-  arma::mat P_dot = Q_w - K_kf*dC_dtheta*P_theta + 2*a_p*P_theta;
+  ekf->predict(); // time update
+  ekf->correct(ddY); // measurement update
 
   // ========  numerical integration  ========
   double Ts = robot->getControlCycle();
-
   t = t + Ts;
   Y = Y + dY*Ts;
   dY = dY + ddY*Ts;
-  Y_ref = Y_ref + dY_ref*Ts;
-  dY_ref = dY_ref + ddY_ref*Ts;
-
-  theta = theta + theta_dot*Ts;
-  g_hat = theta.subvec(0,2);
-  tau_hat = theta(3);
-  P_theta = P_theta + P_dot*Ts;
-  x_hat = t/tau_hat;
-
 }
 
 bool DMP_EKF_Controller::simulate()
 {
   // ========  Read parameters  ========
   readControllerParams();
+  initVariables();
+  initEKF();
 
   // ========  Initialization  ========
   this->robot->update();
   arma::vec p = this->robot->getTaskPosition();
 
+  t = 0.0;
   Y = p;
   dY.zeros(3);
   ddY.zeros(3);
-  arma::vec ddY_hat = arma::vec().zeros(3);
+  Y_c.zeros(3);
+  Z_c.zeros(3);
   Y0 = p;
 
-  g_hat = g_d;
-  arma::vec g = g_d%g_scale;
-
-  tau_hat = tau_d;
+  arma::vec Yg = g_d%g_scale;
   double tau = tau_d*tau_scale;
+  arma::vec theta = arma::join_vert(Yg, arma::vec({tau}));
 
-  t = 0.0;
-  double x = 0.0;
-  double dx = 0.0;
-  x_hat = t/tau_hat;
   can_clock_ptr->setTau(tau);
 
   f_ext = f_ext_raw = arma::vec().zeros(3);
-  mf = 1.0;
-
-  theta = arma::join_vert(g_hat, arma::mat({tau_hat}));
-  P_theta = arma::diagmat( arma::join_vert( P0_g_hat, arma::mat({P0_tau_hat}) ) );
 
   if (gui->logSimulationData()) sim_data.clear();
 
@@ -286,56 +250,34 @@ bool DMP_EKF_Controller::simulate()
     robot->command();
 
     // ========  Data logging  ========
-    if (gui->logSimulationData()) sim_data.log(t, Y, dY, ddY, Y_ref, dY_ref, ddY_ref, f_ext_raw, f_ext, mf, theta, P_theta);
+    if (gui->logSimulationData()) sim_data.log(t, Y, dY, ddY, Y_ref, dY_ref, ddY_ref, f_ext_raw, f_ext, ekf->theta, ekf->P);
 
     // ========  Calculate actual and estimated output (acceleration)  ========
-    int dim = dmp.size();
-    int n_theta = theta.size();
-    arma::mat dC_dtheta = arma::mat().zeros(dim, n_theta);
-    for (int i=0; i<dim; i++)
-    {
-      double y_c=0, z_c=0;
-      ddY(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, x, g(i), tau);
-
-      // KF prediction
-      ddY_hat(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, x_hat, g_hat(i), tau_hat);
-      // Calculate partial derivatives of observation function w.r.t the unknown parameters
-      arma::vec dC_dtheta_i = dmp[i]->getAcellPartDev_g_tau(t, Y(i), dY(i), Y0(i), x_hat, g_hat(i), tau_hat);
-      dC_dtheta(i,i) = dC_dtheta_i(0);
-      dC_dtheta(i,n_theta-1) = dC_dtheta_i(1);
-    }
+    ddY = msrFun(theta);
+    arma::vec ddY_hat =msrFun(ekf->theta);
 
     // estimate external force
     f_ext = f_ext_raw = (ddY - ddY_hat);
-    mf = 1 / ( 1 + std::exp( a_m*(arma::norm(f_ext)-c_m) ) );
 
     // ========  KF update  ========
-    arma::mat K_kf = P_theta*dC_dtheta.t()*inv_R_v;
-    arma::vec theta_dot = K_kf * (ddY - ddY_hat);
-    arma::mat P_dot = Q_w - K_kf*dC_dtheta*P_theta + 2*a_p*P_theta;
-
-    // ========  Phase variable evolution  ========
-    dx = can_clock_ptr->getPhaseDot(x);
+    ekf->predict(); // time update
+    ekf->correct(ddY); // measurement update
 
     // ========  numerical integration  ========
     double Ts = robot->getControlCycle();
 
     t = t + Ts;
-    x = x + dx*Ts;
     Y = Y + dY*Ts;
     dY = dY + ddY*Ts;
 
-    theta = theta + theta_dot*Ts;
-    P_theta = P_theta + P_dot*Ts;
-    g_hat = theta.subvec(0,2);
-    tau_hat = theta(3);
-    x_hat = t/tau_hat;
-
     // ========  stopping criteria ========
-    double err = arma::norm(Y-g);
+    double err = arma::norm(Y-Yg);
     // if (err < 0.5e-3) break;
     if (t >= tau) break;
   }
+
+  // std::cout << "###### ekf->theta = " << ekf->theta.t() << "\n";
+  // std::cout << "###### theta = " << theta.t() << "\n";
 
   return true;
 
@@ -384,6 +326,10 @@ bool DMP_EKF_Controller::train(std::string &err_msg)
     err_msg = "Error training model: The training data are empty...";
     return false;
   }
+
+  double v_start_thres = 0.002;
+  double v_end_thres = 0.005;
+  train_data.trim(v_start_thres, v_end_thres);
 
   int dim = train_data.Y_data.n_rows;
   dmp.resize(dim);
@@ -497,10 +443,10 @@ bool DMP_EKF_Controller::runModel()
   dY.zeros(3);
   ddY.zeros(3);
   Y0 = p;
+
   arma::vec Yg = g_d;
   double tau = tau_d;
-  t = 0.0;
-  double x = t/tau;
+  double t = 0.0;
   can_clock_ptr->setTau(tau);
 
   if (gui->logModelRunData()) modelRun_data.clear();
@@ -539,10 +485,8 @@ bool DMP_EKF_Controller::runModel()
     for (int i=0; i<dim; i++)
     {
       double y_c=0, z_c=0;
-      ddY(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, x, Yg(i), tau);
+      ddY(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), y_c, z_c, t/tau, Yg(i), tau);
     }
-
-    double dx = can_clock_ptr->getPhaseDot(x);
 
     // ========  numerical integration  ========
     double Ts = robot->getControlCycle();
@@ -550,14 +494,61 @@ bool DMP_EKF_Controller::runModel()
     t = t + Ts;
     Y = Y + dY*Ts;
     dY = dY + ddY*Ts;
-    x = x + dx*Ts;
 
     // ========  stopping criteria  ========
     double err = arma::norm(Y-Yg);
-    // if (err < 0.5e-3) break;
     if (t>=tau && err<0.5e-3) break;
   }
 
   return true;
 
+}
+
+arma::vec DMP_EKF_Controller::msrFun(const arma::vec &theta, void *cookie)
+{
+  int i_end = theta.size()-1;
+  arma::vec Yg_hat = theta.subvec(0, i_end-1);
+  double tau_hat = theta(i_end);
+  double x_hat = t/tau_hat;
+
+  // ========  KF estimation  ========
+  int dim = dmp.size();
+  arma::vec Z(dim);
+  for (int i=0; i<dim; i++)
+  {
+    Z(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), Y_c(i), Z_c(i), x_hat, Yg_hat(i), tau_hat);
+  }
+
+  return Z;
+}
+
+arma::vec DMP_EKF_Controller::stateTransFun(const arma::vec &theta, void *cookie)
+{
+  return theta;
+}
+
+arma::mat DMP_EKF_Controller::msrFunJacob(const arma::vec &theta, void *cookie)
+{
+  int i_end = theta.size()-1;
+  arma::vec Yg_hat = theta.subvec(0, i_end-1);
+  double tau_hat = theta(i_end);
+  double x_hat = t/tau_hat;
+
+  // ========  KF estimation  ========
+  int dim = dmp.size();
+  int n_theta = theta.size();
+  arma::mat J = arma::mat().zeros(dim, n_theta);
+  for (int i=0; i<dim; i++)
+  {
+    arma::vec J_i = dmp[i]->getAcellPartDev_g_tau(t, Y(i), dY(i), Y0(i), x_hat, Yg_hat(i), tau_hat);
+    J(i,i) = J_i(0);
+    J(i,n_theta-1) = J_i(1);
+  }
+  return J;
+}
+
+arma::mat DMP_EKF_Controller::stateTransFunJacob(const arma::vec &theta, void *cookie)
+{
+  int N = theta.size();
+  return arma::mat().eye(N,N);
 }

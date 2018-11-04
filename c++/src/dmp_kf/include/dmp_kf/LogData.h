@@ -44,6 +44,10 @@ public:
   // dimensionallity of data
   int dim() const { return Y_data.n_rows; }
 
+  // Trims the data from the beginning and end base on the velocity
+  // thresholds specified.
+  void trim(double v_start_thres, double v_end_thres);
+
   // returns the last point
   arma::vec getFinalPoint() const { return Y_data.col(length()-1); }
 
@@ -68,7 +72,6 @@ public:
 
   arma::mat Fext_data;
   arma::mat Fext_filt_data;
-  arma::rowvec mf_data;
 
   arma::mat theta_data;
   arma::mat Sigma_theta_data;
@@ -84,7 +87,7 @@ public:
   // adds t,Y,dY,dYY to the corresponding data matrices
   void log(double t, const arma::vec &Y, const arma::vec &dY, const arma::vec &ddY,
           const arma::vec &Y_ref, const arma::vec &dY_ref, const arma::vec &ddY_ref,
-          const arma::vec &Fext, const arma::vec &Fext_filt, double mf,
+          const arma::vec &Fext, const arma::vec &Fext_filt,
 					const arma::vec &theta, const arma::mat &P_theta);
 
   // empties all data
@@ -98,47 +101,5 @@ public:
 // ===========================================================
 // ===========================================================
 
-// class LogData
-// {
-// public:
-//
-//   LogData(const std::shared_ptr<Robot> &r, const std::shared_ptr<Controller> &c);
-//   void init();
-//   void log();
-//   void save();
-//   void clear();
-//
-//   void saveTraining();
-//   void loadTraining();
-//
-// private:
-//
-//   std::shared_ptr<Controller> controller;
-//   std::shared_ptr<Robot> robot;
-//
-//   arma::rowvec Time_data;
-//
-//   arma::mat Y_data;
-//   arma::mat dY_data;
-//   arma::mat ddY_data;
-//
-//   arma::mat Fext_data;
-//   arma::mat Fext_filt_data;
-//
-//   arma::mat g_hat_data;
-//   arma::mat Sigma_g_hat_data;
-//   arma::rowvec tau_hat_data;
-//   arma::rowvec sigma_tau_hat_data;
-//   arma::rowvec mf_data;
-//
-//
-//   bool binary;
-//   std::string data_input_path;
-//   std::string data_output_path;
-//
-//   std::string in_data_filename;
-//   std::string out_data_filename;
-//
-// };
 
 #endif // DMP_KF_LOG_DATA_H
