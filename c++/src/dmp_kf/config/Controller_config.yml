@@ -34,4 +34,4 @@ D: [15.0; 15.0; 15.0]
 M_d: [10.0; 10.0; 10.0]
 
 k_click: 0.5
-a_force: 0.05 # iir 1st order filter coeff for filtering force measurements
+a_force: 0.01 # iir 1st order filter coeff for filtering force measurements

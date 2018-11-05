@@ -1,4 +1,5 @@
 enable_safety_check: false
-Fext_dead_zone: [0.7; 0.7; 0.7; 0.35; 0.35; 0.35]
+#Fext_dead_zone: [0.7; 0.7; 0.7; 0.35; 0.35; 0.35]
+Fext_dead_zone: [1.0; 1.0; 1.0; 0.4; 0.4; 0.4]
 vel_limit: [0.7; 0.7; 0.7; 1.2; 1.2; 1.2]
 wrench_limit: [20; 20; 20; 25; 25; 150]

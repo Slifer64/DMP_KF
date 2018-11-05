@@ -96,7 +96,7 @@ void EKF::correct(const arma::vec &z, void *cookie)
   double err2 = arma::norm(arma::diagvec(K_kf) - arma::diagvec(K_kf2));
   double err3 = arma::norm(arma::diagvec(K_kf) - arma::diagvec(K_kf3));
 
-  if (err2 > 1e-10)
+  if (err2 > 1e-6)
   {
     std::cout << "============================\n";
     std::cout << "err2 = " << err2 << "\n";
@@ -105,7 +105,7 @@ void EKF::correct(const arma::vec &z, void *cookie)
     std::cout << "============================\n";
   }
 
-  if (err3 > 1e-10)
+  if (err3 > 1e-6)
   {
     std::cout << "============================\n";
     std::cout << "err3 = " << err3 << "\n";

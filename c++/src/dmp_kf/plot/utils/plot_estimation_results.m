@@ -4,7 +4,8 @@ function plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, P_data, F_dat
 %% ==============================================================
 %% ==========   Target and time scaling est plot ================
 
-    fontsize = 18;
+    
+    fontsize = 16;
     linewidth = 1.5;
     
     D = length(Yg);
@@ -17,55 +18,54 @@ function plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, P_data, F_dat
     tau_color = [0 0 1];
     tau_hat_color = [0.85 0.33 0.1];
     
-    s1_scale = 0.1;
-    
-    
-    % Create figure
-    figure1 = figure('pos',[100 100 700 700]);
-    
-    % Create axes
-    axes1 = axes('Parent',figure1, 'Position',[0.13 0.374 0.775 0.551]);
+    fig1 = figure('Position', [150 150 800 1000]);
+    axes1 = axes('Parent',fig1, 'Position',[0.13 0.595 0.775 0.33]);
     hold(axes1,'on');
     legend_labels = {};
     for i=1:D
         plot([Time(1) Time(end)],[Yg(i) Yg(i)], 'LineStyle','--', 'Color',goal_color{i} ,'LineWidth',2, 'Parent',axes1);
         plot(Time,Yg_data(i,:), 'LineStyle','-', 'Color',goal_est_color{i}, 'LineWidth',linewidth, 'Parent',axes1);
-        legend_labels_i = {['$\mathbf{y}_{g,' axis_name{i} '}$'], ['$\hat{\mathbf{y}}_{g,' axis_name{i} '}$']};
+        plot(Time,Y_data(i,:), 'LineStyle','-', 'Color',pos_color{i}, 'LineWidth',linewidth, 'Parent',axes1);
+        legend_labels = [legend_labels, ['$\mathbf{y}_{g,' axis_name{i} '}$'], ['$\hat{\mathbf{y}}_{g,' axis_name{i} '}$'], ['$\mathbf{y}_{' axis_name{i} '}$']];
         if (plot_1sigma)
-            plot(Time,Yg_data(i,:)+P_data(i,:)*s1_scale, 'LineStyle',':', 'Color',goal_est_color{i}*0.75, 'LineWidth',linewidth, 'Parent',axes1);
-        	plot(Time,Yg_data(i,:)-P_data(i,:)*s1_scale, 'LineStyle',':', 'Color',goal_est_color{i}*0.75, 'LineWidth',linewidth, 'Parent',axes1, 'HandleVisibility','off');
-            legend_labels_i = [legend_labels_i, ['$\pm1\sigma$']];
+            plot(Time,Yg_data(i,:)+Sigma_theta_data(i,:),'c-.', 'LineWidth',linewidth, 'Parent',axes1);
+        	plot(Time,Yg_data(i,:)-Sigma_theta_data(i,:),'c-.', 'LineWidth',linewidth, 'Parent',axes1);
+            legend_labels = [legend_labels, ['$\pm1\sigma$']];
         end
-        plot(Time,Y_data(i,:), 'LineStyle','-.', 'Color',pos_color{i}, 'LineWidth',linewidth, 'Parent',axes1);
-        legend_labels_i = [legend_labels_i, ['$\mathbf{y}_{' axis_name{i} '}$']];
-        legend_labels = [legend_labels, legend_labels_i];
+        ylabel('[$m$]','interpreter','latex','fontsize',fontsize, 'Parent',axes1);
+        axis tight;
     end
-    ylabel('target estimation [$m$]','interpreter','latex','fontsize',fontsize, 'Parent',axes1);
-    legend(axes1, legend_labels,'interpreter','latex', 'fontsize',fontsize, ...
-          'Orientation','horizontal', 'Position',[0.04 0.938 0.927 0.046]);
-    axis(axes1,'tight');
+    legend(axes1, legend_labels,'interpreter','latex','fontsize',fontsize, 'Position',[0.005 0.95 0.99 0.036], 'Orientation','horizontal');
     hold(axes1,'off');
-    
-    % Create axes
-    axes2 = axes('Parent',figure1, 'Position',[0.13 0.11 0.775 0.206]);
+
+    axes2 = axes('Parent',fig1, 'Position',[0.13 0.347 0.775 0.189]);
     hold(axes2,'on');
-    legend_labels = {['$\hat{\tau}$']};
-    hold(axes2,'on');
-    if (~isempty(tau))
-        plot([Time(1) Time(end)],[tau tau], 'LineStyle','--', 'Color',tau_color, 'LineWidth',2, 'Parent',axes2);
-        legend_labels = [['$\tau$'], legend_labels];
-    end
+    % plot([Time(1) Time(end)],[tau tau], 'LineStyle','--', 'Color',tau_color, 'LineWidth',2, 'Parent',axes2);
     plot(Time,tau_data, 'LineStyle','-', 'Color',tau_hat_color, 'LineWidth',linewidth, 'Parent',axes2);
+    %legend_labels = {['$\tau$'], ['$\hat{\tau}$']};
+    legend_labels = {['$\tau$']};
     if (plot_1sigma)
-        plot(Time,tau_data+P_data(end,:)*s1_scale, 'LineStyle',':', 'Color',tau_hat_color*0.75, 'LineWidth',linewidth, 'Parent',axes2);
-    	plot(Time,tau_data-P_data(end,:)*s1_scale, 'LineStyle',':', 'Color',tau_hat_color*0.75, 'LineWidth',linewidth, 'Parent',axes2, 'HandleVisibility','off');
+        plot(Time,tau_data+Sigma_theta_data(end,:),'c-.', 'LineWidth',linewidth, 'Parent',axes2);
+    	plot(Time,tau_data-Sigma_theta_data(end,:),'c-.', 'LineWidth',linewidth, 'Parent',axes2);
         legend_labels = [legend_labels, ['$\pm1\sigma$']];
     end
     legend(axes2, legend_labels,'interpreter','latex','fontsize',fontsize);
     ylabel('$\tau$ [$s$]','interpreter','latex','fontsize',fontsize, 'Parent',axes2);
-    xlabel('time [$s$]','interpreter','latex','fontsize',fontsize, 'Parent',axes2);
-    axis(axes2,'tight');
+    axis tight;
     hold(axes2,'off');
+    
+    f_norm = zeros(size(F_data,2),1);
+    for i=1:length(f_norm)
+        f_norm(i) = norm(F_data(:,i));
+    end
+
+    axes3 = axes('Parent',fig1, 'Position',[0.13 0.0845 0.775 0.216]);
+    hold(axes3,'on');
+    plot(Time, f_norm,'b-', 'LineWidth',linewidth, 'Parent',axes3);
+    ylabel(['$||\mathbf{f}_{ext}||$ [$N$]'],'interpreter','latex','fontsize',fontsize, 'Parent',axes3);
+    xlabel('time [$s$]','interpreter','latex','fontsize',fontsize, 'Parent',axes3);
+    axis tight;
+    hold(axes3,'off');
     
 %% ==========================================================
 %% ==========================================================

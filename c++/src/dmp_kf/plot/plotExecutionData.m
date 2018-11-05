@@ -63,6 +63,28 @@ g_hat_data = theta_data(1:3,:);
 tau_hat_data = theta_data(4,:);
 
 if (isempty(g)), g = Y_data(:,end); end
+
+f_norm = zeros(size(Fext_data,2),1);
+for i=1:length(f_norm)
+    f_norm(i) = norm(Fext_data(:,i));
+end
+
+f_norm_filt = zeros(size(Fext_filt_data,2),1);
+for i=1:length(f_norm)
+    f_norm_filt(i) = norm(Fext_filt_data(:,i));
+end
+
+figure;
+hold on;
+plot(Time, f_norm,'b-', 'LineWidth',1.5);
+plot(Time, f_norm_filt,'g-', 'LineWidth',1.5);
+ylabel(['$||\mathbf{f}_{ext}||$ [$N$]'],'interpreter','latex','fontsize',15);
+xlabel('time [$s$]','interpreter','latex','fontsize',15);
+legend({'raw','filt'},'interpreter','latex','fontsize',15);
+axis tight;
+hold off;
+
+return;
     
 plot_estimation_results(Time, g, g_hat_data, tau, tau_hat_data, Sigma_theta_data, Fext_filt_data, plot_1sigma, Y_data, dY_data);
 
