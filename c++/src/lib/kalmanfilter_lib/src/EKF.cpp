@@ -90,29 +90,31 @@ void EKF::correct(const arma::vec &z, void *cookie)
   arma::mat K_kf = arma::solve((H_k*P*H_k.t() + R).t(), H_k*P.t(), arma::solve_opts::fast).t();
   // arma::mat K_kf = P*H_k.t()*arma::inv(H_k*P*H_k.t() + R);
   // arma::mat K_kf = P*H_k.t()*arma::inv_sympd(H_k*P*H_k.t() + R);
-  arma::mat K_kf2 = P*H_k.t()*arma::inv(H_k*P*H_k.t() + R);
-  arma::mat K_kf3 = P*H_k.t()*arma::inv_sympd(H_k*P*H_k.t() + R);
 
-  double err2 = arma::norm(arma::diagvec(K_kf) - arma::diagvec(K_kf2));
-  double err3 = arma::norm(arma::diagvec(K_kf) - arma::diagvec(K_kf3));
 
-  if (err2 > 1e-6)
-  {
-    std::cout << "============================\n";
-    std::cout << "err2 = " << err2 << "\n";
-    std::cout << "K_kf = \n" << K_kf << "\n";
-    std::cout << "K_kf2 = \n" << K_kf2 << "\n";
-    std::cout << "============================\n";
-  }
-
-  if (err3 > 1e-6)
-  {
-    std::cout << "============================\n";
-    std::cout << "err3 = " << err3 << "\n";
-    std::cout << "K_kf = \n" << K_kf << "\n";
-    std::cout << "K_kf3 = \n" << K_kf3 << "\n";
-    std::cout << "============================\n";
-  }
+  // arma::mat K_kf2 = P*H_k.t()*arma::inv(H_k*P*H_k.t() + R);
+  // arma::mat K_kf3 = P*H_k.t()*arma::inv_sympd(H_k*P*H_k.t() + R);
+  //
+  // double err2 = arma::norm(arma::diagvec(K_kf) - arma::diagvec(K_kf2));
+  // double err3 = arma::norm(arma::diagvec(K_kf) - arma::diagvec(K_kf3));
+  //
+  // if (err2 > 1e-6)
+  // {
+  //   std::cout << "============================\n";
+  //   std::cout << "err2 = " << err2 << "\n";
+  //   std::cout << "K_kf = \n" << K_kf << "\n";
+  //   std::cout << "K_kf2 = \n" << K_kf2 << "\n";
+  //   std::cout << "============================\n";
+  // }
+  //
+  // if (err3 > 1e-6)
+  // {
+  //   std::cout << "============================\n";
+  //   std::cout << "err3 = " << err3 << "\n";
+  //   std::cout << "K_kf = \n" << K_kf << "\n";
+  //   std::cout << "K_kf3 = \n" << K_kf3 << "\n";
+  //   std::cout << "============================\n";
+  // }
 
   theta = theta + K_kf * (z - z_hat);
 
