@@ -215,9 +215,9 @@ end
 
 legends = cell(dim,1);
 for i=1:dim
-    bar(ax{i}, dmp{i}.c, dmp{i}.w, 'BarWidth',1.0, 'FaceColor','blue');
-    bar(ax{i}, dmp_sim{i}.c, dmp_sim{i}.w, 'BarWidth',0.8, 'FaceColor','green');
-    bar(ax{i}, dmp_exec{i}.c, dmp_exec{i}.w, 'BarWidth',0.65, 'FaceColor',[0.85 0.33 0.1]);
+    bar(ax{i}, dmp{i}.c, dmp{i}.w, 'BarWidth',0.85, 'FaceColor','green');
+    bar(ax{i}, dmp_sim{i}.c, dmp_sim{i}.w, 'BarWidth',0.65, 'FaceColor','blue');
+    bar(ax{i}, dmp_exec{i}.c, dmp_exec{i}.w, 'BarWidth',0.45, 'FaceColor',[0.85 0.33 0.1]);
 end
 legend(ax{1}, {'Training','Simulation','Execution'},'interpreter','latex','fontsize',14);
 title(ax{1},'DMP weights','interpreter','latex','fontsize',14);
@@ -363,9 +363,9 @@ dt = 0.002;
 time_offset = tau - tau0;
 
 rng(0);
-sigma_f_ext = 0.2;
+sigma_f_ext = 0.1;
 f_ext_n = 0.0;
-a_f_n = 0.15;
+a_f_n = 0.7;
 f_mag_noise = 0.0;
 
 goal_up_lim = [0.65; 0.8; 0.7];
@@ -404,13 +404,14 @@ D_r = 2*sqrt(M_r*K_r);
 
 M_h = 3*eye(3,3);
 inv_M_h = inv(M_h);
-K_h_min = 30*eye(3,3);
-K_h_max = 400*eye(3,3);
+K_h_min = 50*eye(3,3);
+K_h_max = 500*eye(3,3);
 K_h = K_h_min;
 D_h = 2*sqrt(M_h*K_h);
-p_e_max = 0.25;
+p_e_max = 0.15;
 p_e_min = 0.01;
 p_e = p_e_max;
+
 
 inv_M_rh = inv(inv_M_r + inv_M_h);
 
@@ -518,12 +519,17 @@ while (true)
     Y_c = a_py*(Y_r-Y_hat) + a_dpy*(dY_r-dY_hat);
     Z_c = zeros(Dim,1);
     
-%     if (t/t_end <= 0.25)
-%         tau = t_end/2;
+%     x1 = 0.3;
+%     tau1 = 2.0*t_end;
+%     % x1*tau1<t_end to ensure tau2>0
+%     tau2 = (t_end - x1*tau1)/(1-x1);
+%     if (x <= x1)
+%         tau = tau1;
 %     else
-%        tau = 2*t_end;
+%        tau = tau2;
 %     end
-%     can_clock_ptr.setTau(tau);
+    
+    can_clock_ptr.setTau(tau);
 
     %% DMP simulation
     for i=1:Dim  
@@ -531,16 +537,24 @@ while (true)
         ddY_hat(i) = dmp{i}.getAccel(Y_hat(i), dY_hat(i), Y0(i), 0, 0, x_hat, Yg_hat(i), tau_hat);
     end
 
-    p_e = p_e_max + (p_e_min - p_e_max)*(t/t_end)^1.5;
+    p_e = p_e_max + (p_e_min - p_e_max)*(t/t_end)^0.4;
     p_a = norm(Y_h - Y)/p_e;
     % if (p_a > 1), p_a = 1.0; end
-    K_h = K_h_min + (K_h_max - K_h_min)*(p_a)^0.4;
+    K_h = K_h_min + (K_h_max - K_h_min)*(p_a)^0.6;
     D_h = 2*sqrt(M_h*K_h);
     
+    f_ext_n = a_f_n * f_ext_n + (1-a_f_n)*sigma_f_ext*randn(3,1);
+%     ddY_n = ddY + f_ext_n;
+%     dY_n = dY;
+%     Y_n = Y;
+    ddY_n = zeros(3,1) + f_ext_n;
+    dY_n = zeros(3,1);
+    Y_n = Y;
+    
     if (stiff_human)
-        F_ext = M_r*(ddY-ddY_hat) + M_r*( inv_M_r*(D_r*(dY_r-dY_hat)+K_r*(Y_r-Y_hat)) - inv_M_h*(D_h*(dY_h-dY)+K_h*(Y_h-Y)) );
+        F_ext = M_r*(ddY_n-ddY_hat) + M_r*( inv_M_r*(D_r*(dY_r-dY_hat)+K_r*(Y_r-Y_hat)) - inv_M_h*(D_h*(dY_h-dY_n)+K_h*(Y_h-Y_n)) );
     else
-        F_ext = inv_M_rh*(ddY-ddY_hat) + inv_M_rh*( inv_M_r*(D_r*(dY_r-dY_hat)+K_r*(Y_r-Y_hat)) - inv_M_h*(D_h*(dY_h-dY)+K_h*(Y_h-Y)) );
+        F_ext = inv_M_rh*(ddY_n-ddY_hat) + inv_M_rh*( inv_M_r*(D_r*(dY_r-dY_hat)+K_r*(Y_r-Y_hat)) - inv_M_h*(D_h*(dY_h-dY_n)+K_h*(Y_h-Y_n)) );
     end
     
     Y_out_hat = ddY_hat;
@@ -548,25 +562,18 @@ while (true)
     kf_err = Y_out - Y_out_hat;
     % kf_err = inv(M_r)*F_ext;
     
-    
-    f_ext_n = a_f_n * f_ext_n + (1-a_f_n)*sigma_f_ext*randn(3,1);
-    F_ext = F_ext + f_ext_n + sign(F_ext).*abs(f_mag_noise*rand(3,1));
-%     F_ext_new = F_ext + sigma_f_ext*randn(size(F_ext));
-%     F_ext = a_f*F_ext_new + (1-a_f)*F_ext;
-%     F_ext = F_ext + sign(F_ext).*abs(f_mag_noise*rand(3,1));
-%     sign(F_ext).*abs(f_mag_noise*rand(3,1))
-%     pause
+    %F_ext = F_ext + f_ext_n + sign(F_ext).*abs(f_mag_noise*rand(3,1));
 
     ddY_r = ddY_hat + inv_M_r*(-D_r*(dY_r-dY_hat) - K_r*(Y_r-Y_hat) + F_ext);
     if (stiff_human)
-        ddY_h = ddY + inv_M_h*(-D_h*(dY_h-dY) - K_h*(Y_h-Y));
+        ddY_h = ddY_n + inv_M_h*(-D_h*(dY_h-dY_n) - K_h*(Y_h-Y_n));
     else
-        ddY_h = ddY + inv_M_h*(-D_h*(dY_h-dY) - K_h*(Y_h-Y) - F_ext);
+        ddY_h = ddY_n + inv_M_h*(-D_h*(dY_h-dY_n) - K_h*(Y_h-Y_n) - F_ext);
     end
 
-%     if (norm(ddY_h-ddY_r)>1e-12)
-%         warning(['t=' num2str(t) ' sec: Rigid bond contraint might be violated!']);
-%     end
+    if (norm(ddY_h-ddY_r)>1e-12)
+        warning(['t=' num2str(t) ' sec: Rigid bond contraint might be violated!']);
+    end
 
     %% Update phase variable
     dx = can_clock_ptr.getPhaseDot(x);
@@ -620,7 +627,7 @@ end
 
 tau = Time(end);
 
-SimData = struct('Time',Time, 'Y_data',Y_data, 'dY_data',dY_data, 'ddY_data', ddY_data, 'Yg', Yg, ...
+SimData = struct('Time',Time, 'Y_data',Y_r_data, 'dY_data',dY_r_data, 'ddY_data', ddY_r_data, 'Yg', Yg, ...
             'Fext_data',F_data, 'theta_data',[Yg_data; tau_data], 'Sigma_theta_data', Sigma_theta_data);
     
 save('simulation_data.mat','SimData');
@@ -630,10 +637,17 @@ plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, Sigma_theta_data, F_da
 
 figure;
 subplot(2,1,1);
-plot(Time, p_e_data, 'LineWidth',2.0, 'Color','blue');
-legend({'$p_e$'}, 'interpreter','latex', 'fontsize',14);
-ylabel('$||\mathbf{y}_r - \mathbf{y}||$', 'interpreter','latex', 'fontsize',14);
+hold on;
+plot(Time, p_e_data, 'LineWidth',2.0, 'Color','red', 'LineStyle','--');
+Y_Yh_norm_data = zeros(1,size(Y_data,2));
+for i=1:length(Y_Yh_norm_data)
+    Y_Yh_norm_data(i) = norm(Y_data(:,i)-Y_h_data(:,i));
+end
+plot(Time, Y_Yh_norm_data, 'LineWidth',2.0, 'Color','blue');
+legend({'$||\mathbf{y}_r - \mathbf{y}||_{max}$','$||\mathbf{y}_r - \mathbf{y}||$'}, 'interpreter','latex', 'fontsize',14);
+%ylabel('$||\mathbf{y}_r - \mathbf{y}||$', 'interpreter','latex', 'fontsize',14);
 title('Human allowable error tube around nominal trajectory', 'interpreter','latex', 'fontsize',14);
+hold off;
 subplot(2,1,2);
 plot(Time, K_h_data, 'LineWidth',2.0, 'Color','blue');
 legend({'$tr(K_h)/3$'}, 'interpreter','latex', 'fontsize',14);

@@ -4,7 +4,6 @@ function plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, Sigma_theta_d
 %% ==============================================================
 %% ==========   Target and time scaling est plot ================
 
-    
     fontsize = 16;
     linewidth = 1.5;
     
