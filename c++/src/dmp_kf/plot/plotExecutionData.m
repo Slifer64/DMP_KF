@@ -2,7 +2,7 @@ function plotExecutionData(filename)
 
 if (nargin<1), filename = 'execution_data'; end
 
-addpath('utils/');
+set_matlab_utils_path();
 
 binary = true;
 filename = ['../data/' filename '.bin'];
@@ -23,6 +23,8 @@ Fext_filt_data = read_mat(fid, binary);
 theta_data = read_mat(fid, binary);
 Sigma_theta_data = read_mat(fid, binary);
 g = read_mat(fid, binary);
+
+fclose(fid);
 
 norm_dY = zeros(length(Time),1);
 for i=1:length(norm_dY)
@@ -48,16 +50,12 @@ Fext_filt_data = Fext_filt_data(:,ind);
 theta_data = theta_data(:,ind);
 Sigma_theta_data = Sigma_theta_data(:,ind);
 
-% figure;
-% plot(Fext_data')
-
-fclose(fid);
 
 if (isempty(Time))
     error('The loaded data are empty %s\n', filename);
 end
 
-tau = {}; % Time(end);
+tau = Time(end);
 plot_1sigma = false;
 g_hat_data = theta_data(1:3,:);
 tau_hat_data = theta_data(4,:);
@@ -66,7 +64,7 @@ if (isempty(g)), g = Y_data(:,end); end
 
 f_norm = zeros(size(Fext_data,2),1);
 for i=1:length(f_norm)
-    f_norm(i) = 10*norm(Fext_data(:,i));
+    f_norm(i) = norm(Fext_data(:,i));
 end
 
 f_norm_filt = zeros(size(Fext_filt_data,2),1);

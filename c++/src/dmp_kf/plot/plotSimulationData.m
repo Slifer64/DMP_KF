@@ -2,7 +2,7 @@ function plotSimulationData(filename)
 
 if (nargin<1), filename = 'simulation_data'; end
 
-addpath('utils/');
+set_matlab_utils_path();
 
 binary = true;
 filename = ['../data/' filename '.bin'];

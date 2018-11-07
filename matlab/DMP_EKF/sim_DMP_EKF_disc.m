@@ -50,7 +50,7 @@ stiff_human = false;
 
 a_py = 150;
 a_dpy = 50;
-M_r = 5*eye(3,3);
+M_r = 10*eye(3,3);
 inv_M_r = inv(M_r);
 K_r = 300*eye(3,3);
 D_r = 2*sqrt(M_r*K_r);
