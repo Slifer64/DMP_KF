@@ -9,7 +9,7 @@ clear_all();
 loadTrainingData('../data/training_data.bin');
 % plotTrainData();
 
-loadExecutionData('../data/execution_data_12a.bin');
+loadExecutionData('../data/execution_data_22a.bin');
 % plotExecutionData();
 
 exec_DMP_EKF_disc();
@@ -404,12 +404,14 @@ D_r = 2*sqrt(M_r*K_r);
 
 M_h = 3*eye(3,3);
 inv_M_h = inv(M_h);
-K_h_min = 50*eye(3,3);
-K_h_max = 500*eye(3,3);
+K_h_min = 10*eye(3,3);
+K_h_max = 400*eye(3,3);
 K_h = K_h_min;
 D_h = 2*sqrt(M_h*K_h);
-p_e_max = 0.15;
-p_e_min = 0.01;
+p_e_max = 0.30;
+p_e_min = 0.005;
+r1 = 0.7;
+r2 = 3.0;
 p_e = p_e_max;
 
 
@@ -519,8 +521,8 @@ while (true)
     Y_c = a_py*(Y_r-Y_hat) + a_dpy*(dY_r-dY_hat);
     Z_c = zeros(Dim,1);
     
-%     x1 = 0.3;
-%     tau1 = 2.0*t_end;
+%     x1 = 0.5;
+%     tau1 = 0.5*t_end;
 %     % x1*tau1<t_end to ensure tau2>0
 %     tau2 = (t_end - x1*tau1)/(1-x1);
 %     if (x <= x1)
@@ -537,10 +539,10 @@ while (true)
         ddY_hat(i) = dmp{i}.getAccel(Y_hat(i), dY_hat(i), Y0(i), 0, 0, x_hat, Yg_hat(i), tau_hat);
     end
 
-    p_e = p_e_max + (p_e_min - p_e_max)*(t/t_end)^0.4;
+    p_e = p_e_max + (p_e_min - p_e_max)*(t/t_end)^r1;
     p_a = norm(Y_h - Y)/p_e;
-    % if (p_a > 1), p_a = 1.0; end
-    K_h = K_h_min + (K_h_max - K_h_min)*(p_a)^0.6;
+    if (p_a > 1), p_a = 1.0; end
+    K_h = K_h_min + (K_h_max - K_h_min)*(p_a)^r2;
     D_h = 2*sqrt(M_h*K_h);
     
     f_ext_n = a_f_n * f_ext_n + (1-a_f_n)*sigma_f_ext*randn(3,1);
