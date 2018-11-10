@@ -9,7 +9,7 @@ a_filt: 1.0 # filtering parameter for the numerical differentiation
 
 P0_g_hat: [1.0; 1.0; 1.0]
 P0_tau_hat: [1.0]
-R_v: [1000; 1000; 1000]
+R_v: [1500; 1500; 1500]
 Q_W: [0.005; 0.005; 0.005; 0.005]
 a_p: 1.002
 enable_constraints: true
@@ -28,10 +28,10 @@ tau_scale: 1.0
 f_thres: 0.7 # norm(force)
 
 # target impedance params
-M: [4.0; 4.0; 4.0]
-D: [15.0; 15.0; 15.0]
+M: [5.0; 5.0; 5.0]
+D: [10.0; 10.0; 10.0]
 
-M_d: [10.0; 10.0; 10.0]
+M_d: [5.0; 5.0; 5.0]
 
 k_click: 0.5
 a_force: 0.5 # iir 1st order filter coeff for filtering force measurements
