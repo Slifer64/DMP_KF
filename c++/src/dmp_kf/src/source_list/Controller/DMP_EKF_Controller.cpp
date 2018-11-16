@@ -62,6 +62,8 @@ void DMP_EKF_Controller::readControllerParams(const char *params_file)
   A_c = arma::join_vert(-arma::mat().eye(N_params, N_params), arma::mat().eye(N_params, N_params));
   b_c = arma::join_vert(-theta_low_bound, theta_up_bound);
 
+  if (!parser.getParam("use_ekf_norm", use_ekf_norm)) use_ekf_norm = false;
+
   if (!parser.getParam("g_scale", g_scale)) g_scale = arma::vec({1.0, 1.0, 1.0});
   if (!parser.getParam("tau_scale", tau_scale)) tau_scale = 1.0;
 
@@ -116,6 +118,7 @@ void DMP_EKF_Controller::initEKF()
 {
   arma::vec g_hat = g_d;
   double tau_hat = tau_d;
+  c_n = 1.0;
   arma::vec theta = arma::join_vert(g_hat, arma::mat({tau_hat}));
   arma::mat P_theta = arma::diagmat( arma::join_vert( P0_g_hat, arma::mat({P0_tau_hat}) ) );
 
@@ -165,6 +168,14 @@ void DMP_EKF_Controller::execute()
   dY_ref = dY;
   Y_ref = Y;
 
+  c_n = 1.0;
+  if (use_ekf_norm)
+  {
+    arma::mat J_msr = msrFunJacob(ekf->theta);
+    c_n = std::sqrt( 1 + arma::max( arma::eig_sym(J_msr*J_msr.t()) ) );
+    //std::cout << "c_n = " << c_n << "\n";
+  }
+
   if (gui->logControllerData()) exec_data.log(t, Y, dY, ddY, Y_ref, dY_ref, ddY_ref, f_ext_raw, f_ext, ekf->theta, ekf->P);
 
   // this->robot->update();
@@ -173,7 +184,7 @@ void DMP_EKF_Controller::execute()
   f_ext_raw = (robot->getTaskWrench()).subvec(0,2);
   f_ext = (1-a_force)*f_ext + a_force*f_ext_raw;
 
-  ddY_ref = msrFun(ekf->theta);
+  ddY_ref = c_n*msrFun(ekf->theta);
 
   // ========  Controller  ========
   if (dmp_mod == 1) ddY = ( - D%dY + f_ext) / M;
@@ -187,7 +198,7 @@ void DMP_EKF_Controller::execute()
 
   // ========  KF update  ========
   ekf->predict(); // time update
-  ekf->correct(ddY); // measurement update
+  ekf->correct(ddY/c_n); // measurement update
 
   // ========  numerical integration  ========
   double Ts = robot->getControlCycle();
@@ -518,6 +529,7 @@ arma::vec DMP_EKF_Controller::msrFun(const arma::vec &theta, void *cookie)
   {
     Z(i) = dmp[i]->getAccel(Y(i), dY(i), Y0(i), Y_c(i), Z_c(i), x_hat, Yg_hat(i), tau_hat);
   }
+  Z = Z/c_n;
 
   return Z;
 }
@@ -544,6 +556,9 @@ arma::mat DMP_EKF_Controller::msrFunJacob(const arma::vec &theta, void *cookie)
     J(i,i) = J_i(0);
     J(i,n_theta-1) = J_i(1);
   }
+
+  J = J / c_n;
+
   return J;
 }
 

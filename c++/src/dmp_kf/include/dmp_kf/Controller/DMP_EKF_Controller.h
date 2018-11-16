@@ -50,6 +50,8 @@ private:
   void initVariables();
 
   std::shared_ptr<as64_::kf_::EKF> ekf;
+  double c_n; // normalizing coefficient for measurement Jacobian
+  bool use_ekf_norm;
 
   void readControllerParams(const char *params_file = NULL);
   bool startExecution();

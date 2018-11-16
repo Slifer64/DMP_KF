@@ -9,14 +9,15 @@ a_filt: 1.0 # filtering parameter for the numerical differentiation
 
 P0_g_hat: [1.0; 1.0; 1.0]
 P0_tau_hat: [1.0]
-R_v: [1500; 1500; 1500]
+R_v: [50.0; 50.0; 50.0]
 Q_W: [0.005; 0.005; 0.005; 0.005]
 a_p: 1.002
 enable_constraints: true
 g_up_bound: [0.65; 0.8; 0.7]
 g_low_bound: [-0.65; 0.05; 0.15]
 tau_up_bound: 60.0
-tau_low_bound: 1.5
+tau_low_bound: 2.0
+use_ekf_norm: true
 
 dmp_mod: 2
 
@@ -25,7 +26,7 @@ g_scale: [1.0; 1.0; 1.0]
 tau_scale: 1.0
 
 # starting conditions for controller run
-f_thres: 0.7 # norm(force)
+f_thres: 0.5 # norm(force)
 
 # target impedance params
 M: [5.0; 5.0; 5.0]

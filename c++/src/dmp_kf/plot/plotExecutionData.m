@@ -56,7 +56,7 @@ if (isempty(Time))
 end
 
 tau = Time(end);
-plot_1sigma = false;
+plot_1sigma = 0;
 g_hat_data = theta_data(1:3,:);
 tau_hat_data = theta_data(4,:);
 
