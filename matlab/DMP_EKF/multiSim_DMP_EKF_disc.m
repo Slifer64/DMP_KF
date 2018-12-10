@@ -12,10 +12,10 @@ set_matlab_utils_path();
 
 rng(0);
 
-dg_x = [-0.4 -0.2 0.2 0.5];
-dg_y = [-0.5 -0.25 0.25 0.45];
-dg_z = [-0.45 -0.2 0.2 0.5];
-dtau = [-2.0 -1.0 2.0 4.0 6.0 8.0 10.0 12.0];
+dg_x = [-1.0 1.0];
+dg_y = [-1.0 1.0];
+dg_z = [-1.0 0.25 1.0];
+dtau = [-1.0 3.0 6.0];
 
 Data = cell(length(dg_x)*length(dg_y)*length(dg_z)*length(dtau), 1);
 
@@ -35,25 +35,25 @@ for ix=1:length(dg_x)
             goal_scale = [1.0 1.0 1.0]';
             time_scale = 1.0; 
 
-            goal_offset = [dg_x(ix) dg_y(iy) dg_z(iz)]' + 0.1*rand(3,1);
+            goal_offset = [dg_x(ix) dg_y(iy) dg_z(iz)]' + 1.0*rand(3,1);
             y0_offset = [0.0 0.0 0.0]';
-            time_offset = dtau(it) + 1*rand(1);
+            time_offset = dtau(it) + 2*rand(1);
 
             process_noise = 0.0001; % Q
             msr_noise = 0.005; % R
             init_params_variance = 1.0; % P
-            a_p = 1.002; % forgetting factor in fading memory EKF
+            a_p = 1.003; % forgetting factor in fading memory EKF
 
-            goal_up_lim = 0.6*[1.0 1.0 1.0]';
+            goal_up_lim = [2.0 2.0 2.0]';
             goal_low_lim = -goal_up_lim;
             tau_low_lim = 1.0;
-            tau_up_lim = 20.0; %Inf;
+            tau_up_lim = 10.0; %Inf;
             theta_low_lim = [goal_low_lim; tau_low_lim];
             theta_up_lim = [goal_up_lim; tau_up_lim];
             N_params = length(theta_low_lim);
             A_c = [-eye(N_params, N_params); eye(N_params, N_params)];
             b_c = [-theta_low_lim; theta_up_lim];
-            enable_constraints = true*1;
+            enable_constraints = true*0;
 
             theta_sigma_min = 0.001;
             theta_sigma_max = 100000;
@@ -63,7 +63,7 @@ for ix=1:length(dg_x)
 
             plot_1sigma = false;
 
-            stiff_human = false;
+            stiff_human = true;
 
             a_py = 150;
             a_dpy = 50;

@@ -34,7 +34,7 @@ theta_up_lim = [goal_up_lim; tau_up_lim];
 N_params = length(theta_low_lim);
 A_c = [-eye(N_params, N_params); eye(N_params, N_params)];
 b_c = [-theta_low_lim; theta_up_lim];
-enable_constraints = true*0;
+enable_constraints = false;
 
 theta_sigma_min = 0.001;
 theta_sigma_max = 100000;
@@ -261,7 +261,7 @@ while (true)
 end
 toc
 
-plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, Sigma_theta_data, plot_1sigma, F_data, Y_data, dY_data)
+plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, Sigma_theta_data, F_data, plot_1sigma, Y_data, dY_data)
 
 % fig = figure;
 % Dim = 3;

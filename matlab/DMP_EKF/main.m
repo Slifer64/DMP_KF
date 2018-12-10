@@ -21,7 +21,7 @@ clear_all();
 
 %% test scaling
 disp('Running DMP with EKF...');
-sim_DMP_srff_EKF_disc();
+sim_DMP_EKF_disc();
 
 pause_program();
 clear_all();

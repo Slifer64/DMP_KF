@@ -21,8 +21,6 @@ time_offset = 5.88;
 
 goal_up_lim = 0.5*[1.0 1.0 1.0]';
 goal_low_lim = -goal_up_lim;
-% goal_up_lim = [0.35 1.0 1.0]';
-% goal_low_lim = -[-0.2 1.0 1.0]';
 tau_low_lim = 1.0;
 tau_up_lim = 20.0; %Inf;
 
@@ -36,7 +34,7 @@ theta_up_lim = [goal_up_lim; tau_up_lim];
 N_params = length(theta_low_lim);
 A_c = [-eye(N_params, N_params); eye(N_params, N_params)];
 b_c = [-theta_low_lim; theta_up_lim];
-enable_constraints = true*1;
+enable_constraints = true;
 
 theta_sigma_min = 0.001;
 theta_sigma_max = 100000;
@@ -44,7 +42,7 @@ apply_cov_sat = false;
 
 ekf_provide_Jacob = true;
 
-plot_1sigma = true*0;
+plot_1sigma = false;
 
 stiff_human = false;
 
@@ -257,7 +255,7 @@ while (true)
 end
 toc
 
-plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, Sigma_theta_data, plot_1sigma, F_data, Y_data, dY_data);
+plot_estimation_results(Time, Yg, Yg_data, tau, tau_data, Sigma_theta_data, F_data, plot_1sigma, Y_data, dY_data);
 
 % fig = figure;
 % Dim = 3;
