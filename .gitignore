@@ -146,4 +146,8 @@ CATKIN_IGNORE
 *.kdev4
 
 
+# CLion
+.idea/
+c++/src/cmake-build-debug/
+
 
